@@ -42,19 +42,22 @@ class BasicAirfoilBase(Component):
     cm = Float(iotype='out', desc='pitching moment coefficient')
 
 
-def airfoilForces(airfoil, alpha, Re):
-    """convenience method to use BasicAirfoilBase
-    as a regular python function as opposed to a component"""
+    def forces(self, alpha, Re):
+        """convenience method to use BasicAirfoilBase
+        as a regular Python function as opposed to a component"""
 
-    airfoil.alpha = alpha
-    airfoil.Re = Re
-    airfoil.run()
-    return airfoil.cl, airfoil.cd, airfoil.cm
+        self.alpha = alpha
+        self.Re = Re
+        self.run()
+        return self.cl, self.cd, self.cm
 
 
 
 class ModifyAirfoilBase(Component):
-    """Used for extrapolation, 3D corrections, etc."""
+    """Used for extrapolation, 3D corrections, etc.
+    default behavior is to not do any modification
+
+    """
 
     # inputs
     afIn = Slot(AirfoilDataVT, iotype='in', desc='tabulated airfoil data')
@@ -66,9 +69,6 @@ class ModifyAirfoilBase(Component):
         super(ModifyAirfoilBase, self).__init__()
         self.afIn = AirfoilDataVT()
         self.afOut = AirfoilDataVT()
-
-
-class NoModification(ModifyAirfoilBase):
 
     def execute(self):
         self.afOut = self.afIn
@@ -123,9 +123,9 @@ class AirfoilPreprocessingAssembly(Assembly):
     def configure(self):
 
         self.add('read', ReadAirfoilBase())
-        self.add('mod1', NoModification())
-        self.add('mod2', NoModification())
-        self.add('mod3', NoModification())
+        self.add('mod1', ModifyAirfoilBase())
+        self.add('mod2', ModifyAirfoilBase())
+        self.add('mod3', ModifyAirfoilBase())
         self.add('write', WriteAirfoilBase())
 
         self.driver.workflow.add(['read', 'mod1', 'mod2', 'mod3', 'write'])
