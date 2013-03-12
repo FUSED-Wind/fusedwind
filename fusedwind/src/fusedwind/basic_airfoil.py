@@ -21,7 +21,7 @@ class PolarDataVT(VariableTree):
 class AirfoilDataVT(VariableTree):
 
     Re = Array(desc='Reynolds number')
-    polars = List(PolarDataVT, desc='corresponding Polar data')
+    polars = List(Slot(PolarDataVT), desc='corresponding Polar data')
 
 
 # ------------------------------------
@@ -68,6 +68,11 @@ class ModifyAirfoilBase(Component):
         self.afOut = AirfoilDataVT()
 
 
+class NoModification(ModifyAirfoilBase):
+
+    def execute(self):
+        self.afOut = self.afIn
+
 
 class ReadAirfoilBase(Component):
     """Read airfoil data from a file"""
@@ -102,29 +107,33 @@ class WriteAirfoilBase(Component):
 
 
 
+
 # ------- assemblies -------------
 
 class AirfoilPreprocessingAssembly(Assembly):
 
     # for the benefit of the GUI
     read = Slot(ReadAirfoilBase)
-    correct3D = Slot(ModifyAirfoilBase)
-    extrapolate = Slot(ModifyAirfoilBase)
+    mod1 = Slot(ModifyAirfoilBase)
+    mod2 = Slot(ModifyAirfoilBase)
+    mod3 = Slot(ModifyAirfoilBase)
     write = Slot(WriteAirfoilBase)
 
 
     def configure(self):
 
         self.add('read', ReadAirfoilBase())
-        self.add('correct3D', ModifyAirfoilBase())
-        self.add('extrapolate', ModifyAirfoilBase())
+        self.add('mod1', NoModification())
+        self.add('mod2', NoModification())
+        self.add('mod3', NoModification())
         self.add('write', WriteAirfoilBase())
 
-        self.driver.workflow.add(['read', 'correct3D', 'extrapolate', 'write'])
+        self.driver.workflow.add(['read', 'mod1', 'mod2', 'mod3', 'write'])
 
-        self.connect('read.afOut', 'correct3D.afIn')
-        self.connect('correct3D.afOut', 'extrapolate.afIn')
-        self.connect('extrapolate.afOut', 'write.afIn')
+        self.connect('read.afOut', 'mod1.afIn')
+        self.connect('mod1.afOut', 'mod2.afIn')
+        self.connect('mod2.afOut', 'mod3.afIn')
+        self.connect('mod3.afOut', 'write.afIn')
 
         self.create_passthrough('read.fileIn')
         self.create_passthrough('write.fileOut')
