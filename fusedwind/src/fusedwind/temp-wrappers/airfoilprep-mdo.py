@@ -11,8 +11,9 @@ from enthought.traits.api import on_trait_change
 from openmdao.main.api import Component
 from openmdao.main.datatypes.api import Float, Array, Slot
 
-from fusedwind.basic_airfoil import PolarDataVT, AirfoilDataVT, BasicAirfoilBase, \
-    ModifyAirfoilBase, ReadAirfoilBase, WriteAirfoilBase
+from fusedwind.vartrees.airfoil import PolarDataVT, AirfoilDataVT
+from fusedwind.basecomps.airfoil import BasicAirfoilBase, ModifyAirfoilBase, \
+    ReadAirfoilBase, WriteAirfoilBase
 from airfoilprep import Polar, Airfoil
 
 
@@ -198,7 +199,7 @@ class WriteAeroDynFileComponent(WriteAirfoilBase):
 if __name__ == '__main__':
 
     import numpy as np
-    from fusedwind.basic_airfoil import AirfoilPreprocessingAssembly
+    from fusedwind.assemblies.airfoil import AirfoilPreprocessingAssembly
 
     # -------- airfoil preprocessing assembly --------
     # setup

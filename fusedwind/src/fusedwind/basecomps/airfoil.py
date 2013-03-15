@@ -1,33 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+from openmdao.main.api import Component
+from openmdao.main.datatypes.api import Float, Slot, Str
 
-from openmdao.main.api import Component, Assembly, VariableTree
-from openmdao.main.datatypes.api import Float, Array, Slot, Str, List
+from fusedwind.vartrees.airfoil import AirfoilDataVT
 
-
-# ------- variable trees ---------
-
-class PolarDataVT(VariableTree):
-    """airfoil data at a given Reynolds number"""
-
-    alpha = Array(units='deg', desc='angles of attack')
-    cl = Array(desc='corresponding lift coefficients')
-    cd = Array(desc='corresponding drag coefficients')
-    cm = Array(desc='corresponding pitching moment coefficients')
-
-
-
-class AirfoilDataVT(VariableTree):
-
-    Re = Array(desc='Reynolds number')
-    polars = List(Slot(PolarDataVT), desc='corresponding Polar data')
-
-
-# ------------------------------------
-
-
-# ------- base classes ----------
 
 class BasicAirfoilBase(Component):
     """Evaluation of airfoil at angle of attack and Reynolds number"""
@@ -71,7 +49,9 @@ class ModifyAirfoilBase(Component):
         self.afOut = AirfoilDataVT()
 
     def execute(self):
+        """provides a default behavior (to not modify the airfoil)"""
         self.afOut = self.afIn
+
 
 
 class ReadAirfoilBase(Component):
@@ -89,6 +69,7 @@ class ReadAirfoilBase(Component):
 
 
 
+
 class WriteAirfoilBase(Component):
     """Write airfoil data to a file"""
 
@@ -99,48 +80,3 @@ class WriteAirfoilBase(Component):
     def __init__(self):
         super(WriteAirfoilBase, self).__init__()
         self.afIn = AirfoilDataVT()
-
-
-
-# ---------------------------
-
-
-
-
-
-# ------- assemblies -------------
-
-class AirfoilPreprocessingAssembly(Assembly):
-
-    # for the benefit of the GUI
-    read = Slot(ReadAirfoilBase)
-    mod1 = Slot(ModifyAirfoilBase)
-    mod2 = Slot(ModifyAirfoilBase)
-    mod3 = Slot(ModifyAirfoilBase)
-    write = Slot(WriteAirfoilBase)
-
-
-    def configure(self):
-
-        self.add('read', ReadAirfoilBase())
-        self.add('mod1', ModifyAirfoilBase())
-        self.add('mod2', ModifyAirfoilBase())
-        self.add('mod3', ModifyAirfoilBase())
-        self.add('write', WriteAirfoilBase())
-
-        self.driver.workflow.add(['read', 'mod1', 'mod2', 'mod3', 'write'])
-
-        self.connect('read.afOut', 'mod1.afIn')
-        self.connect('mod1.afOut', 'mod2.afIn')
-        self.connect('mod2.afOut', 'mod3.afIn')
-        self.connect('mod3.afOut', 'write.afIn')
-
-        self.create_passthrough('read.fileIn')
-        self.create_passthrough('write.fileOut')
-
-
-# ---------------------------------
-
-
-
-
