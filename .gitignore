@@ -1,5 +1,8 @@
 *.py[cod]
 
+# OpenMDAO
+openmdao_log.txt
+
 # C extensions
 *.so
 
