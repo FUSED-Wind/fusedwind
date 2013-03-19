@@ -4,7 +4,7 @@
 from openmdao.main.api import Assembly
 from openmdao.main.datatypes.api import Slot
 
-from fusedwind.basecomps.airfoil import ReadAirfoilBase, ModifyAirfoilBase, WriteAirfoilBase
+from fusedwind.base.airfoil import ReadAirfoilBase, ModifyAirfoilBase, WriteAirfoilBase
 
 
 class AirfoilPreprocessingAssembly(Assembly):

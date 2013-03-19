@@ -12,7 +12,7 @@ from openmdao.main.api import Component
 from openmdao.main.datatypes.api import Float, Array, Slot
 
 from fusedwind.vartrees.airfoil import PolarDataVT, AirfoilDataVT
-from fusedwind.basecomps.airfoil import BasicAirfoilBase, ModifyAirfoilBase, \
+from fusedwind.base.airfoil import BasicAirfoilBase, ModifyAirfoilBase, \
     ReadAirfoilBase, WriteAirfoilBase
 from airfoilprep import Polar, Airfoil
 
