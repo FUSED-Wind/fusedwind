@@ -2,32 +2,9 @@
 # encoding: utf-8
 
 from openmdao.main.api import Component
-from openmdao.main.datatypes.api import Float, Slot, Str
+from openmdao.main.datatypes.api import Slot, Str
 
 from fusedwind.vartrees.airfoil import AirfoilDataVT
-
-
-class BasicAirfoilBase(Component):
-    """Evaluation of airfoil at angle of attack and Reynolds number"""
-
-    # inputs
-    alpha = Float(iotype='in', units='deg', desc='angle of attack')
-    Re = Float(iotype='in', desc='Reynolds number')
-
-    # outputs
-    cl = Float(iotype='out', desc='lift coefficient')
-    cd = Float(iotype='out', desc='drag coefficient')
-    cm = Float(iotype='out', desc='pitching moment coefficient')
-
-
-    def forces(self, alpha, Re):
-        """convenience method to use BasicAirfoilBase
-        as a regular Python function as opposed to a component"""
-
-        self.alpha = alpha
-        self.Re = Re
-        self.run()
-        return self.cl, self.cd, self.cm
 
 
 
