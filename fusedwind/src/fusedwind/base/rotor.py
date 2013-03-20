@@ -4,7 +4,7 @@
 from openmdao.main.api import Component
 from openmdao.main.datatypes.api import Array, Slot
 
-from fusedwind.vartrees.rotor import DistributedLoads
+from fusedwind.vartrees.rotor import DistributedLoadsVT
 
 
 class RotorAeroBase(Component):
@@ -16,8 +16,8 @@ class RotorAeroBase(Component):
     pitch = Array(iotype='in', units='deg')
 
     # outputs
-    loads = Slot(DistributedLoads, iotype='out')
+    loads = Slot(DistributedLoadsVT, iotype='out')
 
     def __init__(self):
         super(RotorAeroBase, self).__init__()
-        self.loads = DistributedLoads()
+        self.loads = DistributedLoadsVT()

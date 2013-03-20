@@ -4,13 +4,13 @@
 from openmdao.main.api import Component
 from openmdao.main.datatypes.api import Slot, Float
 
-from fusedwind.vartrees.rotor import DistributedLoads, RotorLoads, HubLoads
+from fusedwind.vartrees.rotor import DistributedLoadsVT, RotorLoads, HubLoads
 
 
 class IntegrateLoads(Component):
     """integrate distributed blade loads to compute thrust, torque, power, and hub loads"""
 
-    distributedLoads = Slot(DistributedLoads, iotype='in')
+    distributedLoads = Slot(DistributedLoadsVT, iotype='in')
     R = Float(iotype='in', units='m', desc='rotor radius used in normalization')
     rho = Float(iotype='in', units='kg/m**3', desc='fluid density used in normalization')
 
@@ -19,7 +19,7 @@ class IntegrateLoads(Component):
 
     def __init__(self):
         super(IntegrateLoads, self).__init__()
-        self.distributedLoads = DistributedLoads()
+        self.distributedLoads = DistributedLoadsVT()
         self.rotorLoads = RotorLoads()
         self.hubLoads = HubLoads()
 

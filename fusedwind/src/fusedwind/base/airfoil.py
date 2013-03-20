@@ -17,6 +17,7 @@ class BasicAirfoilBase(Component):
     # outputs
     cl = Float(iotype='out', desc='lift coefficient')
     cd = Float(iotype='out', desc='drag coefficient')
+    cm = Float(iotype='out', desc='pitching moment coefficient')
 
     def forces(self, alpha, Re):
         """convenience method to use BasicAirfoilBase
@@ -25,7 +26,7 @@ class BasicAirfoilBase(Component):
         self.alpha = alpha
         self.Re = Re
         self.run()
-        return self.cl, self.cd
+        return self.cl, self.cd, self.cm
 
 
 class ModifyAirfoilBase(Component):
