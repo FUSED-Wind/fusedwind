@@ -10,7 +10,7 @@ Copyright (c) NREL. All rights reserved.
 import numpy as np
 
 from openmdao.main.datatypes.api import Float, Bool, Int, Slot
-from fusedwind.vartrees.rotor import BEMRotorVT
+from fusedwind.vartrees.rotor import BEMRotorVT, DistributedLoadsVT, getRotorAeroOutput
 from fusedwind.base.rotor import RotorAeroBase
 
 from airfoilprep import Polar, Airfoil
@@ -71,12 +71,37 @@ class CCBladeWrapper(RotorAeroBase):
         raero = CCBlade(r, chord, theta, bem_af, Rhub, Rtip, B, self.rho, self.mu,
                         self.iterRe, self.usecd, self.tiploss, self.hubloss, self.wakerotation)
 
-        r, theta, Tp, Np = raero.distributedAeroLoads(self.Uinf, self.Omega, self.pitch)
+        n = len(self.Uhub)
+        distLoads = [0]*n
 
-        self.loads.r = r
-        self.loads.theta = np.degrees(theta)
-        self.loads.Tp = Tp
-        self.loads.Np = Np
+        for i in range(n):
+            r, theta, Tp, Np = raero.distributedAeroLoads(self.Uhub[i], self.Omega[i], self.pitch[i])
+            Rp = 0*Tp  # strip theory
+
+            distLoads[i] = DistributedLoadsVT()
+            distLoads[i].r = r
+            distLoads[i].theta = np.degrees(theta)
+            distLoads[i].Tp = Tp
+            distLoads[i].Np = Np
+            distLoads[i].Rp = Rp
+
+
+        self.distributedLoads = distLoads
+
+        # rename
+        precone = 0.0  # unmodeled in CCBlade right now
+        B = self.bemrotor.B
+        R = self.bemrotor.Rtip
+        rho = self.rho
+
+        # integrate
+        self.rotorOut = getRotorAeroOutput(distLoads, self.Uhub, self.Omega, precone, B, R, rho)
+
+
+        # self.hubLoads = getHubLoads(distLoads)  # TODO
+
+
+
 
 
 
@@ -116,5 +141,13 @@ class WTPerfWrapper(RotorAeroBase):
         # create files that WTPerf uses
         for af in afprep_af:
             af.writeToAerodynFile(some_filename)
+
+        if self.onlyRotorOut:
+            # call in batch mode
+            pass
+        else:
+            # call the distributed load mode
+            pass
+
 
 

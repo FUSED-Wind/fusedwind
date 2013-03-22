@@ -2,9 +2,9 @@
 # encoding: utf-8
 
 from openmdao.main.api import Component
-from openmdao.main.datatypes.api import Array, Slot
+from openmdao.main.datatypes.api import Array, Slot, List, Bool
 
-from fusedwind.vartrees.rotor import DistributedLoadsVT
+from fusedwind.vartrees.rotor import DistributedLoadsVT, RotorAeroOutputVT, HubLoadsVT
 
 
 class RotorAeroBase(Component):
@@ -15,9 +15,19 @@ class RotorAeroBase(Component):
     Omega = Array(iotype='in', units='rpm')
     pitch = Array(iotype='in', units='deg')
 
+    # temporary until Justin implements LazyComponent
+    onlyRotorOut = Bool(True)
+
     # outputs
-    loads = Slot(DistributedLoadsVT, iotype='out')
+    rotorOut = Slot(RotorAeroOutputVT, iotype='out')
+    distributedLoads = Slot(List(DistributedLoadsVT), iotype='out')
+    hubLoads = Slot(HubLoadsVT, iotype='out')
 
     def __init__(self):
         super(RotorAeroBase, self).__init__()
-        self.loads = DistributedLoadsVT()
+        self.rotorOut = RotorAeroOutputVT()
+        self.distributedLoads = DistributedLoadsVT()
+        self.hubLoads = HubLoadsVT()
+
+
+
