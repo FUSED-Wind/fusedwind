@@ -122,7 +122,7 @@ def getHubLoads(self):
 
 
 
-class MachineTypeBase(VariableTree):
+class MachineTypeBaseVT(VariableTree):
     """not meant to be instantiated directly"""
 
     Vin = Float(units='m/s')
@@ -130,7 +130,7 @@ class MachineTypeBase(VariableTree):
     ratedPower = Float(units='W')
 
 
-class FixedSpeedFixedPitch(MachineTypeBase):
+class FixedSpeedFixedPitch(MachineTypeBaseVT):
 
     Omega = Float(units='rpm')
     pitch = Float(units='deg')
@@ -140,7 +140,7 @@ class FixedSpeedFixedPitch(MachineTypeBase):
 
 
 
-class FixedSpeedVarPitch(MachineTypeBase):
+class FixedSpeedVarPitch(MachineTypeBaseVT):
 
     Omega = Float(units='rpm')
 
@@ -148,7 +148,7 @@ class FixedSpeedVarPitch(MachineTypeBase):
     varPitch = True
 
 
-class VarSpeedFixedPitch(MachineTypeBase):
+class VarSpeedFixedPitch(MachineTypeBaseVT):
 
     minOmega = Float(units='deg')
     maxOmega = Float(units='deg')
@@ -158,7 +158,7 @@ class VarSpeedFixedPitch(MachineTypeBase):
     varPitch = False
 
 
-class VarSpeedVarPitch(MachineTypeBase):
+class VarSpeedVarPitch(MachineTypeBaseVT):
 
     minOmega = Float(units='deg')
     maxOmega = Float(units='deg')
