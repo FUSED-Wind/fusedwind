@@ -33,12 +33,12 @@ class RotorAeroOutputVT(VariableTree):
 
 class HubLoadsVT(VariableTree):
 
-    Fx = Array(units='N', desc='x-force in wind-aligned coordinate system')
-    Fy = Array(units='N', desc='y-force in wind-aligned coordinate system')
-    Fz = Array(units='N', desc='z-force in wind-aligned coordinate system')
-    Mx = Array(units='N*m', desc='x-moment in wind-aligned coordinate system')
-    My = Array(units='N*m', desc='y-moment in wind-aligned coordinate system')
-    Mz = Array(units='N*m', desc='z-moment in wind-aligned coordinate system')
+    Fx = Float(units='N', desc='x-force in wind-aligned coordinate system')
+    Fy = Float(units='N', desc='y-force in wind-aligned coordinate system')
+    Fz = Float(units='N', desc='z-force in wind-aligned coordinate system')
+    Mx = Float(units='N*m', desc='x-moment in wind-aligned coordinate system')
+    My = Float(units='N*m', desc='y-moment in wind-aligned coordinate system')
+    Mz = Float(units='N*m', desc='z-moment in wind-aligned coordinate system')
 
 
 
@@ -120,3 +120,48 @@ def getHubLoads(self):
 
 
 
+
+
+class MachineTypeBase(VariableTree):
+    """not meant to be instantiated directly"""
+
+    Vin = Float(units='m/s')
+    Vout = Float(units='m/s')
+    ratedPower = Float(units='W')
+
+
+class FixedSpeedFixedPitch(MachineTypeBase):
+
+    Omega = Float(units='rpm')
+    pitch = Float(units='deg')
+
+    varSpeed = False
+    varPitch = False
+
+
+
+class FixedSpeedVarPitch(MachineTypeBase):
+
+    Omega = Float(units='rpm')
+
+    varSpeed = False
+    varPitch = True
+
+
+class VarSpeedFixedPitch(MachineTypeBase):
+
+    minOmega = Float(units='deg')
+    maxOmega = Float(units='deg')
+    pitch = Float(units='deg')
+
+    varSpeed = True
+    varPitch = False
+
+
+class VarSpeedVarPitch(MachineTypeBase):
+
+    minOmega = Float(units='deg')
+    maxOmega = Float(units='deg')
+
+    varSpeed = True
+    varPitch = True

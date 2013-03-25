@@ -20,14 +20,14 @@ class RotorAeroBase(Component):
 
     # outputs
     rotorOut = Slot(RotorAeroOutputVT, iotype='out')
-    distributedLoads = Slot(List(DistributedLoadsVT), iotype='out')
-    hubLoads = Slot(HubLoadsVT, iotype='out')
+    distributedLoads = List(Slot(DistributedLoadsVT), iotype='out')
+    hubLoads = List(Slot(HubLoadsVT), iotype='out')
 
     def __init__(self):
         super(RotorAeroBase, self).__init__()
         self.rotorOut = RotorAeroOutputVT()
-        self.distributedLoads = DistributedLoadsVT()
-        self.hubLoads = HubLoadsVT()
+        # self.distributedLoads = [DistributedLoadsVT()]
+        # self.hubLoads = [HubLoadsVT()]
 
 
 
