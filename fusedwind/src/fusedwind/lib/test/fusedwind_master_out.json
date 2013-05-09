@@ -96,11 +96,13 @@
     "machine_type": {
         "type": "FixedSpeedFixedPitch", 
         "parameters": {
-            "Omega": 0.0, 
-            "ratedPower": 0.0, 
-            "Vin": 0.0, 
             "Vout": 0.0, 
-            "pitch": 0.0
+            "Omega": 0.0, 
+            "pitch": 0.0, 
+            "Vin": 0.0, 
+            "varPitch": false, 
+            "ratedPower": 0.0, 
+            "varSpeed": false
         }
     }, 
     "turbine": {

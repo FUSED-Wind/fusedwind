@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 from openmdao.main.api import VariableTree
-from openmdao.main.datatypes.api import Array, Float, Int, List
+from openmdao.main.datatypes.api import Array, Float, Int, List, Bool
 from math import sin, cos, radians, pi
 import numpy as np
 
@@ -135,8 +135,8 @@ class FixedSpeedFixedPitch(MachineTypeBaseVT):
     Omega = Float(units='rpm')
     pitch = Float(units='deg')
 
-    varSpeed = False
-    varPitch = False
+    varSpeed = Bool(False, desc='')
+    varPitch = Bool(False, desc='')
 
 
 
@@ -144,8 +144,8 @@ class FixedSpeedVarPitch(MachineTypeBaseVT):
 
     Omega = Float(units='rpm')
 
-    varSpeed = False
-    varPitch = True
+    varSpeed = Bool(False, desc='')
+    varPitch = Bool(True, desc='')
 
 
 class VarSpeedFixedPitch(MachineTypeBaseVT):
@@ -154,8 +154,8 @@ class VarSpeedFixedPitch(MachineTypeBaseVT):
     maxOmega = Float(units='deg')
     pitch = Float(units='deg')
 
-    varSpeed = True
-    varPitch = False
+    varSpeed = Bool(True, desc='')
+    varPitch = Bool(False, desc='')
 
 
 class VarSpeedVarPitch(MachineTypeBaseVT):
@@ -163,5 +163,5 @@ class VarSpeedVarPitch(MachineTypeBaseVT):
     minOmega = Float(units='deg')
     maxOmega = Float(units='deg')
 
-    varSpeed = True
-    varPitch = True
+    varSpeed = Bool(True, desc='')
+    varPitch = Bool(True, desc='')
