@@ -7,7 +7,7 @@ from math import sin, cos, radians, pi
 import numpy as np
 
 from fusedwind.vartrees.airfoil import AirfoilDataVT
-
+from fusedwind.lib.fusedvartree import FusedIOVariableTree
 
 class DistributedLoadsVT(VariableTree):
     """at one wind speed"""
@@ -122,7 +122,7 @@ def getHubLoads(self):
 
 
 
-class MachineTypeBaseVT(VariableTree):
+class MachineTypeBaseVT(FusedIOVariableTree):
     """not meant to be instantiated directly"""
 
     Vin = Float(units='m/s')

@@ -1,0 +1,121 @@
+{
+    "rotor": {
+        "type": "RotorVT", 
+        "parameters": {
+            "diameter": 0.0, 
+            "tilt_angle": 0.0, 
+            "nb": 0, 
+            "cone_angle": 0.0, 
+            "hub_height": 0.0, 
+            "mass": 0.0, 
+            "overhang": 0.0
+        }
+    }, 
+    "blade": {
+        "type": "BladeVT", 
+        "parameters": {
+            "max_chord": 0.0, 
+            "tip_chord": 0.0, 
+            "length": 0.0, 
+            "mass": 0.0, 
+            "airfoils": [], 
+            "I_y": 0.0, 
+            "I_x": 0.0, 
+            "root_chord": 0.0
+        }
+    }, 
+    "airfoil_data": {
+        "type": "AirfoilDataArrayVT", 
+        "parameters": {
+            "Re": [], 
+            "polars": [
+                {
+                    "type": "AirfoilDataVT", 
+                    "parameters": {
+                        "Re": [], 
+                        "alpha": [
+                            0.0, 
+                            2.0, 
+                            4.0, 
+                            6.0, 
+                            8.0, 
+                            10.0, 
+                            12.0, 
+                            14.0, 
+                            16.0, 
+                            18.0, 
+                            20.0
+                        ], 
+                        "cd": [], 
+                        "cm": [], 
+                        "cl": [
+                            0.0, 
+                            0.21932454224643017, 
+                            0.43864908449286033, 
+                            0.6579736267392905, 
+                            0.87729816898572066, 
+                            1.0966227112321507, 
+                            1.315947253478581, 
+                            1.5352717957250113, 
+                            1.7545963379714413, 
+                            1.9739208802178716, 
+                            2.1932454224643014
+                        ]
+                    }
+                }
+            ]
+        }
+    }, 
+    "hub": {
+        "type": "HubVT", 
+        "parameters": {
+            "diameter": 0.0, 
+            "mass": 0.0, 
+            "I_y": 0.0, 
+            "CM": [
+                0.0, 
+                0.0, 
+                0.0
+            ], 
+            "I_x": 0.0
+        }
+    }, 
+    "nacelle": {
+        "type": "NacelleVT", 
+        "parameters": {
+            "mass": 0.0, 
+            "I_y": 0.0, 
+            "CM": [
+                0.0, 
+                0.0, 
+                0.0
+            ], 
+            "I_x": 0.0
+        }
+    }, 
+    "machine_type": {
+        "type": "FixedSpeedFixedPitch", 
+        "parameters": {
+            "Omega": 0.0, 
+            "ratedPower": 0.0, 
+            "Vin": 0.0, 
+            "Vout": 0.0, 
+            "pitch": 0.0
+        }
+    }, 
+    "turbine": {
+        "type": "WindTurbineVT", 
+        "parameters": {
+            "name": "turbine", 
+            "orientation": "upwind"
+        }
+    }, 
+    "tower": {
+        "type": "TowerVT", 
+        "parameters": {
+            "top_diameter": 0.0, 
+            "bottom_diameter": 0.0, 
+            "height": 0.0
+        }
+    }
+}
