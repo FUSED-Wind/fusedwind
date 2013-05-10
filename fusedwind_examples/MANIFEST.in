@@ -1,0 +1,3 @@
+graft src/fusedwind_examples/sphinx_build/html
+recursive-include src/fusedwind_examples/test *.py
+
