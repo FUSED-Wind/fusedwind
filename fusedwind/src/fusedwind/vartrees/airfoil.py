@@ -2,11 +2,10 @@
 # encoding: utf-8
 
 from openmdao.main.api import VariableTree
-from fusedwind.lib.fusedvartree import FusedIOVariableTree
 from openmdao.main.datatypes.api import Array, Slot, List, VarTree
 
 
-class AirfoilDataVT(FusedIOVariableTree):
+class AirfoilDataVT(VariableTree):
     """airfoil data at a given Reynolds number"""
 
     Re = Array(desc='Reynolds number')
@@ -17,7 +16,7 @@ class AirfoilDataVT(FusedIOVariableTree):
 
 
 
-class AirfoilDataArrayVT(FusedIOVariableTree):
+class AirfoilDataArrayVT(VariableTree):
 
     Re = Array(desc='Reynolds number')
     polars = List(desc='corresponding Polar data')

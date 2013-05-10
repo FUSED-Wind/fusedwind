@@ -1,14 +1,14 @@
 import numpy as np
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum
-from fusedwind.lib.fusedvartree import FusedIOVariableTree
+from fusedwind.lib.fusedvartree import VariableTree
 
 
-class WindTurbineVT(FusedIOVariableTree):
-    name = Str(desc='Wind turbine name')
+class WindTurbineVT(VariableTree):
+    turbine_name = Str(desc='Wind turbine name')
     orientation = Enum('upwind', ('upwind','downwind'))
     
 
-class RotorVT(FusedIOVariableTree):
+class RotorVT(VariableTree):
 
     hub_height = Float(desc='Hub height')
     nb = Int(desc='Number of blades')
@@ -19,7 +19,7 @@ class RotorVT(FusedIOVariableTree):
     overhang = Float(desc='Rotor overhang')
 
 
-class BladeVT(FusedIOVariableTree):
+class BladeVT(VariableTree):
 
     length = Float(desc='blade length')
     mass = Float(desc='blade mass')
@@ -31,7 +31,7 @@ class BladeVT(FusedIOVariableTree):
     airfoils = List(desc='List of airfoil names used on blade')
 
 
-class HubVT(FusedIOVariableTree):
+class HubVT(VariableTree):
 
     diameter = Float(desc='blade length')
     mass = Float(desc='blade mass')
@@ -40,7 +40,7 @@ class HubVT(FusedIOVariableTree):
     CM = Array(np.zeros(3), desc='')
 
 
-class NacelleVT(FusedIOVariableTree):
+class NacelleVT(VariableTree):
 
     mass = Float(desc='blade mass')
     I_x = Float(desc='first area moment of inertia')
@@ -48,9 +48,10 @@ class NacelleVT(FusedIOVariableTree):
     CM = Array(np.zeros(3), desc='')
 
 
-class TowerVT(FusedIOVariableTree):
+class TowerVT(VariableTree):
 
     height = Float(desc='Tower height')
     bottom_diameter = Float(desc='Tower bottom diameter')
     top_diameter = Float(desc='Tower bottom diameter')
+    mass = Float(desc='Tower mass')
 

@@ -7,7 +7,6 @@ from math import sin, cos, radians, pi
 import numpy as np
 
 from fusedwind.vartrees.airfoil import AirfoilDataVT
-from fusedwind.lib.fusedvartree import FusedIOVariableTree
 
 class DistributedLoadsVT(VariableTree):
     """at one wind speed"""
@@ -122,7 +121,7 @@ def getHubLoads(self):
 
 
 
-class MachineTypeBaseVT(FusedIOVariableTree):
+class MachineTypeBaseVT(VariableTree):
     """not meant to be instantiated directly"""
 
     Vin = Float(units='m/s')
@@ -150,8 +149,8 @@ class FixedSpeedVarPitch(MachineTypeBaseVT):
 
 class VarSpeedFixedPitch(MachineTypeBaseVT):
 
-    minOmega = Float(units='deg')
-    maxOmega = Float(units='deg')
+    minOmega = Float(units='rpm')
+    maxOmega = Float(units='rpm')
     pitch = Float(units='deg')
 
     varSpeed = Bool(True, desc='')
@@ -160,8 +159,8 @@ class VarSpeedFixedPitch(MachineTypeBaseVT):
 
 class VarSpeedVarPitch(MachineTypeBaseVT):
 
-    minOmega = Float(units='deg')
-    maxOmega = Float(units='deg')
+    minOmega = Float(units='rpm')
+    maxOmega = Float(units='rpm')
 
     varSpeed = Bool(True, desc='')
     varPitch = Bool(True, desc='')

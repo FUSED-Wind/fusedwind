@@ -1,8 +1,9 @@
 
 import json
 # import ipdb
+import copy
 import numpy as np
-from openmdao.main.api import Component
+from openmdao.main.api import Component, VariableTree
 from openmdao.lib.datatypes.api import Str, Slot
 from fusedwind.vartrees import api
 
@@ -23,34 +24,88 @@ class FUSEDWindIO(Component):
 
     master_input_file = Str('fusedwind_master.json',desc='')
     master_output_file = Str('fusedwind_master_out.json',desc='')
-    top = Slot()
+    vtrees_in = Slot(iotype='out')
+    vtrees_out = Slot(iotype='in')
 
     def load_master(self):
 
         f = open(self.master_input_file,'r')
         loaded = json.load(f)
         
-        self.add('top',Component())
+        self.add('vtrees_in',Component())
 
         for name, comp in loaded.iteritems():
             decoded = self.decode_json(comp)
             print 'loading', name
             vt = self.load_vartree(decoded)
-            self.top.add(name, vt)
+            self.vtrees_in.add(name, vt)
 
     def write_master(self):
         """serialize and write object hierarchy to a JSON file"""
 
         f = open(self.master_output_file,'wb')
         master = {}
-        for comp in self.top.list_containers():
-            obj = getattr(self.top, comp)
-            if hasattr(obj, 'print_vars'):
+        for comp in self.vtrees_out.list_containers():
+            obj = getattr(self.vtrees_out, comp)
+            obj = copy.deepcopy(obj)
+            if isinstance(obj, VariableTree):
                 print 'dumping', comp
-                master[comp] = obj.print_vars()
+                master[comp] = self.print_vars(obj)
         self._master = master
         # ipdb.set_trace()
         json.dump(master, f, indent = 4)
+
+    def print_vars(self, obj, parent=None):
+
+        attrs = {}
+        attrs['type'] = type(obj).__name__
+
+        parameters = {}
+
+        for name in obj.list_vars():
+
+            trait = obj.get_trait(name)
+            meta = obj.get_metadata(name)
+            value = getattr(obj, name)
+            ttype = trait.trait_type
+
+
+            # Each variable type provides its own basic attributes
+            attr, slot_attr = ttype.get_attribute(name, value, trait, meta)
+
+            # Let the GUI know that this var is the top element of a
+            # variable tree
+            if attr.get('ttype') == 'vartree':
+                vartable = obj.get(name)
+                if hasattr(vartable, 'print_vars'):
+                    attr['vt'] = 'vt'
+
+            # For variables trees only: recursively add the inputs and outputs
+            # into this variable list
+            if 'vt' in attr:
+                vt_attrs = self.print_vars(vartable)
+                parameters[name] = vt_attrs
+            else:
+                if meta['vartypename'] == 'Array':
+                    parameters[name] = list(value)
+                elif meta['vartypename'] == 'List':
+                    for i, item in enumerate(value):
+                        if isinstance(item, VariableTree):
+                            value[i] = self.print_vars(item)
+                    parameters[name] = value
+                else:
+                    parameters[name] = value
+            # ipdb.set_trace()
+
+        attrs['parameters'] = parameters
+        class_dict = {}
+        if obj.name is '':
+            name = type(obj).__name__
+        else:
+            name = obj.name
+        class_dict[name] = attrs
+        return attrs
+
 
     def decode_json(self, vartree):
         """decode unicode keys to ascii strings"""

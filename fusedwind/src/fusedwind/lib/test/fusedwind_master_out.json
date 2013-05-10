@@ -2,26 +2,32 @@
     "rotor": {
         "type": "RotorVT", 
         "parameters": {
-            "diameter": 0.0, 
-            "tilt_angle": 0.0, 
-            "nb": 0, 
-            "cone_angle": 0.0, 
-            "hub_height": 0.0, 
-            "mass": 0.0, 
-            "overhang": 0.0
+            "diameter": 178.332, 
+            "tilt_angle": 5.0, 
+            "nb": 3, 
+            "cone_angle": 2.5, 
+            "hub_height": 119.0, 
+            "mass": 227962.0, 
+            "overhang": 7.1
         }
     }, 
     "blade": {
         "type": "BladeVT", 
         "parameters": {
-            "max_chord": 0.0, 
-            "tip_chord": 0.0, 
-            "length": 0.0, 
+            "max_chord": 6.203, 
+            "tip_chord": 1.23, 
+            "length": 89.166, 
             "mass": 0.0, 
-            "airfoils": [], 
+            "airfoils": [
+                "cylinder", 
+                "FFA-W3-480GF", 
+                "FFA-W3-360GF", 
+                "FFA-W3-301", 
+                "FFA-W3-241"
+            ], 
             "I_y": 0.0, 
             "I_x": 0.0, 
-            "root_chord": 0.0
+            "root_chord": 5.38
         }
     }, 
     "airfoil_data": {
@@ -69,7 +75,7 @@
     "hub": {
         "type": "HubVT", 
         "parameters": {
-            "diameter": 0.0, 
+            "diameter": 5.6, 
             "mass": 0.0, 
             "I_y": 0.0, 
             "CM": [
@@ -83,7 +89,7 @@
     "nacelle": {
         "type": "NacelleVT", 
         "parameters": {
-            "mass": 0.0, 
+            "mass": 446036.0, 
             "I_y": 0.0, 
             "CM": [
                 0.0, 
@@ -94,21 +100,21 @@
         }
     }, 
     "machine_type": {
-        "type": "FixedSpeedFixedPitch", 
+        "type": "VarSpeedVarPitch", 
         "parameters": {
-            "Vout": 0.0, 
-            "Omega": 0.0, 
-            "pitch": 0.0, 
-            "Vin": 0.0, 
-            "varPitch": false, 
-            "ratedPower": 0.0, 
-            "varSpeed": false
+            "Vout": 25.0, 
+            "maxOmega": 9.6, 
+            "Vin": 4.0, 
+            "varPitch": true, 
+            "ratedPower": 100000000.0, 
+            "varSpeed": true, 
+            "minOmega": 6.0
         }
     }, 
     "turbine": {
         "type": "WindTurbineVT", 
         "parameters": {
-            "name": "turbine", 
+            "turbine_name": "DTU 10MW RWT", 
             "orientation": "upwind"
         }
     }, 
@@ -117,6 +123,7 @@
         "parameters": {
             "top_diameter": 0.0, 
             "bottom_diameter": 0.0, 
+            "mass": 628442.0, 
             "height": 0.0
         }
     }
