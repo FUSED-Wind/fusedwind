@@ -1,6 +1,6 @@
 import numpy as np
+from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum
-from fusedwind.lib.fusedvartree import VariableTree
 
 
 class WindTurbineVT(VariableTree):

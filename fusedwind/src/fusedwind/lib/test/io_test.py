@@ -3,12 +3,8 @@
 
 from openmdao.main.api import Component, Assembly 
 from fusedwind.vartrees.api import *
-from fusedwind.lib.fusedvartree import FusedIOVariableTree
 from fusedwind.lib.fusedIO import FUSEDWindIO
 
-class NewTree(FusedIOVariableTree):
-
-    pass
 
 class FusedAssebly(Assembly):
 
@@ -48,8 +44,6 @@ class FusedAssebly(Assembly):
         data.cl = 2. * np.pi * data.alpha * np.pi / 180.
         self.vtrees.airfoil_data.polars.append(data)
 
-        # test that a warning is raised if the vartree is unknown
-        #self.vtrees.add('newtree',NewTree())
 
 
 if __name__ == "__main__":
