@@ -10,8 +10,14 @@ class FusedAssebly(Assembly):
 
     def configure(self):
         self.add('vtrees',Component())
-        self.vtrees.add('turbine', WindTurbineVT())
-        self.vtrees.turbine.turbine_name = 'DTU 10MW RWT'
+        self.vtrees.add('machine_type', VarSpeedVarPitch())
+        self.vtrees.machine_type.ratedPower = 10.e7
+        self.vtrees.machine_type.minOmega = 6.
+        self.vtrees.machine_type.maxOmega = 9.6
+        self.vtrees.machine_type.Vin = 4.
+        self.vtrees.machine_type.Vout = 25.
+        self.vtrees.machine_type.turbine_name = 'DTU 10MW RWT'
+        self.vtrees.machine_type.orientation = 'upwind'
         self.vtrees.add('rotor', RotorVT())
         self.vtrees.rotor.hub_height = 119.
         self.vtrees.rotor.diameter = 178.332
@@ -26,12 +32,6 @@ class FusedAssebly(Assembly):
         self.vtrees.blade.max_chord = 6.203
         self.vtrees.blade.tip_chord = 1.23
         self.vtrees.blade.root_chord = 5.38
-        self.vtrees.add('machine_type', VarSpeedVarPitch())
-        self.vtrees.machine_type.ratedPower = 10.e7
-        self.vtrees.machine_type.minOmega = 6.
-        self.vtrees.machine_type.maxOmega = 9.6
-        self.vtrees.machine_type.Vin = 4.
-        self.vtrees.machine_type.Vout = 25.
         self.vtrees.add('hub', HubVT())
         self.vtrees.hub.diameter = 5.6
         self.vtrees.add('nacelle', NacelleVT())

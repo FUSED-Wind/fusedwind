@@ -11,23 +11,17 @@
             "overhang": 7.1
         }
     }, 
-    "blade": {
-        "type": "BladeVT", 
+    "nacelle": {
+        "type": "NacelleVT", 
         "parameters": {
-            "max_chord": 6.203, 
-            "tip_chord": 1.23, 
-            "length": 89.166, 
-            "mass": 0.0, 
-            "airfoils": [
-                "cylinder", 
-                "FFA-W3-480GF", 
-                "FFA-W3-360GF", 
-                "FFA-W3-301", 
-                "FFA-W3-241"
-            ], 
+            "mass": 446036.0, 
             "I_y": 0.0, 
-            "I_x": 0.0, 
-            "root_chord": 5.38
+            "CM": [
+                0.0, 
+                0.0, 
+                0.0
+            ], 
+            "I_x": 0.0
         }
     }, 
     "airfoil_data": {
@@ -86,36 +80,37 @@
             "I_x": 0.0
         }
     }, 
-    "nacelle": {
-        "type": "NacelleVT", 
+    "blade": {
+        "type": "BladeVT", 
         "parameters": {
-            "mass": 446036.0, 
-            "I_y": 0.0, 
-            "CM": [
-                0.0, 
-                0.0, 
-                0.0
+            "max_chord": 6.203, 
+            "tip_chord": 1.23, 
+            "length": 89.166, 
+            "mass": 0.0, 
+            "airfoils": [
+                "cylinder", 
+                "FFA-W3-480GF", 
+                "FFA-W3-360GF", 
+                "FFA-W3-301", 
+                "FFA-W3-241"
             ], 
-            "I_x": 0.0
+            "I_y": 0.0, 
+            "I_x": 0.0, 
+            "root_chord": 5.38
         }
     }, 
     "machine_type": {
         "type": "VarSpeedVarPitch", 
         "parameters": {
+            "orientation": "upwind", 
             "Vout": 25.0, 
             "maxOmega": 9.6, 
             "Vin": 4.0, 
             "varPitch": true, 
             "ratedPower": 100000000.0, 
             "varSpeed": true, 
-            "minOmega": 6.0
-        }
-    }, 
-    "turbine": {
-        "type": "WindTurbineVT", 
-        "parameters": {
-            "turbine_name": "DTU 10MW RWT", 
-            "orientation": "upwind"
+            "minOmega": 6.0, 
+            "turbine_name": "DTU 10MW RWT"
         }
     }, 
     "tower": {

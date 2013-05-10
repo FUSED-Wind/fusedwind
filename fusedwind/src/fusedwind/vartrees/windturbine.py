@@ -2,10 +2,6 @@ import numpy as np
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum
 
-
-class WindTurbineVT(VariableTree):
-    turbine_name = Str(desc='Wind turbine name')
-    orientation = Enum('upwind', ('upwind','downwind'))
     
 
 class RotorVT(VariableTree):

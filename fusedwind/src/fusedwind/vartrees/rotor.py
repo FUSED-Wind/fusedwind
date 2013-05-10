@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 from openmdao.main.api import VariableTree
-from openmdao.main.datatypes.api import Array, Float, Int, List, Bool
+from openmdao.main.datatypes.api import Array, Float, Int, List, Bool, Str, Enum
 from math import sin, cos, radians, pi
 import numpy as np
 
@@ -123,6 +123,9 @@ def getHubLoads(self):
 
 class MachineTypeBaseVT(VariableTree):
     """not meant to be instantiated directly"""
+
+    turbine_name = Str('FUSED-Wind turbine', desc='Wind turbine name')
+    orientation = Enum('upwind', ('upwind','downwind'))
 
     Vin = Float(units='m/s')
     Vout = Float(units='m/s')
