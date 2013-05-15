@@ -90,8 +90,8 @@ def getRotorAeroOutput(distributedLoads, Uhub, Omega, precone, B, R, rho):
     # loop through load cases
     for idx, load in enumerate(distributedLoads):
 
-        T = B * (cos(precone) * np.trapz(load.Np, load.r) - sin(precone) * np.trapz(load.Rp, load.r))
-        Q = B * cos(precone) * np.trapz(load.r*load.Tp, load.r)
+        T[idx] = B * (cos(precone) * np.trapz(load.Np, load.r) - sin(precone) * np.trapz(load.Rp, load.r))
+        Q[idx] = B * cos(precone) * np.trapz(load.r*load.Tp, load.r)
 
     # power
     P = Q * Omega*pi/30.0
