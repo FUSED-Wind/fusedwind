@@ -16,7 +16,6 @@ class SteadyWindBase(VariableTree):
     beta = Float(0.0, desc='angle of wind relative to inertial x-direction', units='deg')
 
 
-
 class PowerWindVT(SteadyWindBase):
 
     shearExp = Float(desc='exponent in power law')
@@ -25,6 +24,7 @@ class PowerWindVT(SteadyWindBase):
 class LogWindVT(VariableTree):
 
     roughness_length = Float(desc='surface roughness length of terrain', units='m')
+
 
 
 class LinearWaveVT(VariableTree):
