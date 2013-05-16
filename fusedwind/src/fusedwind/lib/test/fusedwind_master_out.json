@@ -11,17 +11,23 @@
             "overhang": 7.1
         }
     }, 
-    "nacelle": {
-        "type": "NacelleVT", 
+    "blade": {
+        "type": "BladeVT", 
         "parameters": {
-            "mass": 446036.0, 
-            "I_y": 0.0, 
-            "CM": [
-                0.0, 
-                0.0, 
-                0.0
+            "max_chord": 6.203, 
+            "tip_chord": 1.23, 
+            "length": 89.166, 
+            "mass": 0.0, 
+            "airfoils": [
+                "cylinder", 
+                "FFA-W3-480GF", 
+                "FFA-W3-360GF", 
+                "FFA-W3-301", 
+                "FFA-W3-241"
             ], 
-            "I_x": 0.0
+            "I_y": 0.0, 
+            "I_x": 0.0, 
+            "root_chord": 5.38
         }
     }, 
     "airfoil_data": {
@@ -80,23 +86,24 @@
             "I_x": 0.0
         }
     }, 
-    "blade": {
-        "type": "BladeVT", 
+    "nacelle": {
+        "type": "NacelleVT", 
         "parameters": {
-            "max_chord": 6.203, 
-            "tip_chord": 1.23, 
-            "length": 89.166, 
-            "mass": 0.0, 
-            "airfoils": [
-                "cylinder", 
-                "FFA-W3-480GF", 
-                "FFA-W3-360GF", 
-                "FFA-W3-301", 
-                "FFA-W3-241"
-            ], 
+            "mass": 446036.0, 
             "I_y": 0.0, 
-            "I_x": 0.0, 
-            "root_chord": 5.38
+            "CM": [
+                0.0, 
+                0.0, 
+                0.0
+            ], 
+            "I_x": 0.0
+        }
+    }, 
+    "wt": {
+        "type": "WindTurbineDescriptionVT", 
+        "parameters": {
+            "docs": "", 
+            "turbine_name": "DTU 10MW RWT"
         }
     }, 
     "machine_type": {
@@ -106,20 +113,20 @@
             "Vout": 25.0, 
             "maxOmega": 9.6, 
             "Vin": 4.0, 
+            "wind_class": "IEC Class 1A", 
             "varPitch": true, 
             "ratedPower": 100000000.0, 
             "varSpeed": true, 
-            "minOmega": 6.0, 
-            "turbine_name": "DTU 10MW RWT"
+            "minOmega": 6.0
         }
     }, 
     "tower": {
         "type": "TowerVT", 
         "parameters": {
-            "top_diameter": 0.0, 
-            "bottom_diameter": 0.0, 
+            "top_diameter": 5.5, 
+            "bottom_diameter": 8.3, 
             "mass": 628442.0, 
-            "height": 0.0
+            "height": 115.63
         }
     }
 }

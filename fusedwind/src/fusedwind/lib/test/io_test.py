@@ -6,18 +6,20 @@ from fusedwind.vartrees.api import *
 from fusedwind.lib.fusedIO import FUSEDWindIO
 
 
-class FusedAssebly(Assembly):
+class FusedAssembly(Assembly):
 
     def configure(self):
         self.add('vtrees',Component())
+        self.vtrees.add('wt',WindTurbineDescriptionVT())
+        self.vtrees.wt.turbine_name = 'DTU 10MW RWT'
         self.vtrees.add('machine_type', VarSpeedVarPitch())
         self.vtrees.machine_type.ratedPower = 10.e7
         self.vtrees.machine_type.minOmega = 6.
         self.vtrees.machine_type.maxOmega = 9.6
         self.vtrees.machine_type.Vin = 4.
         self.vtrees.machine_type.Vout = 25.
-        self.vtrees.machine_type.turbine_name = 'DTU 10MW RWT'
         self.vtrees.machine_type.orientation = 'upwind'
+        self.vtrees.machine_type.wind_class = 'IEC Class 1A'
         self.vtrees.add('rotor', RotorVT())
         self.vtrees.rotor.hub_height = 119.
         self.vtrees.rotor.diameter = 178.332
@@ -38,6 +40,9 @@ class FusedAssebly(Assembly):
         self.vtrees.nacelle.mass = 446036.
         self.vtrees.add('tower', TowerVT())
         self.vtrees.tower.mass = 628442.
+        self.vtrees.tower.height = 115.63
+        self.vtrees.tower.bottom_diameter = 8.3
+        self.vtrees.tower.top_diameter = 5.5
         self.vtrees.add('airfoil_data',AirfoilDataArrayVT())
         data = AirfoilDataVT()
         data.alpha = np.linspace(0,20,11)
@@ -48,7 +53,7 @@ class FusedAssebly(Assembly):
 
 if __name__ == "__main__":
     # load some assembly
-    top = FusedAssebly()
+    top = FusedAssembly()
 
     # start an empty IO object
     io = FUSEDWindIO()

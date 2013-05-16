@@ -61,8 +61,8 @@ class RotorStructureVT(VariableTree):
 class MachineTypeBaseVT(VariableTree):
     """not meant to be instantiated directly"""
 
-    turbine_name = Str('FUSED-Wind turbine', desc='Wind turbine name')
     orientation = Enum('upwind', ('upwind', 'downwind'))
+    wind_class = Str(desc='Certification class')
 
     Vin = Float(units='m/s')
     Vout = Float(units='m/s')
