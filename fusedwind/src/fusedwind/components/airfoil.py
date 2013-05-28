@@ -68,6 +68,7 @@ class ReadAirfoilBase(Component):
 
 
 
+
 class WriteAirfoilBase(Component):
     """Write airfoil data to a file"""
 

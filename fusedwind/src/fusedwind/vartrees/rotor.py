@@ -44,9 +44,8 @@ class RotorStructureVT(VariableTree):
     compSec_base_path = Str(desc='path to directory containing compSec files')
     compSec_file_type = Str(desc='type of compSec file (e.g., PreComp)')
 
-    profile = List(Str, desc='names of profile shape files')
-    profile_base_path = Str(desc='path to directory containing profile files')
-    profile_file_type = Str(desc='type of profile file (e.g., PreComp)')
+        T[idx] = B * (cos(precone) * np.trapz(load.Np, load.r) - sin(precone) * np.trapz(load.Rp, load.r))
+        Q[idx] = B * cos(precone) * np.trapz(load.r*load.Tp, load.r)
 
     materials = Str(desc='name/path of materials file')
     materials_file_type = Str(desc='type of materials file (e.g., PreComp)')
