@@ -50,13 +50,33 @@ class ExtendedWindTurbinePowerCurveDesc(GenericWindTurbinePowerCurveDesc):
     pitch_curve = Array(desc='The wind turbine pitch curve', unit='deg') # P-E: It goes hand in hand with RPM curve usually
     #dB_curve = Array(desc='Machine decibal output [dB] by wind speed at hub') # KLD: important but perhaps not for generic analysis #P-E: I have never seen these types of curves, but if you have these as data inputs, why not
 
-
 # KLD: added for both AEP and wind farm assemblies, P-E: OK!
 class GenericWindFarmTurbineLayout(VariableTree):
 # MODIFIED 17/06 KLD: only one farm layout class necessary if single turbine is a list of 1
     wt_list = List(GenericWindTurbinePowerCurveDesc(), iotype='in', desc='The wind turbine list of descriptions') # KLD: shouldnt these include power curves?
     wt_positions = Array([], unit='m', iotype='in', desc='Array of wind turbines attached to particular positions') # KLD: no particular units? (lat, long)? # P-E: I would rather have the unit defined, otherwise we might introduce some bugs 
 
+#MODIFIED 19/06 P-E: Extending the class to handle single wind turbine farms as well
+    single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
+    wind_turbine = VarTree(GenericWindTurbinePowerCurveDesc(), iotype='in', desc='wind turbine power curve') 
+        
+    def n_wt(self):
+        return self.wt_positions.shape[0]
+
+    def configure_single(self):
+        """ 
+        Modify the class to adapt for single wind turbine codes. 
+        You can directly use self.wind_turbine instead of self.wt_list[0] . 
+        Note that when this function has been run there is a link between
+        self.wind_turbine and self.wt_list[:]. So changing one will change 
+        all the other ones.
+        In your code you can check if single_wind_turbine is set to True.
+        """
+
+        if len(self.wt_list) > 0:
+            self.wind_turbine = self.wt_list[0]
+        self.wt_list = [self.wind_turbine] * self.n_wt()    
+        self.single_wind_turbine = True
 
 # KLD: added for both AEP and wind farm assemblies
 # KLD: removed to eliminate redundancy
