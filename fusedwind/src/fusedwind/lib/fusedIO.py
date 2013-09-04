@@ -45,12 +45,13 @@ class FUSEDWindIO(Component):
 
         f = open(self.master_output_file,'wb')
         master = {}
-        for comp in self.vtrees_out.list_containers():
-            obj = getattr(self.vtrees_out, comp)
-            obj = copy.deepcopy(obj)
-            if isinstance(obj, VariableTree):
-                print 'dumping', comp
-                master[comp] = self.print_vars(obj)
+        master[self.vtrees_out.name] = self.print_vars(self.vtrees_out)
+        # for comp in self.vtrees_out.list_vars():
+        #     obj = getattr(self.vtrees_out, comp)
+        #     # obj = copy.deepcopy(obj)
+        #     if isinstance(obj, VariableTree):
+        #         print 'dumping', comp
+        #         master[comp] = self.print_vars(obj)
         self._master = master
         # ipdb.set_trace()
         json.dump(master, f, indent = 4)
@@ -72,13 +73,12 @@ class FUSEDWindIO(Component):
 
             # Each variable type provides its own basic attributes
             attr, slot_attr = ttype.get_attribute(name, value, trait, meta)
-
             # Let the GUI know that this var is the top element of a
             # variable tree
-            if attr.get('ttype') == 'vartree':
+            if attr.get('ttype') in ['vartree', 'slot']:
                 vartable = obj.get(name)
-                if hasattr(vartable, 'print_vars'):
-                    attr['vt'] = 'vt'
+                # if hasattr(vartable, 'print_vars'):
+                attr['vt'] = 'vt'
 
             # For variables trees only: recursively add the inputs and outputs
             # into this variable list
@@ -87,12 +87,17 @@ class FUSEDWindIO(Component):
                 parameters[name] = vt_attrs
             else:
                 if meta['vartypename'] == 'Array':
-                    parameters[name] = list(value)
+                    parameters[name] = value.tolist()
                 elif meta['vartypename'] == 'List':
+                    newvalues = []
                     for i, item in enumerate(value):
                         if isinstance(item, VariableTree):
-                            value[i] = self.print_vars(item)
-                    parameters[name] = value
+                            newvalues.append(self.print_vars(item))
+                        elif isinstance(item, np.ndarray):
+                            newvalues.append(item.tolist())
+                        else:
+                            newvalues.append(item)
+                    parameters[name] = newvalues
                 else:
                     parameters[name] = value
             # ipdb.set_trace()
@@ -132,17 +137,17 @@ class FUSEDWindIO(Component):
         if 'type' in vartree:
             name = vartree['type']
             try:
-                klass = getattr(api,name)
+                klass = getattr(api, name)
                 obj = klass()
             except:
                 raise RuntimeError('unknown variable tree type %s'%name)
             
 
         for key, val in vartree['parameters'].iteritems():
-
             if key == 'type':
                 pass
-            elif isinstance(val, dict):
+            if isinstance(val, dict):
+                print 'loading', key
                 child = self.load_vartree(val)
                 setattr(obj, key, child)
             elif isinstance(val, list):

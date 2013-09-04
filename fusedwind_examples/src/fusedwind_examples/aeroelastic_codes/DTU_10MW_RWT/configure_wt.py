@@ -1,6 +1,7 @@
 
 
 from openmdao.main.api import Assembly
+from fusedwind.lib.fusedIO import FUSEDWindIO
 from fusedwind.turbine_aeroelastic.configurations import WTConfigurationBuilder
 
 
@@ -34,3 +35,12 @@ if __name__ == '__main__':
 
     # list main bodies
     top.inputs.wt.main_bodies.list_containers()
+    io = FUSEDWindIO()
+    io.vtrees_out = top.inputs.wt
+    io.write_master()
+
+    io2=FUSEDWindIO()
+    io2.master_input_file='fusedwind_master_out.json'
+    io2.load_master()
+
+

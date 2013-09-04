@@ -325,6 +325,7 @@ class TurbineVT(VariableTree):
     # overall characteristics (could go into a separate vartree to become accessible to lower fidelity models)
     nblades = Int(3, desc='number of blades')
     orientation = Str('upwind')
+    rotor_radius = Float(units='m', desc='Nacelle Diameter')
     hub_height = Float(units='m', desc='Hub height')
     tilt_angle = Float(units='deg', desc='rotor tilt angle')
     cone_angle = Float(units='deg', desc='rotor cone angle')
@@ -356,6 +357,6 @@ class TurbineVT(VariableTree):
     
     # drive and control properties   
     drivetrain_performance = VarTree(DrivetrainPerformanceVT(), desc='drivetrain performance VT')
-    gen_perforamnce = VarTree(GeneratorPerformanceVT(), desc='generator performance VT')
+    gen_performance = VarTree(GeneratorPerformanceVT(), desc='generator performance VT')
     controls = VarTree(ControlsVT(), desc='control specifications VT')
 
