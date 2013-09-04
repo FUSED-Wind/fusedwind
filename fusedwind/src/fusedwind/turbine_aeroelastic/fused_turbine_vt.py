@@ -2,8 +2,59 @@
 # extends vartrees.py from Frederik
 
 import numpy as np
-from openmdao.main.api import VariableTree
-from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree
+from openmdao.main.api import VariableTree, Component
+from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot
+
+
+# I think it could be quite convenient to normalize all dimensions relative to e.g. blade length.
+# The RotorAeroVT vartree then knows the radius and can be used in a code to dimensionalize the blade.
+class BeamGeometryVT(VariableTree):
+
+    s = Array(desc='Main axis accumulated curve length')
+    main_axis = Array(desc='Main axis of beam')
+    rot_x = Array(desc='x-rotation of stations')
+    rot_y = Array(desc='y-rotation of stations')
+    rot_z = Array(desc='z-rotation of stations')
+
+    def _compute_s(self):
+        """
+        compute s based on main_axis coordinates
+        """
+        pass
+
+
+class BladeGeometryVT(BeamGeometryVT):
+
+    chord = Array(units=None, desc='Chord length at each section')
+    rthick = Array(units=None, desc='Relative thickness at each section, t/c')
+    p_le = Array(units=None, desc='Normalized distance from LE to pitch axis')
+
+
+class BeamStructureVT(VariableTree):
+
+    s = Array(desc='Running curve length of beam', units='m')
+    dm = Array(desc='Mass per unit length', units='kg/m')
+    x_cg = Array(desc='x-distance from blade axis to center of mass', units='m')
+    y_cg = Array(desc='y-distance from blade axis to center of mass', units='m')
+    ri_x = Array(desc='radius of gyration relative to elastic center.', units='m')
+    ri_y = Array(desc='radius of gyration relative to elastic center', units='m')
+    x_sh = Array(desc='x-distance from blade axis to shear center', units='m')
+    y_sh = Array(desc='y-distance from blade axis to shear center', units='m')
+    E = Array(desc='modulus of elasticity', units='N/m**2')
+    G = Array(desc='shear modulus of elasticity', units='N/m**2')
+    I_x = Array(desc='area moment of inertia with respect to principal bending xe axis', units='m**4')
+    I_y = Array(desc='area moment of inertia with respect to principal bending ye axis', units='m**4')
+    I_p = Array(desc='torsional stiffness constant with respect to ze axis at the shear center', units='m**4/rad')
+    k_x = Array(desc='shear factor for force in principal bending xe direction', units=None)
+    k_y = Array(desc='shear factor for force in principal bending ye direction', units=None)
+    A = Array(desc='cross sectional area', units='m**2')
+    pitch = Array(desc='structural pitch relative to main axis.', units='deg')
+    x_e = Array(desc='x-distance from main axis to center of elasticity', units='m')
+    y_e = Array(desc='y-distance from main axis to center of elasticity', units='m')
+
+class TowerGeometryVT(BeamGeometryVT):
+
+    radius = Array(desc='Tower radius along main_axis')
 
 #####################
 # Aerodynamic Properties Variable Trees
@@ -17,12 +68,18 @@ class AirfoilPolar(VariableTree):
     cd = Array(desc='associated coefficient of drag')
     cm = Array(desc='associated coefficient of the pitching moment')
 
+
 class AirfoilDataset(VariableTree):
     """A set of airfoil polars for a range of relative thicknesses"""
 
     np = Int(desc='number of airfoil polars in set')
-    polars = List(HAWC2AirfoilPolar, desc='List of polars')
+    polars = List(AirfoilPolar, desc='List of polars')
 
+
+# frza: haven't changed anything here, but having added BladeGeometryVT a lot of this vartree becomes redundant.
+# We should discuss generality vs convenience: it is for readability easier to define stuff multiple times like this
+# but geometry definitions are needed across a number of components such as structural, CFD and aeroelastic codes,
+# so to me it makes sense to separate it from the RotorAeroVT vartree.
 class RotorAeroVT(VariableTree):
 
     # geometry
@@ -32,7 +89,7 @@ class RotorAeroVT(VariableTree):
     chord = Array(units='m', desc='chord length at each section')
     theta = Array(units='deg', desc='twist angle at each section (positive decreases angle of attack)')
     #c12_axis = Array(desc='Pitch axis of blade') # todo: variable location - used by Andrew's model and HAWC2 and indexed with radial stations
-    af_set = VarTree(AirfoilDataSet, desc='names of airfoil file')
+    af_set = VarTree(AirfoilDataset(), desc='names of airfoil file')
 
 #####################
 # Turbine Component Structure Variable Trees
@@ -63,7 +120,7 @@ class BladeVT(TurbineComponent):
     root_chord = Float(desc='Blade root chord')
     max_chord = Float(desc='Blade maximum chord')
     tip_chord = Float(desc='Blade tip chord')
-    subsystem = Enum('Rotor', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Rotor', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
     #Distributed blade properties
     ### TBD - would like to see what Andrew and Frederik think
@@ -71,7 +128,7 @@ class BladeVT(TurbineComponent):
 class HubVT(TurbineComponent):
 
     diameter = Float(desc='hub diameter')
-    subsystem = Enum('Rotor', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Rotor', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
  
 # ? include pitch system as component or treat as additional rotor mass at c.m.
 
@@ -88,46 +145,46 @@ class HubVT(TurbineComponent):
 class LowSpeedShaftVT(TurbineComponent):
 
     length = Float()
-    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
 class BearingVT(TurbineComponent):
 
     diameter = Float()
-    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
     
 class GearboxVT(TurbineComponent):
 
     height = Float()
     length = Float()
-    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
 # ? include high speed side or no?
 class HighSpeedShaftVT(TurbineComponent):
 
     length = Float()
-    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
 class MechanicalBrakeVT(TurbineComponent):
 
     diameter = Float()
-    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
 class GeneratorVT(TurbineComponent):
 
     height = Float()
     diameter = Float()
-    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
 class BedplateVT(TurbineComponent):
 
     front_length = Float()
     rear_length = Float()
-    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
 class YawSystemVT(TurbineComponent):
 
     diameter = Float()
-    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Nacelle', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
 #class NacelleVT(TurbineComponent): # kld - move to turbine, composite of individual components, up to wrapper to translate
 
@@ -138,7 +195,7 @@ class TowerVT(TurbineComponent):
     height = Float(desc='Tower height')
     bottom_diameter = Float(desc='Tower bottom diameter')
     top_diameter = Float(desc='Tower bottom diameter')
-    subsystem = Enum('Tower', ('Rotor', 'Nacelle', 'Tower', 'Foundation')
+    subsystem = Enum('Tower', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
 # Support Classes for Overall Orientation of structural components relative to one another
 class OrientationBase(VariableTree):
@@ -165,17 +222,30 @@ class MainBody(VariableTree):
     body_name = Str('body')
     body_type = Str('timoschenko')
     st_filename = Str()
-    beam_structure = List(HAWC2BeamStructure)
+    beam_structure = List(BeamStructureVT)
     body_set = List([1, 1], desc='Index of beam structure set to use from st file')
     nbodies = Int(1)
     node_distribution = Str('c2_def')
     damping_posdef = Array(np.zeros(6))
     copy_main_body = Str()
-    c12axis = Array(desc='C12 axis containing (x_c12, y_c12, z_c12, twist)')
+    geom = VarTree(BeamGeometryVT(), desc='Geometry of body containing main axis and rotations')
     concentrated_mass = List(Array())
     body_set = Array([1, 1])
     orientations = List()
     constraints = List()
+
+    def initialize_geom(self, nb=10):
+        """
+        convenience method for initializing geometry
+
+        could be moved to an __init__ method, but often the geometry is set directly
+        from e.g. a file
+        """
+
+        self.geom.main_axis = np.zeros((nb, 3))
+        self.geom.rot_x = np.zeros(nb)
+        self.geom.rot_y = np.zeros(nb)
+        self.geom.rot_z = np.zeros(nb)
 
     def add_orientation(self, orientation):
 
@@ -202,6 +272,15 @@ class MainBody(VariableTree):
 
         self.constraints.append(con)
 
+
+class MainBodies(VariableTree):
+    """
+    Empty placeholder vartree for main bodies
+    """
+
+    pass
+
+
 #####################
 # Drivetrain and Controls Performance Variable Trees
 class TransmissionPerformanceVT(VariableTree):
@@ -220,6 +299,11 @@ class GeneratorPerformanceVT(VariableTree):
     max_torque = Float(desc='Maximum allowable generator torque')
     generator_efficiency = Array(desc='2-D array of generator efficiency as a function of power/rated power') 
     
+
+class DrivetrainPerformanceVT(VariableTree):
+    pass
+
+
 class ControlsVT(VariableTree):
 
     "TBD controls VT"
@@ -227,19 +311,47 @@ class ControlsVT(VariableTree):
 
 #####################
 # Overall turbine definition in multi-body formulation
+
+class TurbineInflowVT(VariableTree):
+
+    pass
+
+
+
 class TurbineVT(VariableTree):
 
     """ connects the set of components together using a HAWC2 multi-body approach """ 
-    # aero properties
+
+    # overall characteristics (could go into a separate vartree to become accessible to lower fidelity models)
+    nblades = Int(3, desc='number of blades')
+    orientation = Str('upwind')
+    hub_height = Float(units='m', desc='Hub height')
+    tilt_angle = Float(units='deg', desc='rotor tilt angle')
+    cone_angle = Float(units='deg', desc='rotor cone angle')
+    hub_overhang = Float(units='m', desc='Horizontal distance from tower axis to rotor center')
+    hub_radius = Float(units='m', desc='Hub radius')
+    tower_height = Float(units='m', desc='Tower height')
+    tower_bottom_radius = Float(units='m', desc='Tower bottom radius')
+    tower_top_radius = Float(units='m', desc='Tower top radius')
+    nacelle_diameter = Float(units='m', desc='Nacelle Diameter')
+    shaft_length = Float(units='m', desc='Shaft length')
+
+    # vartrees
+    blade_geom = VarTree(BladeGeometryVT(), desc='Blade geometry')
+    tower_geom = VarTree(TowerGeometryVT(), desc='Tower geometry')
+
+    inflow = VarTree(TurbineInflowVT(), desc='Inflow conditions')
+
+    airfoildata = VarTree(AirfoilDataset(), desc='Airfoil Aerodynamic characteristics')
     rotor_aero = VarTree(RotorAeroVT(), desc='rotor aero properties VT')
+    controller = VarTree(ControlsVT(), desc='controller settings')
+
+    main_bodies = Slot(MainBodies(), desc='List of main bodies')
+
+
     nacelle_cd = Float(desc='nacelle drag coefficient')
     tower_cd = Float(desc='tower drag coeffficient')
     
-    # structure properties
-    # TBD - discussion on what to include - should take approach of multi-body formulation and add bodies as relevant
-    additional_rotor_mass = Float(desc='additional rotor mass from miscellaneous, non-load bearing components; treated as point mass at rotor c.m.')
-    additional_nacelle_mass = Float(desc='additional nacelle mass from miscellaneous, non-load bearing components; treated as point mass at nacelle c.m.')
-    additional_tower_mass = Float(desc='additional tower mass from miscellaneous, non-load bearing components; treated as point mass at tower c.m.')
     # ? include key aggregate properties of tilt, overhang, and coning?
     
     # drive and control properties   
@@ -247,97 +359,3 @@ class TurbineVT(VariableTree):
     gen_perforamnce = VarTree(GeneratorPerformanceVT(), desc='generator performance VT')
     controls = VarTree(ControlsVT(), desc='control specifications VT')
 
-    # support functions for configuration, something along these lines would be nice to include
-    # would like to allow for the user to control configuration
-    '''def configure_wt(self):
-        
-        if not self.from_file:
-            self.configure_tower_body()
-            self.configure_towertop_body()
-            self.configure_shaft_body()
-            self.configure_hub_bodies()
-            self.configure_blade_bodies()
-
-        self.add_tower_aerodrag()
-        self.add_nacelle_aerodrag()
-
-    def configure_tower_body(self):
-        """convenience method for adding tower body with orientation and constraints"""
-
-        b = self.get_main_body('tower')
-        b.c12axis = np.zeros((10, 4))
-        b.c12axis[:, 2] = np.linspace(0, -self.tower.height, 10)
-        b.add_orientation('base')
-        b.orientations[0].eulerang.append(np.array([0, 0, 0]))
-        b.add_constraint('fixed')
-
-        return b
-
-    def configure_towertop_body(self):
-        """convenience method for adding towertop body with orientation and constraints"""
-
-        b = self.get_main_body('towertop')
-        b.c12axis = np.zeros((2, 4))
-        b.c12axis[-1, 2] = -self.nacelle.diameter / 2.
-        b.add_orientation('relative')
-        b.orientations[0].mbdy1_name = 'tower'
-        b.orientations[0].eulerang.append(np.array([0, 0, 0]))
-        b.add_constraint('fixed_to_body', body1='tower')
-
-    def configure_shaft_body(self):
-        """convenience method for adding shaft body with orientation and constraints"""
-
-        b =self.get_main_body('shaft')
-        b.c12axis = np.zeros((5, 4))
-        b.c12axis[:, 2] = np.linspace(0, self.shaft.length, 5)
-        b.add_orientation('relative')
-        b.orientations[0].mbdy1_name = 'towertop'
-        b.orientations[0].eulerang.append(np.array([90, 0, 0]))
-        b.orientations[0].eulerang.append(np.array([self.rotor.tilt_angle, 0, 0]))
-        b.orientations[0].initial_speed = 0.314 # ???
-        b.orientations[0].rotation_dof = [0, 0, -1]
-        b.add_constraint('free', body1='towertop', con_name='shaft_rot', DOF=np.array([0,0,0,0,0,-1]))
-
-    def configure_hub_bodies(self):
-        """convenience method for adding hub bodies with orientation and constraints"""
-
-        b = self.get_main_body('hub1')
-        b.c12axis = np.zeros((2, 4))
-        b.c12axis[1, 2] = self.hub.diameter/2.
-        b.nbodies = 1
-        b.add_orientation('relative')
-        b.orientations[0].mbdy1_name = 'shaft'
-        b.orientations[0].eulerang.append(np.array([-90, 0, 0]))
-        b.orientations[0].eulerang.append(np.array([0., 180., 0]))
-        b.orientations[0].eulerang.append(np.array([self.rotor.cone_angle, 0, 0]))
-        b.add_constraint('fixed_to_body', body1='shaft')
-
-        for i in range(1, self.rotor.nblades):
-            b = self.get_main_body('hub'+str(i+1))
-            b.copy_main_body = 'hub1'
-            b.add_orientation('relative')
-            b.orientations[0].mbdy1_name = 'shaft'
-            b.orientations[0].eulerang.append(np.array([-90, 0, 0]))
-            b.orientations[0].eulerang.append(np.array([0., 60. - (i-1) * 120., 0]))
-            b.orientations[0].eulerang.append(np.array([self.rotor.cone_angle, 0, 0]))
-            b.add_constraint('fixed_to_body', body1='shaft')
-
-    def configure_blade_bodies(self):
-        """convenience method for adding blade bodies with orientation and constraints"""
-
-        b = self.get_main_body('blade1')
-        b.c12axis[:, :3] = self.blade_ae.c12axis
-        b.c12axis[:, 3] = self.blade_ae.twist
-        b.nbodies = 10
-        b.add_orientation('relative')
-        b.orientations[0].mbdy1_name = 'hub1'
-        b.orientations[0].eulerang.append(np.array([0, 0, 0]))
-        b.add_constraint('prescribed_angle', body1='hub1', con_name='pitch1', DOF=np.array([0,0,0,0,0,-1]))
-
-        for i in range(1, self.rotor.nblades):
-            b = self.get_main_body('blade'+str(i+1))
-            b.copy_main_body = 'blade1'
-            b.add_orientation('relative')
-            b.orientations[0].mbdy1_name = 'hub'+str(i+1)
-            b.orientations[0].eulerang.append(np.array([0, 0, 0]))
-            b.add_constraint('prescribed_angle', body1='hub'+str(i+1), con_name='pitch'+str(i+1), DOF=np.array([0,0,0,0,0,-1]))'''
