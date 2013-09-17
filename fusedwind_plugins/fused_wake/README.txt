@@ -1,6 +1,13 @@
 README.txt file for fused_wake.
 
-To view the Sphinx documentation for this distribution, type:
+This is the FUSED-Wake plugin. It should eventually be implemented in FUSED-Wind.
 
-plugin docs fused_wake
+Version changes:
+v 0.1: made as a proper OpenMDAO plugin
+
+How to install:
+In the fused_wake directory just do:
+> plugin install
+
+The test should work as well.
 
