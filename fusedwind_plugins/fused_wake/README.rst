@@ -1,5 +1,3 @@
-README.txt file for fused_wake.
-
 Introduction
 ============
 This is the FUSED-Wake plugin. It should eventually be implemented in FUSED-Wind.
