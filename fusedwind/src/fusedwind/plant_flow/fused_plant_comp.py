@@ -4,10 +4,7 @@
 #    GenericMultipleTurbineTypesWindFarm # KLD: REMOVED after discussions with Pierre
 #    GenericAEP
 
-# P-E: Additional Modifications / additions made 6/17/2013
-# Classes added:
-#   ExtendedWindTurbinePowerCurveDesc
-
+# P-E 17/9: Changed all the Desc into VT for following the rest of fusedwind laguage 
 
 from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
 from numpy import pi, sqrt, dot
@@ -21,14 +18,14 @@ from openmdao.main.interfaces import implements, ICaseRecorder, ICaseIterator
 from openmdao.main.case import Case
 
 # KLD - 8/29/13 separated vt and assembly into separate file
-from fused_plant_vt import GenericWindTurbineDesc, GenericWindTurbinePowerCurveDesc, ExtendedWindTurbinePowerCurveDesc, GenericWindFarmTurbineLayout
+from fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, ExtendedWindTurbinePowerCurveVT, GenericWindFarmTurbineLayout
 
 # ------------------------------------------------------------
 # Components and Assembly Base Classes
 
 class GenericWSPosition(Component):
     """Calculate the positions where we should calculate the wind speed on the rotor"""
-    wt_desc = VarTree(GenericWindTurbineDesc(), iotype='in')
+    wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
     ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
     wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
 
@@ -73,7 +70,7 @@ class GenericWakeModel(GenericFlowModel):
     """
     Framework for a wake model
     """
-    wt_desc = VarTree(GenericWindTurbineDesc(), iotype='in', desc='the geometrical description of the current turbine')
+    wt_desc = VarTree(GenericWindTurbineVT(), iotype='in', desc='the geometrical description of the current turbine')
     wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the current wind turbine', unit='m')
     c_t = Float(0.0, iotype='in', desc='the thrust coefficient of the wind turbine')
     ws_array_inflow = Array([], iotype='in', desc='The inflow velocity at the ws_positions', unit='m/s')

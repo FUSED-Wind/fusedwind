@@ -4,10 +4,8 @@
 #    GenericMultipleTurbineTypesWindFarm # KLD: REMOVED after discussions with Pierre
 #    GenericAEP
 
-# P-E: Additional Modifications / additions made 6/17/2013
-# Classes added:
-#   ExtendedWindTurbinePowerCurveDesc
 
+# P-E 17/9: Changed all the Desc into VT for following the rest of fusedwind laguage 
 
 from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
 from numpy import pi, sqrt, dot
@@ -21,7 +19,7 @@ from openmdao.main.interfaces import implements, ICaseRecorder, ICaseIterator
 from openmdao.main.case import Case
 
 # KLD - 8/29/13 separated vt and assembly into separate file
-from fused_plant_vt import GenericWindTurbineDesc, GenericWindTurbinePowerCurveDesc, ExtendedWindTurbinePowerCurveDesc, GenericWindFarmTurbineLayout
+from fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, ExtendedWindTurbinePowerCurveVT, GenericWindFarmTurbineLayout
 from fused_plant_comp import GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel, /
                              GenericWakeModel, GenericInflowGenerator, WindTurbinePowerCurve, PostProcessWindRose
 
