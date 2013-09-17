@@ -11,8 +11,8 @@ Version changes
 
 How to install
 ==============
-* You need to install first fusedwind: `plugin install` in the git/fusedwind directory.
-* then install the fused_wake plugin: `plugin install` in the fused_wake directory.
+* You need to install first fusedwind: ``plugin install`` in the git/fusedwind directory.
+* then install the fused_wake plugin: ``plugin install`` in the fused_wake directory.
 
 Tests
 =====
