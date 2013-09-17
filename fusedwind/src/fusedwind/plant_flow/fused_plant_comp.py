@@ -6,7 +6,7 @@
 
 # P-E 17/9: Changed all the Desc into VT for following the rest of fusedwind laguage 
 
-from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
+from numpy import interp, ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
 from numpy import pi, sqrt, dot
 from numpy.linalg.linalg import norm
 from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str, Dict
@@ -84,8 +84,15 @@ class GenericInflowGenerator(GenericFlowModel):
     """
     wind_speed = Float(0.0, iotype='in', desc='the reference wind speed')
 
+class GenericWindTurbine(Component):
+    wt_desc = Slot(iotype='in')
+    hub_wind_speed = Float(iotype='in')
+    power = Float(0.0, iotype='out', desc='The wind turbine power')
+    thrust = Float(0.0, iotype='out', desc='The wind turbine thrust')
+    c_t = Float(0.0, iotype='out', desc='The wind turbine thrust coefficient')    
 
-class WindTurbinePowerCurve(Component):
+
+class WindTurbinePowerCurve(GenericWindTurbine):
     """
     wt_desc needs to contain:
         - power_curve

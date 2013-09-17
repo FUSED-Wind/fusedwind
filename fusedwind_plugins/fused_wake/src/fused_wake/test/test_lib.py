@@ -1,21 +1,29 @@
 #__all__ = ['fused_wake']
 
 import unittest
+
+#FUSED-Wake imports
 from fused_wake.wake import *
-from fused_wake.io import *
-from fused_wake.windturbine import *
-import ipdb
-import numpy as np
-from numpy.linalg.linalg import norm
+# from fused_wake.io import *
+#from fused_wake.windturbine import *
+
+#FUSED-Wind imports
+from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
+from fusedwind.plant_flow.fused_plant_comp import WindTurbinePowerCurve, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
+
+#OpenMDAO imports
 from openmdao.lib.casehandlers.api import CSVCaseRecorder
 from openmdao.main.api import set_as_top
+
+#Other imports
+# import ipdb
+import numpy as np
+from numpy.linalg.linalg import norm
 from random import random
 import matplotlib.pyplot as plt
 
 
 # Some handy case generators ---------------------------------------------------------------
-
-
 def generate_a_valid_wt():
     wt_desc = GenericWindTurbineVT()
     wt_desc.hub_height = random()*200

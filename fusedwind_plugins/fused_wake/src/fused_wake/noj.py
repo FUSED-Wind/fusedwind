@@ -1,17 +1,21 @@
 #__all__ = ['fused_wake']
 
-# from fused_wake.wake import GenericWindFarmWake, \
-#     HomogeneousInflowGenerator, QuadraticWakeSum, \
-#     HubCenterWSPosition, HubCenterWS, GenericEngineeringWakeModel
+#FUSED-Wake imports
 #from fused_wake.io import GenericWindTurbineVT
 #from fused_wake.windturbine import WindTurbinePowerCurve
+#from io import GenericWindTurbineVT
 from wake import GenericWindFarmWake, \
     HomogeneousInflowGenerator, QuadraticWakeSum, \
     HubCenterWSPosition, HubCenterWS, GenericEngineeringWakeModel
-from io import GenericWindTurbineVT
-from windturbine import WindTurbinePowerCurve
 
+#FUSED Wind imports
+from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT
+from fusedwind.plant_flow.fused_plant_comp import WindTurbinePowerCurve
+
+#OpenMDAO imports
 from openmdao.lib.datatypes.api import VarTree, Float
+
+#Other imports
 from numpy import sin, pi, sqrt, arccos
 
 

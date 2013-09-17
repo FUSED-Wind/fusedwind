@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>fused_wake.wake &mdash; fused_wake 0.1 documentation</title>
+    <title>fused_wake.wake &mdash; fused_wake 0.1.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.1',
+        VERSION:     '0.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="fused_wake 0.1 documentation" href="../../index.html" />
+    <link rel="top" title="fused_wake 0.1.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -38,7 +38,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">fused_wake 0.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">fused_wake 0.1.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -61,8 +61,10 @@
 <span class="kn">from</span> <span class="nn">openmdao.main.interfaces</span> <span class="kn">import</span> <span class="n">ICaseIterator</span>
 <span class="kn">from</span> <span class="nn">openmdao.main.case</span> <span class="kn">import</span> <span class="n">Case</span>
 
-<span class="c">#from fused_wake.io import GenericWindTurbineVT, GenericWindTurbine</span>
-<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">GenericWindTurbineVT</span><span class="p">,</span> <span class="n">GenericWindTurbine</span>
+<span class="c">#from io import GenericWindTurbineVT, GenericWindTurbine</span>
+<span class="c"># from io import GenericWindTurbine</span>
+<span class="kn">from</span> <span class="nn">fusedwind.plant_flow.fused_plant_vt</span> <span class="kn">import</span> <span class="n">GenericWindTurbineVT</span><span class="p">,</span> <span class="n">GenericWindTurbinePowerCurveVT</span>
+<span class="kn">from</span> <span class="nn">fusedwind.plant_flow.fused_plant_comp</span> <span class="kn">import</span> <span class="n">GenericWindTurbine</span><span class="p">,</span> <span class="n">GenericWSPosition</span><span class="p">,</span> <span class="n">HubCenterWSPosition</span><span class="p">,</span> <span class="n">GenericWakeSum</span><span class="p">,</span> <span class="n">GenericHubWindSpeed</span><span class="p">,</span> <span class="n">GenericFlowModel</span><span class="p">,</span> <span class="n">GenericWakeModel</span>
 
 <span class="c"># Wake Model stuffs ######################################################</span>
 
@@ -117,32 +119,32 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">ordered_indices</span> <span class="o">=</span> <span class="n">argsort</span><span class="p">(</span><span class="n">n_downstream</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
+
+<span class="c"># class GenericWSPosition(Component):</span>
+<span class="c">#     &quot;&quot;&quot;Calculate the position of the ws_array&quot;&quot;&quot;</span>
+<span class="c">#     wt_desc = VarTree(GenericWindTurbineVT(), iotype=&#39;in&#39;)</span>
+<span class="c">#     ws_positions = Array([], iotype=&#39;out&#39;, desc=&#39;the position [n,3] of the ws_array&#39;, unit=&#39;m&#39;)</span>
+<span class="c">#     wt_xy = List([0.0, 0.0], iotype=&#39;in&#39;, desc=&#39;The x,y position of the wind turbine&#39;, unit=&#39;m&#39;)</span>
+
+
+<span class="c"># class HubCenterWSPosition(GenericWSPosition):</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     Generate the positions at the center of the wind turbine rotor</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     def execute(self):</span>
+<span class="c">#         self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])</span>
+
+
+<span class="c"># class GenericWakeSum(Component):</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     Generic class for calculating the wake accumulation</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     wakes = List([], iotype=&#39;in&#39;, desc=&#39;wake contributions to rotor wind speed [nwake][n]&#39;)</span>
+<span class="c">#     ws_array_inflow = Array([], iotype=&#39;in&#39;, desc=&#39;inflow contributions to rotor wind speed [n]&#39;, unit=&#39;m/s&#39;)</span>
+
+<span class="c">#     ws_array = Array([], iotype=&#39;out&#39;, desc=&#39;the rotor wind speed [n]&#39;, unit=&#39;m/s&#39;)</span>
+
 </div></div>
-<div class="viewcode-block" id="GenericWSPosition"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.GenericWSPosition">[docs]</a><span class="k">class</span> <span class="nc">GenericWSPosition</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Calculate the position of the ws_array&quot;&quot;&quot;</span>
-    <span class="n">wt_desc</span> <span class="o">=</span> <span class="n">VarTree</span><span class="p">(</span><span class="n">GenericWindTurbineVT</span><span class="p">(),</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">)</span>
-    <span class="n">ws_positions</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;the position [n,3] of the ws_array&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
-    <span class="n">wt_xy</span> <span class="o">=</span> <span class="n">List</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;The x,y position of the wind turbine&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
-
-</div>
-<div class="viewcode-block" id="HubCenterWSPosition"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.HubCenterWSPosition">[docs]</a><span class="k">class</span> <span class="nc">HubCenterWSPosition</span><span class="p">(</span><span class="n">GenericWSPosition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generate the positions at the center of the wind turbine rotor</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="HubCenterWSPosition.execute"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.HubCenterWSPosition.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ws_positions</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_desc</span><span class="o">.</span><span class="n">hub_height</span><span class="p">]])</span>
-
-</div></div>
-<div class="viewcode-block" id="GenericWakeSum"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.GenericWakeSum">[docs]</a><span class="k">class</span> <span class="nc">GenericWakeSum</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic class for calculating the wake accumulation</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">wakes</span> <span class="o">=</span> <span class="n">List</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;wake contributions to rotor wind speed [nwake][n]&#39;</span><span class="p">)</span>
-    <span class="n">ws_array_inflow</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;inflow contributions to rotor wind speed [n]&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m/s&#39;</span><span class="p">)</span>
-
-    <span class="n">ws_array</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;the rotor wind speed [n]&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m/s&#39;</span><span class="p">)</span>
-
-</div>
 <div class="viewcode-block" id="LinearWakeSum"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.LinearWakeSum">[docs]</a><span class="k">class</span> <span class="nc">LinearWakeSum</span><span class="p">(</span><span class="n">GenericWakeSum</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Sum the wakes linearly</span>
@@ -176,17 +178,17 @@
                 <span class="n">DUs</span> <span class="o">=</span> <span class="n">array</span><span class="p">([</span><span class="n">wake</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ws_array_inflow</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">wake</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wakes</span><span class="p">])</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">ws_array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ws_array_inflow</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">sqrt</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">DUs</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)))</span>
 
+
+<span class="c"># class GenericHubWindSpeed(Component):</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     Generic class for calculating the wind turbine hub wind speed. </span>
+<span class="c">#     Typically used as an input to a wind turbine power curve / thrust coefficient curve.</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     ws_array = Array([], iotype=&#39;in&#39;, desc=&#39;an array of wind speed on the rotor&#39;, unit=&#39;m/s&#39;)</span>
+
+<span class="c">#     hub_wind_speed = Float(0.0, iotype=&#39;out&#39;, desc=&#39;hub wind speed&#39;, unit=&#39;m/s&#39;)</span>
+
 </div></div>
-<div class="viewcode-block" id="GenericHubWindSpeed"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.GenericHubWindSpeed">[docs]</a><span class="k">class</span> <span class="nc">GenericHubWindSpeed</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generic class for calculating the wind turbine hub wind speed. </span>
-<span class="sd">    Typically used as an input to a wind turbine power curve / thrust coefficient curve.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ws_array</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;an array of wind speed on the rotor&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m/s&#39;</span><span class="p">)</span>
-
-    <span class="n">hub_wind_speed</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;hub wind speed&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m/s&#39;</span><span class="p">)</span>
-
-</div>
 <div class="viewcode-block" id="HubCenterWS"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.HubCenterWS">[docs]</a><span class="k">class</span> <span class="nc">HubCenterWS</span><span class="p">(</span><span class="n">GenericHubWindSpeed</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Provide the wind speed at the center of the hub. Only compatible with HubCenterWSPosition</span>
@@ -195,35 +197,35 @@
 <div class="viewcode-block" id="HubCenterWS.execute"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.HubCenterWS.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hub_wind_speed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ws_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
-</div></div>
-<div class="viewcode-block" id="GenericFlowModel"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.GenericFlowModel">[docs]</a><span class="k">class</span> <span class="nc">GenericFlowModel</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Framework for a flow model</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ws_positions</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)&#39;</span><span class="p">)</span>
-    <span class="n">ws_array</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;an array of wind speed to find wind speed&#39;</span><span class="p">)</span>
 
-</div>
-<div class="viewcode-block" id="GenericWakeModel"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.GenericWakeModel">[docs]</a><span class="k">class</span> <span class="nc">GenericWakeModel</span><span class="p">(</span><span class="n">GenericFlowModel</span><span class="p">):</span>
+<span class="c"># class GenericFlowModel(Component):</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     Framework for a flow model</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     ws_positions = Array([], iotype=&#39;in&#39;, desc=&#39;the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)&#39;)</span>
+<span class="c">#     ws_array = Array([], iotype=&#39;out&#39;, desc=&#39;an array of wind speed to find wind speed&#39;)</span>
 
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Framework for a wake model</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">wt_desc</span> <span class="o">=</span> <span class="n">VarTree</span><span class="p">(</span><span class="n">GenericWindTurbineVT</span><span class="p">(),</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;the geometrical description of the current turbine&#39;</span><span class="p">)</span>
-    <span class="n">wt_xy</span> <span class="o">=</span> <span class="n">List</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;The x,y position of the current wind turbine&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
-    <span class="n">c_t</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;the thrust coefficient of the wind turbine&#39;</span><span class="p">)</span>
-    <span class="n">ws_array_inflow</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;The inflow velocity at the ws_positions&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m/s&#39;</span><span class="p">)</span>
-    <span class="n">wind_direction</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;The inflow wind direction&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;deg&#39;</span><span class="p">)</span>
-    <span class="n">du_array</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;The deficit in m/s. Empty if only zeros&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m/s&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="GenericWakeModel.post_execute"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.GenericWakeModel.post_execute">[docs]</a>    <span class="k">def</span> <span class="nf">post_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        In the case where we are only interested in deficits, there isn&#39;t any advantage </span>
-<span class="sd">        of copying arrays of 0. So let&#39;s post process those out.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">du_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ws_array</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ws_array_inflow</span>
-        <span class="k">if</span> <span class="n">norm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">du_array</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1E-5</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">du_array</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c"># class GenericWakeModel(GenericFlowModel):</span>
+
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     Framework for a wake model</span>
+<span class="c">#     &quot;&quot;&quot;</span>
+<span class="c">#     wt_desc = VarTree(GenericWindTurbineVT(), iotype=&#39;in&#39;, desc=&#39;the geometrical description of the current turbine&#39;)</span>
+<span class="c">#     wt_xy = List([0.0, 0.0], iotype=&#39;in&#39;, desc=&#39;The x,y position of the current wind turbine&#39;, unit=&#39;m&#39;)</span>
+<span class="c">#     c_t = Float(0.0, iotype=&#39;in&#39;, desc=&#39;the thrust coefficient of the wind turbine&#39;)</span>
+<span class="c">#     ws_array_inflow = Array([], iotype=&#39;in&#39;, desc=&#39;The inflow velocity at the ws_positions&#39;, unit=&#39;m/s&#39;)</span>
+<span class="c">#     wind_direction = Float(0.0, iotype=&#39;in&#39;, desc=&#39;The inflow wind direction&#39;, unit=&#39;deg&#39;)</span>
+<span class="c">#     du_array = Array([], iotype=&#39;out&#39;, desc=&#39;The deficit in m/s. Empty if only zeros&#39;, unit=&#39;m/s&#39;)</span>
+
+<span class="c">#     def post_execute(self):</span>
+<span class="c">#         &quot;&quot;&quot;</span>
+<span class="c">#         In the case where we are only interested in deficits, there isn&#39;t any advantage </span>
+<span class="c">#         of copying arrays of 0. So let&#39;s post process those out.</span>
+<span class="c">#         &quot;&quot;&quot;</span>
+<span class="c">#         self.du_array = self.ws_array - self.ws_array_inflow</span>
+<span class="c">#         if norm(self.du_array) &lt; 1E-5:</span>
+<span class="c">#             self.du_array = []</span>
 
 </div></div>
 <div class="viewcode-block" id="GenericEngineeringWakeModel"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.wake.GenericEngineeringWakeModel">[docs]</a><span class="k">class</span> <span class="nc">GenericEngineeringWakeModel</span><span class="p">(</span><span class="n">GenericWakeModel</span><span class="p">):</span>
@@ -750,7 +752,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">fused_wake 0.1 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">fused_wake 0.1.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

@@ -9,12 +9,12 @@ Source Documentation
         
 .. index:: fused_wake.py
 
-.. _fused_wake.fused_wake.py:
+.. _fused_wake.deprecated.fused_wake.py:
 
 fused_wake.py
 -------------
 
-.. automodule:: fused_wake.fused_wake
+.. automodule:: fused_wake.deprecated.fused_wake
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,12 +22,25 @@ fused_wake.py
         
 .. index:: io.py
 
-.. _fused_wake.io.py:
+.. _fused_wake.deprecated.io.py:
 
 io.py
 -----
 
-.. automodule:: fused_wake.io
+.. automodule:: fused_wake.deprecated.io
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+        
+.. index:: windturbine.py
+
+.. _fused_wake.deprecated.windturbine.py:
+
+windturbine.py
+--------------
+
+.. automodule:: fused_wake.deprecated.windturbine
    :members:
    :undoc-members:
    :show-inheritance:
@@ -93,19 +106,6 @@ wake.py
 -------
 
 .. automodule:: fused_wake.wake
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-        
-.. index:: windturbine.py
-
-.. _fused_wake.windturbine.py:
-
-windturbine.py
---------------
-
-.. automodule:: fused_wake.windturbine
    :members:
    :undoc-members:
    :show-inheritance:

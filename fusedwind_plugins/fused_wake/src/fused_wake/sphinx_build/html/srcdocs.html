@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Source Documentation &mdash; fused_wake 0.1 documentation</title>
+    <title>Source Documentation &mdash; fused_wake 0.1.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.1',
+        VERSION:     '0.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,7 +25,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="fused_wake 0.1 documentation" href="index.html" />
+    <link rel="top" title="fused_wake 0.1.1 documentation" href="index.html" />
     <link rel="next" title="Package Metadata" href="pkgdocs.html" />
     <link rel="prev" title="Usage Guide" href="usage.html" /> 
   </head>
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="usage.html" title="Usage Guide"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">fused_wake 0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fused_wake 0.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -56,115 +56,17 @@
             
   <div class="section" id="source-documentation">
 <span id="fused-wake-src-label"></span><h1>Source Documentation<a class="headerlink" href="#source-documentation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="module-fused_wake.fused_wake">
-<span id="fused-wake-py"></span><span id="fused-wake-fused-wake-py"></span><span id="index-0"></span><h2>fused_wake.py<a class="headerlink" href="#module-fused_wake.fused_wake" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="fused-wake-py">
+<span id="fused-wake-deprecated-fused-wake-py"></span><span id="index-0"></span><h2>fused_wake.py<a class="headerlink" href="#fused-wake-py" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-fused_wake.io">
-<span id="io-py"></span><span id="fused-wake-io-py"></span><span id="index-1"></span><h2>io.py<a class="headerlink" href="#module-fused_wake.io" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="fused_wake.io.GenericWindTurbine">
-<em class="property">class </em><tt class="descclassname">fused_wake.io.</tt><tt class="descname">GenericWindTurbine</tt><a class="reference internal" href="_modules/fused_wake/io.html#GenericWindTurbine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.io.GenericWindTurbine" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">openmdao.main.component.Component</span></tt></p>
-<dl class="docutils">
-<dt><em>Float</em> <strong>hub_wind_speed</strong></dt>
-<dd><ul class="first last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Slot</em> (object) <strong>wt_desc</strong></dt>
-<dd><ul class="first last simple">
-<li>default:  None</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>copy:  &#8216;deep&#8217;</li>
-<li>vartypename:  &#8216;Slot&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>c_t</strong></dt>
-<dd><p class="first">The wind turbine thrust coefficient</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>power</strong></dt>
-<dd><p class="first">The wind turbine power</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>thrust</strong></dt>
-<dd><p class="first">The wind turbine thrust</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="class">
-<dt id="fused_wake.io.GenericWindTurbinePowerCurveVT">
-<em class="property">class </em><tt class="descclassname">fused_wake.io.</tt><tt class="descname">GenericWindTurbinePowerCurveVT</tt><big>(</big><em>iotype=''</em><big>)</big><a class="reference internal" href="_modules/fused_wake/io.html#GenericWindTurbinePowerCurveVT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.io.GenericWindTurbinePowerCurveVT" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.io.GenericWindTurbineVT" title="fused_wake.io.GenericWindTurbineVT"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.io.GenericWindTurbineVT</span></tt></a></p>
-<dl class="docutils">
-<dt><em>Array</em> <strong>c_t_curve</strong></dt>
-<dd><p class="first">The thrust coefficient curve of the wind turbine</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>comparison_mode:  1</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>hub_height</strong></dt>
-<dd><ul class="first last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Array</em> <strong>power_curve</strong></dt>
-<dd><p class="first">The power curve of the wind turbine</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>comparison_mode:  1</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>rotor_diameter</strong></dt>
-<dd><ul class="first last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="class">
-<dt id="fused_wake.io.GenericWindTurbineVT">
-<em class="property">class </em><tt class="descclassname">fused_wake.io.</tt><tt class="descname">GenericWindTurbineVT</tt><big>(</big><em>iotype=''</em><big>)</big><a class="reference internal" href="_modules/fused_wake/io.html#GenericWindTurbineVT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.io.GenericWindTurbineVT" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">openmdao.main.vartree.VariableTree</span></tt></p>
-<dl class="docutils">
-<dt><em>Float</em> <strong>hub_height</strong></dt>
-<dd><ul class="first last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>rotor_diameter</strong></dt>
-<dd><ul class="first last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
+<div class="section" id="io-py">
+<span id="fused-wake-deprecated-io-py"></span><span id="index-1"></span><h2>io.py<a class="headerlink" href="#io-py" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="windturbine-py">
+<span id="fused-wake-deprecated-windturbine-py"></span><span id="index-2"></span><h2>windturbine.py<a class="headerlink" href="#windturbine-py" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-fused_wake.noj">
-<span id="noj-py"></span><span id="fused-wake-noj-py"></span><span id="index-2"></span><h2>noj.py<a class="headerlink" href="#module-fused_wake.noj" title="Permalink to this headline">¶</a></h2>
+<span id="noj-py"></span><span id="fused-wake-noj-py"></span><span id="index-3"></span><h2>noj.py<a class="headerlink" href="#module-fused_wake.noj" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="fused_wake.noj.MozaicTileWakeModel">
 <em class="property">class </em><tt class="descclassname">fused_wake.noj.</tt><tt class="descname">MozaicTileWakeModel</tt><a class="reference internal" href="_modules/fused_wake/noj.html#MozaicTileWakeModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.noj.MozaicTileWakeModel" title="Permalink to this definition">¶</a></dt>
@@ -176,7 +78,7 @@ using the mozaic tile approach.</p>
 <dt><em>VarTree</em> <strong>down_wt_desc</strong></dt>
 <dd><p class="first">Downstream wind turbine descriptor (only used when partial=True)</p>
 <ul class="last simple">
-<li>default:  &#8216;&lt;fused_wake.io.GenericWindTurbineVT object at 0x10ccbb3b0&gt;&#8217;</li>
+<li>default:  &#8216;&lt;fusedwind.plant_flow.fused_plant_vt.GenericWindTurbineVT object at 0x107d555f0&gt;&#8217;</li>
 <li>iotype:  &#8216;in&#8217;</li>
 <li>copy:  &#8216;deep&#8217;</li>
 <li>vartypename:  &#8216;VarTree&#8217;</li>
@@ -253,16 +155,16 @@ DU: the axial velocity deficit</p>
 
 </div>
 <div class="section" id="test-noj-py">
-<span id="fused-wake-test-test-noj-py"></span><span id="index-3"></span><h2>test_NOJ.py<a class="headerlink" href="#test-noj-py" title="Permalink to this headline">¶</a></h2>
+<span id="fused-wake-test-test-noj-py"></span><span id="index-4"></span><h2>test_NOJ.py<a class="headerlink" href="#test-noj-py" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="test-fused-wake-py">
-<span id="fused-wake-test-test-fused-wake-py"></span><span id="index-4"></span><h2>test_fused_wake.py<a class="headerlink" href="#test-fused-wake-py" title="Permalink to this headline">¶</a></h2>
+<span id="fused-wake-test-test-fused-wake-py"></span><span id="index-5"></span><h2>test_fused_wake.py<a class="headerlink" href="#test-fused-wake-py" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="test-lib-py">
-<span id="fused-wake-test-test-lib-py"></span><span id="index-5"></span><h2>test_lib.py<a class="headerlink" href="#test-lib-py" title="Permalink to this headline">¶</a></h2>
+<span id="fused-wake-test-test-lib-py"></span><span id="index-6"></span><h2>test_lib.py<a class="headerlink" href="#test-lib-py" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-fused_wake.wake">
-<span id="wake-py"></span><span id="fused-wake-wake-py"></span><span id="index-6"></span><h2>wake.py<a class="headerlink" href="#module-fused_wake.wake" title="Permalink to this headline">¶</a></h2>
+<span id="wake-py"></span><span id="fused-wake-wake-py"></span><span id="index-7"></span><h2>wake.py<a class="headerlink" href="#module-fused_wake.wake" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="fused_wake.wake.AEP">
 <em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">AEP</tt><a class="reference internal" href="_modules/fused_wake/wake.html#AEP"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.AEP" title="Permalink to this definition">¶</a></dt>
@@ -388,7 +290,7 @@ DU: the axial velocity deficit</p>
 <dl class="class">
 <dt id="fused_wake.wake.GenericEngineeringWakeModel">
 <em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">GenericEngineeringWakeModel</tt><a class="reference internal" href="_modules/fused_wake/wake.html#GenericEngineeringWakeModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.GenericEngineeringWakeModel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.wake.GenericWakeModel" title="fused_wake.wake.GenericWakeModel"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.wake.GenericWakeModel</span></tt></a></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">fusedwind.plant_flow.fused_plant_comp.GenericWakeModel</span></tt></p>
 <p>A class that sets up the single wake frame. 
 The specialized wake models have to specify the single_wake method.</p>
 <dl class="method">
@@ -409,62 +311,9 @@ Return the axial velocity deficit</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="fused_wake.wake.GenericFlowModel">
-<em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">GenericFlowModel</tt><a class="reference internal" href="_modules/fused_wake/wake.html#GenericFlowModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.GenericFlowModel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">openmdao.main.component.Component</span></tt></p>
-<p>Framework for a flow model</p>
-<dl class="docutils">
-<dt><em>Array</em> <strong>ws_positions</strong></dt>
-<dd><p class="first">the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>comparison_mode:  1</li>
-</ul>
-</dd>
-<dt><em>Array</em> <strong>ws_array</strong></dt>
-<dd><p class="first">an array of wind speed to find wind speed</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>comparison_mode:  1</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="class">
-<dt id="fused_wake.wake.GenericHubWindSpeed">
-<em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">GenericHubWindSpeed</tt><a class="reference internal" href="_modules/fused_wake/wake.html#GenericHubWindSpeed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.GenericHubWindSpeed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">openmdao.main.component.Component</span></tt></p>
-<p>Generic class for calculating the wind turbine hub wind speed. 
-Typically used as an input to a wind turbine power curve / thrust coefficient curve.</p>
-<dl class="docutils">
-<dt><em>Array</em> <strong>ws_array</strong></dt>
-<dd><p class="first">an array of wind speed on the rotor</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>comparison_mode:  1</li>
-<li>unit:  &#8216;m/s&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>hub_wind_speed</strong></dt>
-<dd><p class="first">hub wind speed</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-<li>unit:  &#8216;m/s&#8217;</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="class">
 <dt id="fused_wake.wake.GenericInflowGenerator">
 <em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">GenericInflowGenerator</tt><a class="reference internal" href="_modules/fused_wake/wake.html#GenericInflowGenerator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.GenericInflowGenerator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.wake.GenericFlowModel" title="fused_wake.wake.GenericFlowModel"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.wake.GenericFlowModel</span></tt></a></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">fusedwind.plant_flow.fused_plant_comp.GenericFlowModel</span></tt></p>
 <p>Framework for an inflow model</p>
 <dl class="docutils">
 <dt><em>Float</em> <strong>wind_speed</strong></dt>
@@ -473,145 +322,6 @@ Typically used as an input to a wind turbine power curve / thrust coefficient cu
 <li>default:  &#8216;0.0&#8217;</li>
 <li>iotype:  &#8216;in&#8217;</li>
 <li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="class">
-<dt id="fused_wake.wake.GenericWSPosition">
-<em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">GenericWSPosition</tt><a class="reference internal" href="_modules/fused_wake/wake.html#GenericWSPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.GenericWSPosition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">openmdao.main.component.Component</span></tt></p>
-<p>Calculate the position of the ws_array</p>
-<dl class="docutils">
-<dt><em>VarTree</em> <strong>wt_desc</strong></dt>
-<dd><ul class="first last simple">
-<li>default:  &#8216;&lt;fused_wake.io.GenericWindTurbineVT object at 0x10cb53fb0&gt;&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>copy:  &#8216;deep&#8217;</li>
-<li>vartypename:  &#8216;VarTree&#8217;</li>
-</ul>
-</dd>
-<dt><em>List</em> <strong>wt_xy</strong></dt>
-<dd><p class="first">The x,y position of the wind turbine</p>
-<ul class="last simple">
-<li>default:  &#8216;[0.0, 0.0]&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>copy:  &#8216;deep&#8217;</li>
-<li>unit:  &#8216;m&#8217;</li>
-</ul>
-</dd>
-<dt><em>Array</em> <strong>ws_positions</strong></dt>
-<dd><p class="first">the position [n,3] of the ws_array</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>comparison_mode:  1</li>
-<li>unit:  &#8216;m&#8217;</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="class">
-<dt id="fused_wake.wake.GenericWakeModel">
-<em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">GenericWakeModel</tt><a class="reference internal" href="_modules/fused_wake/wake.html#GenericWakeModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.GenericWakeModel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.wake.GenericFlowModel" title="fused_wake.wake.GenericFlowModel"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.wake.GenericFlowModel</span></tt></a></p>
-<p>Framework for a wake model</p>
-<dl class="docutils">
-<dt><em>Float</em> <strong>c_t</strong></dt>
-<dd><p class="first">the thrust coefficient of the wind turbine</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>wind_direction</strong></dt>
-<dd><p class="first">The inflow wind direction</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-<li>unit:  &#8216;deg&#8217;</li>
-</ul>
-</dd>
-<dt><em>Array</em> <strong>ws_array_inflow</strong></dt>
-<dd><p class="first">The inflow velocity at the ws_positions</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>comparison_mode:  1</li>
-<li>unit:  &#8216;m/s&#8217;</li>
-</ul>
-</dd>
-<dt><em>VarTree</em> <strong>wt_desc</strong></dt>
-<dd><p class="first">the geometrical description of the current turbine</p>
-<ul class="last simple">
-<li>default:  &#8216;&lt;fused_wake.io.GenericWindTurbineVT object at 0x10ccbb290&gt;&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>copy:  &#8216;deep&#8217;</li>
-<li>vartypename:  &#8216;VarTree&#8217;</li>
-</ul>
-</dd>
-<dt><em>List</em> <strong>wt_xy</strong></dt>
-<dd><p class="first">The x,y position of the current wind turbine</p>
-<ul class="last simple">
-<li>default:  &#8216;[0.0, 0.0]&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>copy:  &#8216;deep&#8217;</li>
-<li>unit:  &#8216;m&#8217;</li>
-</ul>
-</dd>
-<dt><em>Array</em> <strong>du_array</strong></dt>
-<dd><p class="first">The deficit in m/s. Empty if only zeros</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>comparison_mode:  1</li>
-<li>unit:  &#8216;m/s&#8217;</li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="fused_wake.wake.GenericWakeModel.post_execute">
-<tt class="descname">post_execute</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/fused_wake/wake.html#GenericWakeModel.post_execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.GenericWakeModel.post_execute" title="Permalink to this definition">¶</a></dt>
-<dd><p>In the case where we are only interested in deficits, there isn&#8217;t any advantage 
-of copying arrays of 0. So let&#8217;s post process those out.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="fused_wake.wake.GenericWakeSum">
-<em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">GenericWakeSum</tt><a class="reference internal" href="_modules/fused_wake/wake.html#GenericWakeSum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.GenericWakeSum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">openmdao.main.component.Component</span></tt></p>
-<p>Generic class for calculating the wake accumulation</p>
-<dl class="docutils">
-<dt><em>List</em> <strong>wakes</strong></dt>
-<dd><p class="first">wake contributions to rotor wind speed [nwake][n]</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>copy:  &#8216;deep&#8217;</li>
-</ul>
-</dd>
-<dt><em>Array</em> <strong>ws_array_inflow</strong></dt>
-<dd><p class="first">inflow contributions to rotor wind speed [n]</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>comparison_mode:  1</li>
-<li>unit:  &#8216;m/s&#8217;</li>
-</ul>
-</dd>
-<dt><em>Array</em> <strong>ws_array</strong></dt>
-<dd><p class="first">the rotor wind speed [n]</p>
-<ul class="last simple">
-<li>default:  &#8216;[]&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>comparison_mode:  1</li>
-<li>unit:  &#8216;m/s&#8217;</li>
 </ul>
 </dd>
 </dl>
@@ -798,7 +508,7 @@ Should be called after self.configure and self.configure_single_inflow.</p>
 <dl class="class">
 <dt id="fused_wake.wake.HubCenterWS">
 <em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">HubCenterWS</tt><a class="reference internal" href="_modules/fused_wake/wake.html#HubCenterWS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.HubCenterWS" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.wake.GenericHubWindSpeed" title="fused_wake.wake.GenericHubWindSpeed"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.wake.GenericHubWindSpeed</span></tt></a></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">fusedwind.plant_flow.fused_plant_comp.GenericHubWindSpeed</span></tt></p>
 <p>Provide the wind speed at the center of the hub. Only compatible with HubCenterWSPosition</p>
 <dl class="method">
 <dt id="fused_wake.wake.HubCenterWS.execute">
@@ -808,21 +518,9 @@ Should be called after self.configure and self.configure_single_inflow.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="fused_wake.wake.HubCenterWSPosition">
-<em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">HubCenterWSPosition</tt><a class="reference internal" href="_modules/fused_wake/wake.html#HubCenterWSPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.HubCenterWSPosition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.wake.GenericWSPosition" title="fused_wake.wake.GenericWSPosition"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.wake.GenericWSPosition</span></tt></a></p>
-<p>Generate the positions at the center of the wind turbine rotor</p>
-<dl class="method">
-<dt id="fused_wake.wake.HubCenterWSPosition.execute">
-<tt class="descname">execute</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/fused_wake/wake.html#HubCenterWSPosition.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.HubCenterWSPosition.execute" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="fused_wake.wake.LinearWakeSum">
 <em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">LinearWakeSum</tt><a class="reference internal" href="_modules/fused_wake/wake.html#LinearWakeSum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.LinearWakeSum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.wake.GenericWakeSum" title="fused_wake.wake.GenericWakeSum"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.wake.GenericWakeSum</span></tt></a></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">fusedwind.plant_flow.fused_plant_comp.GenericWakeSum</span></tt></p>
 <p>Sum the wakes linearly</p>
 <dl class="method">
 <dt id="fused_wake.wake.LinearWakeSum.execute">
@@ -976,7 +674,7 @@ Should be called after self.configure and self.configure_single_inflow.</p>
 <dl class="class">
 <dt id="fused_wake.wake.QuadraticWakeSum">
 <em class="property">class </em><tt class="descclassname">fused_wake.wake.</tt><tt class="descname">QuadraticWakeSum</tt><a class="reference internal" href="_modules/fused_wake/wake.html#QuadraticWakeSum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.wake.QuadraticWakeSum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.wake.GenericWakeSum" title="fused_wake.wake.GenericWakeSum"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.wake.GenericWakeSum</span></tt></a></p>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">fusedwind.plant_flow.fused_plant_comp.GenericWakeSum</span></tt></p>
 <p>Sum the wakes quadratically (square root sum of the squares).
 Used typically in relation with the NOJ, MozaicTile wake models.</p>
 <dl class="method">
@@ -1301,86 +999,6 @@ wake_length_dist</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-fused_wake.windturbine">
-<span id="windturbine-py"></span><span id="fused-wake-windturbine-py"></span><span id="index-7"></span><h2>windturbine.py<a class="headerlink" href="#module-fused_wake.windturbine" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="fused_wake.windturbine.WindTurbinePowerCurve">
-<em class="property">class </em><tt class="descclassname">fused_wake.windturbine.</tt><tt class="descname">WindTurbinePowerCurve</tt><a class="reference internal" href="_modules/fused_wake/windturbine.html#WindTurbinePowerCurve"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.windturbine.WindTurbinePowerCurve" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#fused_wake.io.GenericWindTurbine" title="fused_wake.io.GenericWindTurbine"><tt class="xref py py-class docutils literal"><span class="pre">fused_wake.io.GenericWindTurbine</span></tt></a></p>
-<dl class="docutils">
-<dt>wt_desc needs to contain:</dt>
-<dd><ul class="first last simple">
-<li>power_curve</li>
-<li>c_t_curve</li>
-<li>rotor_diameter</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>density</strong></dt>
-<dd><p class="first">Air density</p>
-<ul class="last simple">
-<li>default:  &#8216;1.225&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>hub_wind_speed</strong></dt>
-<dd><p class="first">Wind Speed at hub height</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Slot</em> (GenericWindTurbinePowerCurveVT) <strong>wt_desc</strong></dt>
-<dd><p class="first">The wind turbine description</p>
-<ul class="last simple">
-<li>default:  None</li>
-<li>iotype:  &#8216;in&#8217;</li>
-<li>copy:  &#8216;deep&#8217;</li>
-<li>vartypename:  &#8216;Slot&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>a</strong></dt>
-<dd><p class="first">The wind turbine induction factor</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>c_t</strong></dt>
-<dd><p class="first">The wind turbine thrust coefficient</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>power</strong></dt>
-<dd><p class="first">The wind turbine power</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-<dt><em>Float</em> <strong>thrust</strong></dt>
-<dd><p class="first">The wind turbine thrust</p>
-<ul class="last simple">
-<li>default:  &#8216;0.0&#8217;</li>
-<li>iotype:  &#8216;out&#8217;</li>
-<li>vartypename:  &#8216;Float&#8217;</li>
-</ul>
-</dd>
-</dl>
-<dl class="method">
-<dt id="fused_wake.windturbine.WindTurbinePowerCurve.execute">
-<tt class="descname">execute</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/fused_wake/windturbine.html#WindTurbinePowerCurve.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#fused_wake.windturbine.WindTurbinePowerCurve.execute" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
 </div>
 
 
@@ -1392,14 +1010,14 @@ wake_length_dist</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Source Documentation</a><ul>
-<li><a class="reference internal" href="#module-fused_wake.fused_wake">fused_wake.py</a></li>
-<li><a class="reference internal" href="#module-fused_wake.io">io.py</a></li>
+<li><a class="reference internal" href="#fused-wake-py">fused_wake.py</a></li>
+<li><a class="reference internal" href="#io-py">io.py</a></li>
+<li><a class="reference internal" href="#windturbine-py">windturbine.py</a></li>
 <li><a class="reference internal" href="#module-fused_wake.noj">noj.py</a></li>
 <li><a class="reference internal" href="#test-noj-py">test_NOJ.py</a></li>
 <li><a class="reference internal" href="#test-fused-wake-py">test_fused_wake.py</a></li>
 <li><a class="reference internal" href="#test-lib-py">test_lib.py</a></li>
 <li><a class="reference internal" href="#module-fused_wake.wake">wake.py</a></li>
-<li><a class="reference internal" href="#module-fused_wake.windturbine">windturbine.py</a></li>
 </ul>
 </li>
 </ul>
@@ -1447,7 +1065,7 @@ wake_length_dist</p>
         <li class="right" >
           <a href="usage.html" title="Usage Guide"
              >previous</a> |</li>
-        <li><a href="index.html">fused_wake 0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">fused_wake 0.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

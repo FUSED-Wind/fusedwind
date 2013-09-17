@@ -10,8 +10,10 @@ from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator
 from openmdao.main.interfaces import ICaseIterator
 from openmdao.main.case import Case
 
-#from fused_wake.io import GenericWindTurbineVT, GenericWindTurbine
-from io import GenericWindTurbineVT, GenericWindTurbine
+#from io import GenericWindTurbineVT, GenericWindTurbine
+# from io import GenericWindTurbine
+from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
+from fusedwind.plant_flow.fused_plant_comp import GenericWindTurbine, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
 
 # Wake Model stuffs ######################################################
 
@@ -67,29 +69,29 @@ class WTStreamwiseSorting(Component):
         self.ordered_indices = argsort(n_downstream).tolist()
 
 
-class GenericWSPosition(Component):
-    """Calculate the position of the ws_array"""
-    wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
-    ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
-    wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
+# class GenericWSPosition(Component):
+#     """Calculate the position of the ws_array"""
+#     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+#     ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
+#     wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
 
 
-class HubCenterWSPosition(GenericWSPosition):
-    """
-    Generate the positions at the center of the wind turbine rotor
-    """
-    def execute(self):
-        self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
+# class HubCenterWSPosition(GenericWSPosition):
+#     """
+#     Generate the positions at the center of the wind turbine rotor
+#     """
+#     def execute(self):
+#         self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
 
 
-class GenericWakeSum(Component):
-    """
-    Generic class for calculating the wake accumulation
-    """
-    wakes = List([], iotype='in', desc='wake contributions to rotor wind speed [nwake][n]')
-    ws_array_inflow = Array([], iotype='in', desc='inflow contributions to rotor wind speed [n]', unit='m/s')
+# class GenericWakeSum(Component):
+#     """
+#     Generic class for calculating the wake accumulation
+#     """
+#     wakes = List([], iotype='in', desc='wake contributions to rotor wind speed [nwake][n]')
+#     ws_array_inflow = Array([], iotype='in', desc='inflow contributions to rotor wind speed [n]', unit='m/s')
 
-    ws_array = Array([], iotype='out', desc='the rotor wind speed [n]', unit='m/s')
+#     ws_array = Array([], iotype='out', desc='the rotor wind speed [n]', unit='m/s')
 
 
 class LinearWakeSum(GenericWakeSum):
@@ -126,14 +128,14 @@ class QuadraticWakeSum(GenericWakeSum):
                 self.ws_array[i] = self.ws_array_inflow[i] * (1 - sqrt(sum(DUs ** 2.0)))
 
 
-class GenericHubWindSpeed(Component):
-    """
-    Generic class for calculating the wind turbine hub wind speed. 
-    Typically used as an input to a wind turbine power curve / thrust coefficient curve.
-    """
-    ws_array = Array([], iotype='in', desc='an array of wind speed on the rotor', unit='m/s')
+# class GenericHubWindSpeed(Component):
+#     """
+#     Generic class for calculating the wind turbine hub wind speed. 
+#     Typically used as an input to a wind turbine power curve / thrust coefficient curve.
+#     """
+#     ws_array = Array([], iotype='in', desc='an array of wind speed on the rotor', unit='m/s')
 
-    hub_wind_speed = Float(0.0, iotype='out', desc='hub wind speed', unit='m/s')
+#     hub_wind_speed = Float(0.0, iotype='out', desc='hub wind speed', unit='m/s')
 
 
 class HubCenterWS(GenericHubWindSpeed):
@@ -145,34 +147,34 @@ class HubCenterWS(GenericHubWindSpeed):
         self.hub_wind_speed = self.ws_array[0]
 
 
-class GenericFlowModel(Component):
-    """
-    Framework for a flow model
-    """
-    ws_positions = Array([], iotype='in', desc='the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)')
-    ws_array = Array([], iotype='out', desc='an array of wind speed to find wind speed')
+# class GenericFlowModel(Component):
+#     """
+#     Framework for a flow model
+#     """
+#     ws_positions = Array([], iotype='in', desc='the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)')
+#     ws_array = Array([], iotype='out', desc='an array of wind speed to find wind speed')
 
 
-class GenericWakeModel(GenericFlowModel):
+# class GenericWakeModel(GenericFlowModel):
 
-    """
-    Framework for a wake model
-    """
-    wt_desc = VarTree(GenericWindTurbineVT(), iotype='in', desc='the geometrical description of the current turbine')
-    wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the current wind turbine', unit='m')
-    c_t = Float(0.0, iotype='in', desc='the thrust coefficient of the wind turbine')
-    ws_array_inflow = Array([], iotype='in', desc='The inflow velocity at the ws_positions', unit='m/s')
-    wind_direction = Float(0.0, iotype='in', desc='The inflow wind direction', unit='deg')
-    du_array = Array([], iotype='out', desc='The deficit in m/s. Empty if only zeros', unit='m/s')
+#     """
+#     Framework for a wake model
+#     """
+#     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in', desc='the geometrical description of the current turbine')
+#     wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the current wind turbine', unit='m')
+#     c_t = Float(0.0, iotype='in', desc='the thrust coefficient of the wind turbine')
+#     ws_array_inflow = Array([], iotype='in', desc='The inflow velocity at the ws_positions', unit='m/s')
+#     wind_direction = Float(0.0, iotype='in', desc='The inflow wind direction', unit='deg')
+#     du_array = Array([], iotype='out', desc='The deficit in m/s. Empty if only zeros', unit='m/s')
 
-    def post_execute(self):
-        """
-        In the case where we are only interested in deficits, there isn't any advantage 
-        of copying arrays of 0. So let's post process those out.
-        """
-        self.du_array = self.ws_array - self.ws_array_inflow
-        if norm(self.du_array) < 1E-5:
-            self.du_array = []
+#     def post_execute(self):
+#         """
+#         In the case where we are only interested in deficits, there isn't any advantage 
+#         of copying arrays of 0. So let's post process those out.
+#         """
+#         self.du_array = self.ws_array - self.ws_array_inflow
+#         if norm(self.du_array) < 1E-5:
+#             self.du_array = []
 
 
 class GenericEngineeringWakeModel(GenericWakeModel):
