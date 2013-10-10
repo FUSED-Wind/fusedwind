@@ -1,11 +1,9 @@
-#__all__ = ['fused_wake']
-
 ## FUSED-Wake imports
 from wake import GenericWindFarmWake, \
     HomogeneousInflowGenerator, \
     HubCenterWSPosition, HubCenterWS, GenericEngineeringWakeModel
 
-from accumulation import QuadraticWakeSum    
+from accumulation import QuadraticWakeSum
 
 ## Moved to FUSED-Wind plugin
 #from fused_wake.io import GenericWindTurbineVT
@@ -17,50 +15,21 @@ from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT
 from fusedwind.plant_flow.fused_plant_comp import WindTurbinePowerCurve
 
 ## OpenMDAO imports
-from openmdao.lib.datatypes.api import VarTree, Float
+from openmdao.lib.datatypes.api import VarTree, Float, Int
 
 ## Other imports
 from numpy import sin, pi, sqrt, arccos
 
-
-class NOJWakeModel(GenericEngineeringWakeModel):
-
+class FrandsenWakeModel(GenericEngineeringWakeModel):
     """
-    The N.O. Jensen wake model.
+    The Frandsen wake model, described in the article:
+    Frandsen et al. Analytical Modelling of Wind Speed Deficit in Large Offshore Wind Farms, Wind Energy.
+    and Storpark Analytical Model(SAM) that was presented at the European Wind Energy Conference and Exhibition 2006
     """
-    k = Float(0.04, iotype='in', desc='The wake spreading parameter')
+    k = Float(2.0, iotype='in', desc='expansion exponent')
+    alpha = Float(0.7, iotype='in', desc='expansion parameter')
+    version = Int(1, min=1, max=2, iotype='in', desc='wake expansion version')
 
-    def single_wake(self, X, dr, ws):
-        """
-        X : Stream wise wake distance
-        dr: Cross wise wake distance
-        ws: local inflow wind speed
-
-        Output:
-        DU: the axial velocity deficit
-        """
-        if X <= 0.0:
-            # No wake upstream in this model!
-            return 0.0
-
-        R = self.wt_desc.rotor_diameter / 2.0
-        # NOJ Specific
-        Rw = R + self.k * X  # upstream turbine wake radius
-        DU = (1.0 - sqrt(1.0 - self.c_t)) / (1.0 + (self.k * X) / R) ** 2.0
-
-        if dr < abs(Rw):
-            return - DU
-        else:
-            return 0.0
-
-
-class MozaicTileWakeModel(NOJWakeModel):
-
-    """
-    The N.O. Jensen wake model, the wake model will assume that there is a
-    downstream wind turbine, and the deficit will be calculated
-    using the mozaic tile approach.
-    """
     down_wt_desc = VarTree(GenericWindTurbineVT(), iotype='in',
                            desc='Downstream wind turbine descriptor (only used when partial=True)')
 
@@ -78,9 +47,20 @@ class MozaicTileWakeModel(NOJWakeModel):
             # No wake upstream in this model!
             return 0.0
 
-        R = self.wt_desc.rotor_diameter / 2.0
-        Rw = abs(R + self.k * X)  # upstream turbine wake radius
-        DU = (1.0 - sqrt(1.0 - self.c_t)) / (1.0 + (self.k * X) / R) ** 2.0
+        D = self.wt_desc.rotor_diameter
+        R =  D / 2.0
+        A = pi * R**2.0
+        #Rw = abs(R + self.k * X)  # upstream turbine wake radius
+
+        beta = (1.0 + sqrt(1.0 - self.c_t)) / (2.0 * sqrt(1.0 - self.c_t))
+
+        if self.version == 1:
+            Rw = R * (beta**(self.k / 2.0) + self.alpha * X / D)**(1.0/self.k)            
+        elif self.version == 2:
+            Rw = R * max(beta, self.alpha * X / D)**(1.0/2.0)            
+
+        Aw = pi * Rw**2.0
+        DU = 0.5 * (1.0 - sqrt(1.0 - 2.0 * self.c_t * A / Aw))
 
         # There is a downstream wind turbine, so we activate the partial wake
         # calculation
@@ -103,35 +83,19 @@ class MozaicTileWakeModel(NOJWakeModel):
             return - DU
 
 
-class NOJWindFarmWake(GenericWindFarmWake):
+class FrandsenWindFarmWake(GenericWindFarmWake):
 
     """
     The Original NOJ model.
     """
     def configure(self):
-        super(NOJWindFarmWake, self).configure()
+        super(FrandsenWindFarmWake, self).configure()
         self.replace('ws_positions', HubCenterWSPosition())
         self.replace('wake_sum', QuadraticWakeSum())
         self.replace('hub_wind_speed', HubCenterWS())
         self.replace('wt_model', WindTurbinePowerCurve())
-        self.replace('wake_model', NOJWakeModel())
+        self.replace('wake_model', FrandsenWakeModel())
         self.replace('inflow_gen', HomogeneousInflowGenerator())
         if 'k' not in self.list_inputs():
             self.create_passthrough('wake_model.k')
-
-
-class MozaicTileWindFarmWake(NOJWindFarmWake):
-
-    """
-    The Mozaic Tile model from Rathmann. Based on the NOJ model.
-    """
-    def configure(self):
-        super(MozaicTileWindFarmWake, self).configure()
-        self.replace('wake_model', MozaicTileWakeModel())
-        self.wake_driver.wt_connections.append('wake_model.down_wt_desc')
-
-    def configure_single_turbine_type(self):
-        super(MozaicTileWindFarmWake, self).configure_single_turbine_type()
-        self.connect('wt_list[0]', 'wake_model.down_wt_desc')
-
-
+        self.wake_driver.wt_connections.append('wake_model.down_wt_desc')            

@@ -1,6 +1,6 @@
 #__all__ = ['fused_wake']
 
-from test_lib import *
+from fused_wake.test.test_lib import *
 from fused_wake.noj import *
 from numpy import loadtxt
 
