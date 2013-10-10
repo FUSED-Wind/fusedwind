@@ -4,6 +4,7 @@ import unittest
 
 #FUSED-Wake imports
 from fused_wake.wake import *
+from fused_wake.accumulation import *
 # from fused_wake.io import *
 #from fused_wake.windturbine import *
 
