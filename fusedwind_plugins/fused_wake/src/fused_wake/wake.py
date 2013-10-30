@@ -1,6 +1,6 @@
 #__all__ = ['fused_wake']
 
-from numpy import array, log, zeros, cos, sin, nonzero, argsort, ones, arange, pi, sqrt
+from numpy import array, log, zeros, cos, sin, nonzero, argsort, ones, arange, pi, sqrt, dot
 from numpy.linalg.linalg import norm
 from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str
 from openmdao.lib.drivers.api import CaseIteratorDriver
@@ -34,6 +34,14 @@ RotZ = lambda a: array([[cos(a),  -sin(a),    0],
                         [sin(a),   cos(a),    0],
                         [0,         0,        1]])
 
+
+def set_inputs(self, dic):
+    """ Helping function to set the inputs of an assembly using a dictionary """
+    for k, v in dic.iteritems():
+        if k in self.list_inputs():
+            setattr(self, k, v)
+
+Assembly.set_inputs = set_inputs
 
 def nnz(list):
     """ Emulate nnz function of Matlab """
@@ -73,39 +81,6 @@ class WTStreamwiseSorting(Component):
         self.ordered_indices = argsort(n_downstream).tolist()
 
 
-class LinearWakeSum(GenericWakeSum):
-    """
-    Sum the wakes linearly
-    """
-    def execute(self):
-        # Create the output
-        self.ws_array = zeros(self.ws_array_inflow.shape)
-        # loop on the points
-        if len(self.wakes) == 0:
-            self.ws_array = self.ws_array_inflow
-        else:
-            for i in range(self.ws_array_inflow.shape[0]):
-                DUs = array([wake[i] / self.ws_array_inflow[i] for wake in self.wakes])
-                self.ws_array[i] = self.ws_array_inflow[i] * (1 - sum(DUs))
-
-
-class QuadraticWakeSum(GenericWakeSum):
-    """
-    Sum the wakes quadratically (square root sum of the squares).
-    Used typically in relation with the NOJ, MozaicTile wake models.
-    """
-    def execute(self):
-        # Create the output
-        self.ws_array = zeros(self.ws_array_inflow.shape)
-        # loop on the points
-        if len(self.wakes) == 0:
-            self.ws_array = self.ws_array_inflow
-        else:
-            for i in range(self.ws_array_inflow.shape[0]):
-                # Calculate the normalized velocities deficits
-                DUs = array([wake[i] / self.ws_array_inflow[i] for wake in self.wakes])
-                self.ws_array[i] = self.ws_array_inflow[i] * (1 - sqrt(sum(DUs ** 2.0)))
-
 
 class HubCenterWS(GenericHubWindSpeed):
     """
@@ -114,6 +89,175 @@ class HubCenterWS(GenericHubWindSpeed):
 
     def execute(self):
         self.hub_wind_speed = self.ws_array[0]
+
+
+
+class GaussWSPosition(GenericWSPosition):
+
+    """
+    Calculate numerically the gauss integration. The algorithm is based on
+    [1].
+
+    References:
+      [1] Larsen GC. "A simple stationary semi-analytical wake model".
+      [2] http://www.holoborodko.com/pavel/?page_id=679
+      [3] http://en.wikipedia.org/wiki/Gaussian_quadrature
+    """
+    wind_direction = Float(270.0, iotype='in', desc='The wind direction oriented form the North [deg]', unit='deg')
+    N = Int(5, min=4, max=6, iotype='in', desc='coefficient of gauss integration')
+    te = Array([], iotype='out', desc='The theta angles')
+    w = Array([], iotype='out', desc='The radiuses')
+
+    def execute(self):
+        N = self.N
+        A = pi * self.wt_desc.rotor_diameter ** 2.0
+        # turbine rotor area
+
+        # Gauss interpolation coefficients (Eq.30)
+        # Also in [2] and [3]
+        #  N = 4:
+        if N == 4:
+            rt = [-0.339981043584856,
+                  -0.861136311594053,
+                  0.339981043584856,
+                  0.861136311594053]
+            w = [0.652145154862546,
+                 0.347854845137454,
+                 0.652145154862546,
+                 0.347854845137454]
+        elif N == 5:
+            rt = [0,
+                  0.5384693101056830910363144,
+                  -0.5384693101056830910363144,
+                  0.9061798459386639927976269,
+                  -0.9061798459386639927976269]
+
+            w = [0.5688888888888888888888889,
+                 0.4786286704993664680412915,
+                 0.4786286704993664680412915,
+                 0.2369268850561890875142640,
+                 0.2369268850561890875142640]
+        elif N == 6:
+            rt = [0.2386191860831969086305017,
+                  -0.2386191860831969086305017,
+                  0.6612093864662645136613996,
+                  -0.6612093864662645136613996,
+                  0.9324695142031520278123016,
+                  -0.9324695142031520278123016]
+
+            w = [0.4679139345726910473898703,
+                 0.4679139345726910473898703,
+                 0.3607615730481386075698335,
+                 0.3607615730481386075698335,
+                 0.1713244923791703450402961,
+                 0.1713244923791703450402961]
+        else:
+            raise Exception('N is not a valid value', self.N)
+
+        te = rt
+
+        # res = 0;  # result output
+        self.ws_positions = zeros([N * N, 3])
+        inc = 0
+        for j in range(N):
+            for i in range(N):
+                # (Eq.45)
+                r = self.wt_desc.rotor_diameter/2.0 * (rt[i] + 1) / 2
+                t = pi * (te[j] + 1)
+                # Flow direction
+                x = 0.0
+                # Cross-flow direction
+                y = r * cos(t+0.5*pi)
+                # Vertical direction
+                z = r * sin(t+0.5*pi)
+
+                # Rotate in the Z direction to obtain the right positions
+                wt_centered = dot(RotZ((-self.wind_direction + 270.0) * pi / 180.0), array([x, y, z]))
+                self.ws_positions[inc,:] = wt_centered + array([self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height])
+                inc += 1
+        self.te = te
+        self.w = w
+
+
+class GaussHubWS(GenericHubWindSpeed):
+
+    """
+    Calculate numerically the gauss integration. The algorithm is based on
+    [1].
+
+    References:
+      [1] Larsen GC. "A simple stationary semi-analytical wake model".
+      [2] http://www.holoborodko.com/pavel/?page_id=679
+      [3] http://en.wikipedia.org/wiki/Gaussian_quadrature
+    """
+    wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+    N = Int(5, min=4, max=6, iotype='in', desc='coefficient of gauss integration')
+    # te = Array([], iotype='in', desc='The theta angles')
+    # w = Array([], iotype='in', desc='The radiuses')
+
+    def execute(self):
+        R = self.wt_desc.rotor_diameter
+        A = pi * R ** 2.0
+        # turbine rotor area
+
+        N = self.N
+
+        if N == 4:
+            rt = [-0.339981043584856,
+                  -0.861136311594053,
+                  0.339981043584856,
+                  0.861136311594053]
+            w = [0.652145154862546,
+                 0.347854845137454,
+                 0.652145154862546,
+                 0.347854845137454]
+        elif N == 5:
+            rt = [0,
+                  0.5384693101056830910363144,
+                  -0.5384693101056830910363144,
+                  0.9061798459386639927976269,
+                  -0.9061798459386639927976269]
+
+            w = [0.5688888888888888888888889,
+                 0.4786286704993664680412915,
+                 0.4786286704993664680412915,
+                 0.2369268850561890875142640,
+                 0.2369268850561890875142640]
+        elif N == 6:
+            rt = [0.2386191860831969086305017,
+                  -0.2386191860831969086305017,
+                  0.6612093864662645136613996,
+                  -0.6612093864662645136613996,
+                  0.9324695142031520278123016,
+                  -0.9324695142031520278123016]
+
+            w = [0.4679139345726910473898703,
+                 0.4679139345726910473898703,
+                 0.3607615730481386075698335,
+                 0.3607615730481386075698335,
+                 0.1713244923791703450402961,
+                 0.1713244923791703450402961]
+        else:
+            raise Exception('N is not a valid value', self.N)
+
+        # te = rt
+
+        # rt = self.te
+        # w = self.w
+
+        # res = 0;  # result output
+        res = zeros([N, N])
+        inc = 0
+        for j in range(N):
+            for i in range(N):
+
+                # (Eq.45)
+                res[j, i] = w[j] * w[i] * (rt[i] + 1) * self.ws_array[inc]
+                inc += 1
+
+        res = (pi / 4.0) * (R ** 2.0 / A) * res
+        self.hub_wind_speed = sum(sum(res))
+
 
 
 
@@ -138,7 +282,7 @@ class GenericEngineeringWakeModel(GenericWakeModel):
             rely = c2c_dist(self.wind_direction, 0.0, 0.0, cWTx, cWTy)
             relz = self.ws_positions[i, 2] - self.wt_desc.hub_height
             dr = sqrt(rely ** 2.0 + relz ** 2.0)
-            self.ws_array[i] = ws + self.single_wake(X, dr, ws)
+            self.ws_array[i] = ws * (1.0 + self.single_wake(X, dr, ws))
 
     def single_wake(self, X, dr, ws):
         """
@@ -147,7 +291,7 @@ class GenericEngineeringWakeModel(GenericWakeModel):
         ws: local inflow wind speed
 
         Output:
-        Return the axial velocity deficit
+        Return the normalized axial velocity deficit
         """
         pass
 

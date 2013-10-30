@@ -4,6 +4,7 @@ import unittest
 
 #FUSED-Wake imports
 from fused_wake.wake import *
+from fused_wake.accumulation import *
 # from fused_wake.io import *
 #from fused_wake.windturbine import *
 
@@ -24,15 +25,14 @@ import matplotlib.pyplot as plt
 
 
 # Some handy case generators ---------------------------------------------------------------
-def generate_a_valid_wt():
+def generate_a_valid_wt(D = 200*random()):
     wt_desc = GenericWindTurbineVT()
-    wt_desc.hub_height = random()*200
-    wt_desc.rotor_diameter = wt_desc.hub_height*2.0 * (1 - random())
+    wt_desc.rotor_diameter = D
+    wt_desc.hub_height = D * (0.5 + random())
     return wt_desc
 
 
-def generate_ws_positions():
-    wt_desc = generate_a_valid_wt()
+def generate_ws_positions(wt_desc = generate_a_valid_wt()):
     xy = [random()*1000, random()*1000]
     # Compute the ws_positions
     ws_positions = array([[xy[0], 
@@ -41,6 +41,16 @@ def generate_ws_positions():
     					   for r in np.linspace(0.0, wt_desc.rotor_diameter/2.0, 10)
     					   for theta in np.linspace(0.0, 2.0*np.pi, 10)])
     return ws_positions
+
+def generate_neutral_inflow(ws_positions, ws=random()*40, z_ref=random()*100):
+    """ Generate a ramdom neutral inflow """
+    inflow = NeutralLogLawInflowGenerator()
+    inflow.z_0 = random()
+    inflow.z_ref = z_ref
+    inflow.wind_speed = ws
+    inflow.ws_positions = ws_positions
+    inflow.execute()
+    return inflow.ws_array
 
 def generate_v80():
 
@@ -197,6 +207,7 @@ class WSPos(unittest.TestCase):
             self.assertTrue(abs(ws_pos.ws_positions[i, 2] - wt_desc.hub_height) <= wt_desc.rotor_diameter/2.0)
             # Check that the z value is not under the ground
             self.assertTrue(ws_pos.ws_positions[i, 2] > 0.0)
+
 
 
 class Inflow(unittest.TestCase):
