@@ -1,0 +1,292 @@
+import os, copy
+import numpy as np
+
+"""
+DLC -> IECDLC
+DLC -> RunCase -> FASTRunCase
+               -> HAWC2RunCase 
+We might argue for a level between DLC and IECDLC called StudyCase, b/c not all multi-run
+cases are IEC, but not all DLC's are multi-run.
+"""
+
+
+###############################
+###### Design load case, no need for openMDAO
+class DesignLoadCase(object):
+    """ base class for design load case representing a whole study 
+    (e.g., but not limite to, one row of table 1,  88_329).
+    In particular, will be probably more than one run of the underlying aerodode."""
+    def __init__(self, case):
+        self.name = case
+        pass
+
+        
+class IECDesignLoadCase(DesignLoadCase):
+    """ one IEC case, e.g. IEC1.4. """
+    def __init__(self, case, params):        
+        """ case is a string 
+        params is a dict of parameters for this case
+        """
+        super(IECDesignLoadCase,self).__init__(case)
+        self.params = params # dict of parameters for this case
+
+    def genGenericCases(self):
+        """ An IEC Design Load Case is one row of table 1, 88_329 
+        This fn is to generate subcases.
+        """
+        ### this fn was mostly for testing, XXXRunCaseBuilder, below
+        gcases = []
+        # as a test, will hard code wind speed and random seed
+        winds = [10,20]
+        rs = [1,2,3]
+        for w in winds:
+            for r in rs:
+                g = WindRandomSeedRunCase(self, w, r)
+                gcases.append(g)
+        return gcases
+        
+
+class RunCase(DesignLoadCase):
+    """ a single RUN of the aerocode.
+    The params are meant to be the non-turbine driving parameters like wind speed,
+    wave period, direction, etc. ie "environment"
+
+    This is _one run_ of the underlying wind code. An IECDesignLoadCase is composed of many RunCases.
+    """
+    def __init__(self, parent):
+        super(RunCase,self).__init__(parent)
+        self.parent = parent
+        
+        
+class WindRandomSeedRunCase(RunCase):
+    """ a single run of the aerocode.
+        meant to be the non-turbine driving parameters like wind speed,
+        wave period, direction, etc. ie "environment"
+    """
+    def __init__(self, parent, windspeed, randomseed):
+        super(WindRandomSeedRunCase,self).__init__(parent)
+        self.ws = windspeed
+        self.randomseed = randomseed
+        self.windfile = os.path.join(WaveCaseLoc,"%s%.2d.bts" % (WaveNameBase, randomseed))  ## already FAST specific !
+        self.name = "%s-ws%.1f.rs%d" % (parent.name, windspeed, randomseed)
+        
+
+class FASTRunCase(WindRandomSeedRunCase):
+    """ FAST specific single run of the aerocode.
+    """
+    def __init__(self, parent, windspeed, randomseed, fst_params):
+        super(FASTRunCase,self).__init__(parent, windspeed, randomseed)
+        self.fst_params = copy.deepcopy(fst_params) # dict of FAST keywords/values to override
+
+        
+class NREL13_88_329Input(object):
+    """ format made up by P Graf, closely following spec in 88_329 doc, but also mimicing some aspects
+    of RunIEC.pl input format.  like a csv/excel version.
+e.g. 
+DLC,   @WindSpeeds,   NumSeeds,  NumWavePer, TotProbReq, TStart, AnalTime
+DLC1.1,  12.3 14.5  ,  1   ,     1  , 	     N/A, 	 20.0 ,  60.0
+DLC1.2,  14.3 19.5  ,  1   ,     1  ,	     0.54321,    20.0 ,  60.0
+    """
+    def __init__(self):
+        super(NREL13_88_329Input, self).__init__()
+    
+    def initFromFile(self, filename, verbose =True):
+        """ make design load cases from simple line by line spec """    
+        fin = file(filename).readlines()
+        lzero=True
+        self.cases = []
+        for ln in fin:
+            ln = [stuff.strip() for stuff in ln.strip().split(",")]
+            if (len(ln) > 0 and not ln[0] =='' and not ln[0][0] == "#"):
+                if (lzero):
+                    print "header line: ", ln
+                    # header line
+                    fields = [s.strip(",") for s in ln[1:]]
+                    lzero=False
+                else:
+                    print "real line: ", ln
+                    dlc = ln[0]
+                    d = {fields[i]:ln[i+1] for i in range(len(fields))}
+                    self.cases.append(IECDesignLoadCase(dlc, d))
+        print "88_329 cases = ", [[c.name, c.params] for c in self.cases]
+
+#-----------------------------------------------
+##### stub so far;  needs to get actual results from run ###
+## also no need for openMDAO
+class DLCResult(object):
+    """ class to modularize collecting the results of all the runs, will have to use the
+    Dispatcher and AeroCode to find and parse them, resp."""
+    def __init__(self, aerocode):
+        self.aerocode = aerocode
+
+    def save(self):
+        pass
+
+class FASTDLCResult(DLCResult):
+    def __init__(self, aerocode):
+        super(FASTDLCResult,self).__init__(aerocode)
+        rawfast = aerocode.rawfast
+    
+
+#-------------------------#############################-------------------------#
+"""
+ hard coded, FAST-specific (in exact form) constants and stuff.
+lots will come from input file, just not DLC sections.  TODO later, parse them from more
+complex file (e.g. sample.riec). for now,
+adding them here AS NEEDED
+"""
+
+Vref = 50
+Vref_95 = 0.95 * Vref
+WaveCaseLoc = "/Users/pgraf/work/wese/RunIEC/materials/Environment/Wind/FF_Wind/1.6_37x51_3600s/"
+WaveNameBase = "SimLength_NTM_3600s_04.0V0_S"
+ 
+
+"""
+ cases in RunIEC.pl, loops are over:
+1.1: windspeed, seed, waveper 
+1.2: windspeed, seed, wavecases
+1.3: windspeed, seed, waveper
+1.4: windcases, seed, waveper
+1.5: windspeed, sheertype(windcases), seed, waveper
+1.6a: windspeed, seed, waveper
+2.1: windspeed, seed, waveper
+2.3: windcases, seed, waveper
+6.1a: (fixedwind), seed, waveper, nacyaw, wavedir
+6.2a: (fixedwind), seed, waveper, nacyaw, wavedir
+6.3a: (fixedwind), seed, waveper, nacyaw, wavedir
+6.4: (fixedwind), seed, wavecases
+7.1a: (fixedwind), seed, waveper, nacyaw, wavedir
+"""
+
+""" encode part of Table 1 of ODR 88_329e 
+casename, wind, waves, directionality
+This will tell us _what to expect_ in the input dictionaries
+"""
+Table1 = {'default': ['windspeed'],
+          'DLC1.1': ['windspeed', 'waveper'],
+          'DLC1.2': ['windspeed', 'wavecases'],
+          'DLC1.3': ['windspeed', 'waveper']
+          };
+
+def fix_name(name):
+    if (name not in Table1):
+        name = "default"
+    return name
+
+def has_key(name, key):
+    name = fix_name(name)
+    if (name in Table1):
+        if key in Table1[name]:
+            return True
+    return False
+
+def has_windspeed(name):
+    return (has_key(name, 'windspeed'))
+
+def has_waveper(name):
+    return (has_key(name, 'waveper'))
+    
+def has_wavecases(name):
+    return (has_key(name, 'wavecases'))
+    
+
+class DLCRunCaseBuilder(object):
+    """ superclass for run cases, ie a single aerodcode run.
+    Anything in common to build toward here ??? 
+    We want to push anything that is not specific to a certain aerocode to be set up here """
+    def __init__(self):
+        pass
+
+class FASTRunCaseBuilder(DLCRunCaseBuilder):
+    """ setting up a single FAST run.
+    relies on some specific variable like windspeed, otherwise a dictionary overriding 
+    line by line the entries in the template .fst file 
+    """
+
+    WSPitch    =   np.array([0.0, 11.0, 12.0, 25.0])
+    Pitch      =   np.array([0.0,  0.0,  4.0, 22.0])
+    WSRpm      =   np.array([0.0, 10.2, 11.4])
+    Rpm        =   np.array([6.0, 10.0, 12.1])
+
+    @staticmethod
+    def genRunCases(parent, dlc):
+        """ given dlc spec (ie 1.1, and its params(as dict)), build list of
+        separate runs required, for use in case iterator
+
+        dlc is a dict., all entries are strings b/c they are parsed generically from csv
+
+        We need to consider loops over (some specifics from spec):
+        -- wind speed (all-{6.1a,6.2a,6.3a,7.1a})
+          ++ just speed:
+          ++ "wind conditions" (wind files):1.4,2.3
+          ++ speed & sheer: 1.5
+          -- fixed speed: 6.1a,6.2a,6.3a,7.1a
+        -- random seed (for stats) (all)
+        -- wave periods (all)
+        -- yaw (6.1a,6.2a,6.3a,7.1a)
+        -- wave direction(6.1a,6.2a,6.3a,7.1a)
+        """
+        name = parent.name
+        cases = []
+        params = {}
+        print "setting up dlc name %s" % name
+
+        ws = None
+        wp = None
+        wc = None
+        seeds = None
+        if (has_windspeed(name)):
+            ws = dlc["@WindSpeeds"] # a string of space separated numbers
+            ws = ws.split()  
+            ws = [float(f) for f in ws]
+        else:
+            ws = [Vref_95]
+
+        # a dictionary to stort line by line substitutions in .fst file.
+        params['TStart'] = float(dlc['TStart'])
+        params['TMax'] = params['TStart'] + float(dlc['AnalTime'])
+
+        if (has_waveper(name)):
+            wp = int(dlc['NumWavePer'])
+            print wp
+        if (has_wavecases(name)):
+            # This is encoded by 'TotProbReq', then call to get wave cases
+            tpr = float(dlc['TotProbReq'])
+            print tpr
+            
+## when it's ready, use these checks.  But for now we haven't completed table
+#        if (not wp==None and not wc==None):
+#            raise ValueError, "both wave period and wave cases supplied"
+#        if (wp==None and wc==None):
+#            raise ValueError, "neither wave period nor wave cases supplied"
+                
+        seeds = int(dlc['NumSeeds']) # all cases have this
+        seedlist = range(1,seeds+1)
+                
+        for w in ws:
+            blpitch1 = FASTRunCaseBuilder.GetPitch(w)
+            rotspeed = FASTRunCaseBuilder.GetRotSpd(w)
+            params['RotSpeed'] = rotspeed
+            params['BlPitch1'] = blpitch1
+            params['BlPitch2'] = blpitch1
+            params['BlPitch3'] = blpitch1
+            ## these b/c some FAST files (that might be the template) use parens:
+            params['BlPitch(1)'] = blpitch1  
+            params['BlPitch(2)'] = blpitch1
+            params['BlPitch(3)'] = blpitch1
+
+            for s in seedlist:
+                subcase = FASTRunCase(parent,w,s,params)
+                cases.append(subcase)
+        
+        return cases
+
+    @staticmethod
+    def GetPitch(ws):
+        return np.interp(ws, FASTRunCaseBuilder.WSPitch, FASTRunCaseBuilder.Pitch)
+
+    @staticmethod
+    def GetRotSpd(ws):
+        return np.interp(ws, FASTRunCaseBuilder.WSRpm, FASTRunCaseBuilder.Rpm)
+
