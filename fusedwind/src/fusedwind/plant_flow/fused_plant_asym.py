@@ -20,8 +20,8 @@ from openmdao.main.case import Case
 
 # KLD - 8/29/13 separated vt and assembly into separate file
 from fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, ExtendedWindTurbinePowerCurveVT, GenericWindFarmTurbineLayout
-from fused_plant_comp import GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel, /
-                             GenericWakeModel, GenericInflowGenerator, WindTurbinePowerCurve, PostProcessWindRose
+from fused_plant_comp import GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel, \
+                             GenericInflowGenerator, WindTurbinePowerCurve, PostProcessWindRose
 
 # ------------------------------------------------------------
 # Assembly Base Classes
@@ -71,7 +71,7 @@ class GenericAEPModel(Assembly):
 # -------------------------------------------------------------
 # Implementation Assemblies
 
-class AEP(GenericAEPModel): # KLD: modified to inerhit from generic AEP assembly class
+class AEPSingleWindRose(GenericAEPModel): # KLD: modified to inerhit from generic AEP assembly class
 
     wf = Slot(GenericWindFarm, desc='A wind farm assembly or component')
 

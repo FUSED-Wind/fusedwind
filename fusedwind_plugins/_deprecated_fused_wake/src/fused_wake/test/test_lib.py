@@ -4,6 +4,7 @@ import unittest
 
 #FUSED-Wake imports
 from fused_wake.wake import *
+from fused_wake.accumulation import *
 # from fused_wake.io import *
 #from fused_wake.windturbine import *
 
@@ -321,15 +322,15 @@ class testHornsRev(unittest.TestCase):
 
         # wfm.configure()
         # wfm.configure_single_inflow()
-        wfm.wt_list = [wt_desc]*80
+        wfm.wt_layout.wt_list = [wt_desc]*80
 
         wfm.wind_speed = 8.0
         wfm.wind_direction = 270.0
         wfm.z_0 = 1.0000e-04
         wfm.TI = 0.07
         wfm.z_ref = wt_desc.hub_height
-        wfm.wt_positions = np.loadtxt(self.file_Positions)
-        # wfm.wake_driver.recorders.append(CSVCaseRecorder(filename='debug.csv'))
+        wfm.wt_layout.wt_positions = np.loadtxt(self.file_Positions)
+        wfm.wake_driver.recorders.append(CSVCaseRecorder(filename='debug.csv'))
 
         wfm.upstream_wake_driver.sequential = True
 

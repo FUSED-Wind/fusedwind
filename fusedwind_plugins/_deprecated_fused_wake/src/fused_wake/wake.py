@@ -18,6 +18,7 @@ from openmdao.main.case import Case
 ## FUSED-Wind imports 
 from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
 from fusedwind.plant_flow.fused_plant_comp import GenericWindTurbine, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
+from fusedwind.plant_flow.fused_plant_asym import GenericWindFarm
 
 # Wake Model stuffs ######################################################
 
@@ -520,23 +521,23 @@ class WTID(Component):
 
 
 
-class GenericWindFarm(Assembly):
-    # Inputs:
-    wind_speed = Float(0.0, iotype='in', desc='Inflow wind speed at hub height')
-    wind_direction = Float(0.0, iotype='in', desc='Inflow wind direction at hub height', my_metadata='hello')
-    wt_list = List([], iotype='in', desc='The wind turbine list of descriptions')
-    wt_positions = Array([], unit='m', iotype='in')
+# class GenericWindFarm(Assembly):
+#     # Inputs:
+#     wind_speed = Float(0.0, iotype='in', desc='Inflow wind speed at hub height')
+#     wind_direction = Float(0.0, iotype='in', desc='Inflow wind direction at hub height', my_metadata='hello')
+#     wt_list = List([], iotype='in', desc='The wind turbine list of descriptions')
+#     wt_positions = Array([], unit='m', iotype='in')
 
-    # Outputs:
-    power = Float(0.0, iotype='out', desc='Total wind farm power production', unit='W')
-    thrust = Float(0.0, iotype='out', desc='Total wind farm thrust', unit='N')
-    wt_power = Array([], iotype='out', desc='The power production of each wind turbine')
-    wt_thrust = Array([], iotype='out', desc='The thrust of each wind turbine')
+#     # Outputs:
+#     power = Float(0.0, iotype='out', desc='Total wind farm power production', unit='W')
+#     thrust = Float(0.0, iotype='out', desc='Total wind farm thrust', unit='N')
+#     wt_power = Array([], iotype='out', desc='The power production of each wind turbine')
+#     wt_thrust = Array([], iotype='out', desc='The thrust of each wind turbine')
 
-    def execute(self):
-        # print "Running %s with ws:%f and wd:%f "%(self.__class__.__name__, self.wind_speed, self.wind_direction)
-        super(GenericWindFarm, self).execute()
-        # time.sleep(2)
+#     def execute(self):
+#         # print "Running %s with ws:%f and wd:%f "%(self.__class__.__name__, self.wind_speed, self.wind_direction)
+#         super(GenericWindFarm, self).execute()
+#         # time.sleep(2)
 
 class GenericWindFarmWake(GenericWindFarm):
     """
@@ -556,8 +557,6 @@ class GenericWindFarmWake(GenericWindFarm):
     def configure(self):
         super(GenericWindFarmWake, self).configure()
         # Add the components
-        self.add('wt1', WTID())
-        self.add('wt2', WTID())
         self.add('ws_positions', GenericWSPosition())
         self.add('inflow_gen', GenericInflowGenerator())
         self.add('wake_dist', WTStreamwiseSorting())
@@ -565,9 +564,20 @@ class GenericWindFarmWake(GenericWindFarm):
         self.add('wake_sum', GenericWakeSum())
         self.add('hub_wind_speed', GenericHubWindSpeed())
         self.add('wake_model', GenericWakeModel())
+
+class WindFarmWake(GenericWindFarmWake):
+    """
+    TODO: write docstring
+    """
+
+    def configure(self):
+        super(OMDAOWindFarmWake, self).configure()
+        self.add('wt1', WTID())
+        self.add('wt2', WTID())
         self.add('wake_driver', WakeDriver())
         self.add('upstream_wake_driver', UpstreamWakeDriver())
         self.add('postprocess_wt_cases', PostProcessWTCases())
+        # Add the components
         # self.add('wake_reader', WakeReader())
 
         # Activate parallelization:
@@ -620,10 +630,10 @@ class GenericWindFarmWake(GenericWindFarm):
         #     """
         #     Configure the assembly for single inflow
         #     """
-        self.connect('wt_list', ['wake_driver.wt_list'])
+        self.connect('wt_layout.wt_list', ['wake_driver.wt_list'])
         self.connect('wind_speed', 'inflow_gen.wind_speed')
         self.connect('wind_direction', ['wake_dist.wind_direction', 'wake_model.wind_direction'])
-        self.connect('wt_positions', ['wake_dist.wt_positions', 'wake_driver.wt_positions'])
+        self.connect('wt_layout.wt_positions', ['wake_dist.wt_positions', 'wake_driver.wt_positions'])
         self.connect('postprocess_wt_cases.wt_power', 'wt_power')
         self.connect('postprocess_wt_cases.wt_thrust', 'wt_thrust')
         self.connect('postprocess_wt_cases.power', 'power')
@@ -646,6 +656,128 @@ class GenericWindFarmWake(GenericWindFarm):
 
         ### Adding the new connections
         self.connect('wt_list[0]', ['ws_positions.wt_desc', 'wt_model.wt_desc', 'wake_model.wt_desc'])
+
+
+class SimpleWindFarmWake(GenericWindFarmWake):
+    """
+    TODO: write docstring
+    """
+
+    def configure(self):
+        super(SimpleWindFarmWake, self).configure()
+        #self.connect('wt_layout.wt_list', ['wake_driver.wt_list'])
+        self.connect('wind_speed', 'inflow_gen.wind_speed')
+        self.connect('wind_direction', ['wake_dist.wind_direction', 'wake_model.wind_direction'])
+        self.connect('wt_layout.wt_positions', ['wake_dist.wt_positions'])
+
+    #     self.add('ws_positions', GenericWSPosition())
+    #     self.add('inflow_gen', GenericInflowGenerator())
+    #     self.add('wake_dist', WTStreamwiseSorting())
+    #     self.add('wt_model', GenericWindTurbine())
+    #     self.add('wake_sum', GenericWakeSum())
+    #     self.add('hub_wind_speed', GenericHubWindSpeed())
+    #     self.add('wake_model', GenericWakeModel())
+
+    def execute(self):
+        indices = self.wake_dist().ordered_indices
+        for i in indices:
+            pos = self.wt_positions[:,i]
+            ws_pos = self.ws_positions(wt_xy=pos).ws_positions
+            inflow_array = self.inflow_gen(ws_positions = ws_pos).ws_array
+            self.wake_sum.ws_array_inflow = inflow_array
+            self.hub_wind_speed.ws_array = self.wake_sum().ws_array
+            self.wt_model.hub_wind_speed = self.hub_wind_speed().hub_wind_speed
+            self.wake_model(ws_array_inflow = inflow_array,
+                            ws_positions = ws_pos,
+                            c_t = self.c_t[j], 
+                            wt_xy=self.wt_positions[:,j])
+            self.wt_c_t[i] = self.wt_model.c_t
+            self.wt_power[i] = self.wt_model.power
+
+
+
+    #     self.add('wake_driver', WakeDriver())
+    #     self.add('upstream_wake_driver', UpstreamWakeDriver())
+    #     self.add('postprocess_wt_cases', PostProcessWTCases())
+    #     # self.add('wake_reader', WakeReader())
+
+    #     # Activate parallelization:
+    #     # self.upstream_wake_driver.sequential = False
+
+    #     # Add and configure the drivers
+    #     self.driver.workflow.add(['wake_dist', 'wake_driver', 'postprocess_wt_cases'])
+    #     # self.wake_driver.workflow.add(['wt1', 'ws_positions', 'inflow_gen', 'upstream_wake_driver',
+    #     #                                      'wake_reader', 'wake_sum', 'hub_wind_speed', 'wt_model'])
+    #     self.wake_driver.workflow.add(['wt1', 'ws_positions', 'inflow_gen', 'upstream_wake_driver', 'wake_sum', 'hub_wind_speed', 'wt_model'])
+    #     self.upstream_wake_driver.workflow.add(['wt2', 'wake_model'])
+
+    #     # Wire the components
+    #     self.connect('wake_dist.ordered_indices', 'wake_driver.wt_indices')
+    #     self.connect('ws_positions.ws_positions', ['inflow_gen.ws_positions', 'wake_model.ws_positions'])
+    #     self.connect('inflow_gen.ws_array', ['wake_sum.ws_array_inflow', 'wake_model.ws_array_inflow'])
+    #     self.connect('wake_sum.ws_array', ['hub_wind_speed.ws_array'])
+    #     self.connect('hub_wind_speed.hub_wind_speed', 'wt_model.hub_wind_speed')
+    #     self.wake_driver.recorded_connections = [('wt_model.c_t', 'wake_model.c_t'),
+    #                                              ('ws_positions.wt_desc', 'wake_model.wt_desc'),
+    #                                              ('ws_positions.wt_xy', 'wake_model.wt_xy'),
+    #                                              ('wt1.i', 'wt2.i')]
+
+    #     self.connect('wake_driver.evaluated', 'postprocess_wt_cases.cases')
+    #     # self.connect('upstream_wake_driver.evaluated', 'wake_reader.cases')
+    #     # self.connect('wake_reader.wakes', 'wake_sum.wakes')
+    #     self.connect('upstream_wake_driver.wakes', 'wake_sum.wakes')
+
+    #     # Prepare the wake case drivers
+    #     self.wake_driver.wt_connections = ['ws_positions.wt_desc', 'wt_model.wt_desc']
+    #     self.wake_driver.xy_connections = ['ws_positions.wt_xy']
+    #     self.wake_driver.index_connections = ['wt1.i']
+
+    #     # Indicates the outputs to record in the ListCaseRecorder. Some will be used to feed in the upstream_wake_driver
+    #     # and some will be used to calculate the AEP after everything is finished.
+    #     self.wake_driver.printvars = ['wake_dist.wind_direction',
+    #                                   'inflow_gen.wind_speed',
+    #                                   'wt_model.power',
+    #                                   'wt_model.hub_wind_speed',
+    #                                   'wt_model.thrust',
+    #                                   'wt_model.c_t',
+    #                                   'wt1.i',
+    #                                   'ws_positions.wt_xy',
+    #                                   'ws_positions.wt_desc',
+    #                                   'wake_driver.wti']
+    #     self.upstream_wake_driver.printvars = ['wt2.i', 'wake_model.ws_array', 'wake_model.ws_array_inflow', 'wake_model.ws_positions']
+
+
+    #     # def configure_single_inflow(self):
+    #     #     """
+    #     #     Configure the assembly for single inflow
+    #     #     """
+    #     self.connect('wt_layout.wt_list', ['wake_driver.wt_list'])
+    #     self.connect('wind_speed', 'inflow_gen.wind_speed')
+    #     self.connect('wind_direction', ['wake_dist.wind_direction', 'wake_model.wind_direction'])
+    #     self.connect('wt_layout.wt_positions', ['wake_dist.wt_positions', 'wake_driver.wt_positions'])
+    #     self.connect('postprocess_wt_cases.wt_power', 'wt_power')
+    #     self.connect('postprocess_wt_cases.wt_thrust', 'wt_thrust')
+    #     self.connect('postprocess_wt_cases.power', 'power')
+    #     self.connect('postprocess_wt_cases.thrust', 'thrust')
+
+    # def configure_single_turbine_type(self):
+    #     """
+    #     There is only one type of wind turbine, so no need to copy arround the wt_desc. Just connect it.
+    #     Should be called after self.configure and self.configure_single_inflow.
+    #     """
+    #     ### Removing the existing connections
+    #     self.wake_driver.wt_connections = []
+    #     for i, con in enumerate(self.wake_driver.recorded_connections):
+    #         if 'wt_desc' in con[0]:
+    #             self.wake_driver.recorded_connections.remove(con)
+
+    #     for i, var in enumerate(self.wake_driver.printvars):
+    #         if 'wt_desc' in var:
+    #             self.wake_driver.printvars.remove(var)
+
+    #     ### Adding the new connections
+    #     self.connect('wt_list[0]', ['ws_positions.wt_desc', 'wt_model.wt_desc', 'wake_model.wt_desc'])
+
 
 
 class PostProcessWindRose(Component):
