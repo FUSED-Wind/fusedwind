@@ -287,12 +287,10 @@ class PostProcessSingleWindRose(PostProcessWindRose):
     speeds = Array(iotype='in', desc='The different wind speeds to run [nWS]', unit='m/s')
     directions = Array(iotype='in', desc='The different wind directions to run [nWD]', unit='deg')  
     def execute(self):
+        wr = WeibullWindRose()(directions=self.directions, speeds=self.speeds,
+                               wind_rose_array=self.wind_rose_array).wind_rose            
 
-        #### TODO: add the wind_rose computation in the postprocessing single wind rose component
-            wr = WeibullWindRose()(directions=self.directions, speeds=self.speeds,
-                                   wind_rose_array=self.wt_layout.wt_wind_roses[i_wt]).wind_rose            
-
-        self.energies = [self.wind_rose.frequency_array[c['i_wd'], c['i_ws']] \
+        self.energies = [wr.frequency_array[c['i_wd'], c['i_ws']] \
                             * c['wf.power'] * 24 * 365 for c in self.cases]
         self.aep = sum(self.energies)
 
@@ -403,5 +401,24 @@ class PlantFromWWH(Component):
         self.wind_rose_array = self.wt_layout.wt_wind_roses[0]
 
 
+class WindRoseCaseGenerator(Component):
+    speeds = Array(iotype='in', desc='The different wind speeds to run [nWS]', unit='m/s')
+    directions = Array(iotype='in', desc='The different wind directions to run [nWD]', unit='deg')
+    
+    cases = Slot(ICaseIterator, iotype='out')
+    
+    ### Change this to reflect the assembly structure
+    speeds_str = Str('wf.wind_speed', iotype='in')
+    directions_str = Str('wf.wind_direction', iotype='in')
 
+    def execute(self):
+        cases = []
+        for i_ws, ws in enumerate(self.speeds):
+            for i_wd, wd in enumerate(self.directions):
+                cases.append(Case(
+                    inputs=[(self.directions_str, wd), 
+                            (self.speeds_str, ws), 
+                            ('i_ws', i_ws), ('i_wd', i_ws)]))
+                
+        self.cases = ListCaseIterator(cases)
 

@@ -10,18 +10,22 @@
 from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
 from numpy import pi, sqrt, dot
 from numpy.linalg.linalg import norm
-from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str, Dict
+from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str, Dict, Enum
 #from openmdao.lib.drivers.api import CaseIteratorDriver # KLD: temporary version issues
 from openmdao.main.api import Driver, Run_Once
 from openmdao.main.api import Component, Assembly, VariableTree, Container  # , IOInterface
 from openmdao.lib.casehandlers.api import ListCaseIterator
+from openmdao.lib.drivers.api import CaseIteratorDriver
+
 from openmdao.main.interfaces import implements, ICaseRecorder, ICaseIterator
 from openmdao.main.case import Case
+
 
 # KLD - 8/29/13 separated vt and assembly into separate file
 from fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, ExtendedWindTurbinePowerCurveVT, GenericWindFarmTurbineLayout
 from fused_plant_comp import GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel, \
-                             GenericInflowGenerator, WindTurbinePowerCurve, PostProcessWindRose
+                             GenericInflowGenerator, WindTurbinePowerCurve, PostProcessWindRose, PlantFromWWH, \
+                             WindRoseCaseGenerator, PostProcessSingleWindRose, PostProcessMultipleWindRoses
 
 # ------------------------------------------------------------
 # Assembly Base Classes
@@ -106,3 +110,61 @@ class AEPSingleWindRose(GenericAEPModel): # KLD: modified to inerhit from generi
     def execute(self):
         self.wind_rose_driver.iterator = ListCaseIterator(self.generate_cases())
         super(AEP, self).execute()
+
+
+class WWHAEP(GenericAEPModel):
+    """Class that loads a wind farm position and wind roses from a .wwh WAsP file
+    and perform an AEP calculation.
+    """
+
+    wf = Slot(GenericWindFarm, desc='A wind farm assembly or component')
+    wwh = Slot(PlantFromWWH)
+    case_generator = Slot(WindRoseCaseGenerator)
+
+    filename = Str(iotype='in', desc='The .wwh file name')
+    wind_speeds = Array([], iotype='in', desc='The different wind speeds to run [nWS]', unit='m/s')
+    wind_directions = Array([], iotype='in', desc='The different wind directions to run [nWD]', unit='deg')
+
+    i_ws = Float(iotype='in', desc='Place holder for recorders')
+    i_wd = Float(iotype='in', desc='Place holder for recorders')
+
+    energies = Array([], iotype='out', desc='The energy production per sector', unit='kWh') 
+    
+    wind_rose_type = Enum('single', ('single', 'multiple'), iotype='in', desc='Are we using only one wind rose for the whole wind farm, or a different wind rose for each turbine?')
+    
+    def configure(self):
+        super(WWHAEP, self).configure()
+        self.add('wf', GenericWindFarm())
+        self.add('wwh', PlantFromWWH())
+        self.add('case_generator', WindRoseCaseGenerator())
+        self.add('driver', Run_Once())
+        self.add('wind_rose_driver', CaseIteratorDriver())
+
+        self.wind_rose_driver.workflow.add('wf')
+        self.wind_rose_driver.printvars = ['wf.power', 'wf.wt_power', 'wf.wt_thrust']
+        
+        ### Wiring
+        self.connect('wwh.wt_layout', 'wf.wt_layout')    
+        self.connect('wind_speeds', 'case_generator.speeds')
+        self.connect('wind_directions', 'case_generator.directions')
+        self.connect('case_generator.cases', 'wind_rose_driver.iterator')
+        self.connect('filename', 'wwh.filename')
+        
+        ### Configure the wind rose postprocessor:
+        ### Are we using only one wind rose for the whole wind farm, or a 
+        ### different wind rose for each turbine?
+        if self.wind_rose_type == 'single':
+            self.add('postprocess_wind_rose', PostProcessSingleWindRose())
+            self.connect('wwh.wind_rose_array', 'postprocess_wind_rose.wind_rose_array')
+        if self.wind_rose_type == 'multiple':
+            self.add('postprocess_wind_rose', PostProcessMultipleWindRoses())
+            self.connect('wwh.wt_layout', 'postprocess_wind_rose.wt_layout')
+
+        ### Common wiring for the postprocessor
+        self.connect('wind_rose_driver.evaluated', 'postprocess_wind_rose.cases')
+        self.connect('postprocess_wind_rose.aep', 'net_aep') 
+        self.connect('postprocess_wind_rose.energies', 'energies')        
+        self.connect('wind_speeds', 'postprocess_wind_rose.speeds')
+        self.connect('wind_directions', 'postprocess_wind_rose.directions')
+        self.driver.workflow.add(['wwh', 'case_generator', 'wind_rose_driver', 'postprocess_wind_rose'])
+        
