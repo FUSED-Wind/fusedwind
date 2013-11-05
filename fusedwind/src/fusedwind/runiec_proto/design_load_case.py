@@ -9,6 +9,7 @@ We might argue for a level between DLC and IECDLC called StudyCase, b/c not all 
 cases are IEC, but not all DLC's are multi-run.
 """
 
+from distn_input import DistnParser
 
 ###############################
 ###### Design load case, no need for openMDAO
@@ -45,6 +46,15 @@ class IECDesignLoadCase(DesignLoadCase):
                 gcases.append(g)
         return gcases
         
+class GenericIECDesignLoadCase(DesignLoadCase):
+    """ one IEC case, e.g. IEC1.4. """
+    def __init__(self, case, params, parser):        
+        """ case is a string 
+        params is a dict of parameters for this case
+        """
+        super(GenericIECDesignLoadCase,self).__init__(case)
+        self.params = params # dict of parameters for this case
+        self.parser = parser # distn_parser object able to generate samples for this case
 
 class RunCase(DesignLoadCase):
     """ a single RUN of the aerocode.
@@ -106,9 +116,49 @@ DLC1.2,  14.3 19.5  ,  1   ,     1  ,	     0.54321,    20.0 ,  60.0
                 else:
                     print "real line: ", ln
                     dlc = ln[0]
-                    d = {fields[i]:ln[i+1] for i in range(len(fields))}
+                    d = {fields[i]:ln[i+1].strip("\"").strip("\t").strip() for i in range(len(fields))}
                     self.cases.append(IECDesignLoadCase(dlc, d))
         print "88_329 cases = ", [[c.name, c.params] for c in self.cases]
+
+
+class NREL13_88_329FromDistn(object):
+    """ format made up by P Graf, closely following spec in 88_329 doc,
+    but making us a generic "distribution format specification" as implemented in
+    distn_input.py.
+    distn_input.py already accepts block of lines that can represent ONE design load case.
+    Just need separator lines.  ok, let's say:
+    "--DLCX.X--"
+    at start of line begins a new block
+    """
+    def __init__(self):
+        super(NREL13_88_329FromDistn, self).__init__()
+    
+    def initFromFile(self, filename, verbose =True):
+        """ make design load cases from simple line by line spec """    
+        fin = file(filename).readlines()
+        print "lines: ", fin
+        thiscase = []
+        casename = ""
+        self.cases = []
+        for iln in range(len(fin)):
+            ln = fin[iln]
+            print ln
+            if (iln == len(fin)-1 or fin[iln+1][0:5] == "--DLC"):
+                # found new case.  first finish up the old one:
+                if (casename == ""):
+                    print "no casename, skipping these lines"
+                else:
+                    thiscase.append(ln)
+                    dparser = DistnParser()
+                    dparser.parse(thiscase)
+                    self.cases.append(GenericIECDesignLoadCase(casename, {}, dparser))
+            elif (ln[0:5] == "--DLC"):
+                casename = ln.strip().strip("-")
+                thiscase = []
+                print "got new case name ", casename
+            else:
+                thiscase.append(ln)
+        print "generic 88_329 cases = ", [[c.name, c.parser] for c in self.cases]
 
 #-----------------------------------------------
 ##### stub so far;  needs to get actual results from run ###
@@ -195,19 +245,72 @@ class DLCRunCaseBuilder(object):
     """ superclass for run cases, ie a single aerodcode run.
     Anything in common to build toward here ??? 
     We want to push anything that is not specific to a certain aerocode to be set up here """
+
+    WSPitch    =   np.array([0.0, 11.0, 12.0, 25.0])
+    Pitch      =   np.array([0.0,  0.0,  4.0, 22.0])
+    WSRpm      =   np.array([0.0, 10.2, 11.4])
+    Rpm        =   np.array([6.0, 10.0, 12.1])
+
     def __init__(self):
         pass
+
+    @staticmethod
+    def GetPitch(ws):
+        return np.interp(ws, FASTRunCaseBuilder.WSPitch, FASTRunCaseBuilder.Pitch)
+
+    @staticmethod
+    def GetRotSpd(ws):
+        return np.interp(ws, FASTRunCaseBuilder.WSRpm, FASTRunCaseBuilder.Rpm)
+
+
+class GenericFASTRunCaseBuilder(DLCRunCaseBuilder):
+    @staticmethod
+    def genRunCases(dlc):
+
+        # first let the dlc's parser generate a list of cases (samples), each of which is a dictionary
+        parser = dlc.parser
+        slist = parser.multi_sample(parser.get_num_samples(),expand_enums=True)
+
+        name = dlc.name
+        print "setting up dlc name %s" % name
+        cases = []
+        params = {}
+
+        for sample in slist:
+            w = sample['Vhub']
+            s = -1 # random seed, not used
+            blpitch1 = DLCRunCaseBuilder.GetPitch(w)
+            rotspeed = DLCRunCaseBuilder.GetRotSpd(w)
+            params['RotSpeed'] = rotspeed
+            params['BlPitch1'] = blpitch1
+            params['BlPitch2'] = blpitch1
+            params['BlPitch3'] = blpitch1
+            ## these b/c some FAST files (that might be the template) use parens:
+            params['BlPitch(1)'] = blpitch1  
+            params['BlPitch(2)'] = blpitch1
+            params['BlPitch(3)'] = blpitch1
+
+            params['TStart'] = sample['TStart']
+            params['TMax'] = params['TStart'] + sample['AnalTime']
+
+            epsHs = 0.1
+            epsTp = 0
+            if ("Hs" in sample):
+                params['WaveHs'] = max(epsHs,sample['Hs'])
+            if ("Tp" in sample):
+                params['WaveTp'] = max(epsTp,sample['Tp'])
+
+            subcase = FASTRunCase(dlc,w,s,params)
+            cases.append(subcase)
+        
+        return cases
+
 
 class FASTRunCaseBuilder(DLCRunCaseBuilder):
     """ setting up a single FAST run.
     relies on some specific variable like windspeed, otherwise a dictionary overriding 
     line by line the entries in the template .fst file 
     """
-
-    WSPitch    =   np.array([0.0, 11.0, 12.0, 25.0])
-    Pitch      =   np.array([0.0,  0.0,  4.0, 22.0])
-    WSRpm      =   np.array([0.0, 10.2, 11.4])
-    Rpm        =   np.array([6.0, 10.0, 12.1])
 
     @staticmethod
     def genRunCases(parent, dlc):
@@ -265,8 +368,8 @@ class FASTRunCaseBuilder(DLCRunCaseBuilder):
         seedlist = range(1,seeds+1)
                 
         for w in ws:
-            blpitch1 = FASTRunCaseBuilder.GetPitch(w)
-            rotspeed = FASTRunCaseBuilder.GetRotSpd(w)
+            blpitch1 = RunCaseBuilder.GetPitch(w)
+            rotspeed = RunCaseBuilder.GetRotSpd(w)
             params['RotSpeed'] = rotspeed
             params['BlPitch1'] = blpitch1
             params['BlPitch2'] = blpitch1
@@ -281,12 +384,4 @@ class FASTRunCaseBuilder(DLCRunCaseBuilder):
                 cases.append(subcase)
         
         return cases
-
-    @staticmethod
-    def GetPitch(ws):
-        return np.interp(ws, FASTRunCaseBuilder.WSPitch, FASTRunCaseBuilder.Pitch)
-
-    @staticmethod
-    def GetRotSpd(ws):
-        return np.interp(ws, FASTRunCaseBuilder.WSRpm, FASTRunCaseBuilder.Rpm)
 

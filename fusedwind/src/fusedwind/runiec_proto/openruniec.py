@@ -13,11 +13,13 @@ from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
 from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator
 from openmdao.lib.datatypes.api import Str, Int
 
-
-from twister.models.FAST import mkgeom
+### For NREL insiders:
+#from twister.models.FAST.mkgeom import makeGeometry
+### For the rest
+from twister_mkgeom import makeGeometry
 
 from openaero import openFAST
-from design_load_case import  NREL13_88_329Input
+from design_load_case import  NREL13_88_329Input, NREL13_88_329FromDistn
 
 #import logging
 #logging.getLogger().setLevel(logging.DEBUG)
@@ -141,13 +143,15 @@ class CaseAnalyzer(Assembly):
             print "aerocode wrapper= ", aero
             print "aerocode wrapper's underlying code = ", fast
             print case.ws, case.randomseed, max(fast.getOutputValue("RotPwr"))
-        print "again: windspeed, randomseed, max power"
+#        print "again: windspeed, randomseed, max power"
+        print "again: windspeed, waveheight, max power"
         for c in self.ws_driver.recorders[0].get_iterator():
             res =  c['runner.output']
             aero = res.aerocode
             fast = aero.rawfast  ### this may not exist, only for fast wrapper
             case = c['runner.input']
-            print case.ws, case.randomseed, fast.getMaxPower()  ### this may not exist, just an example
+#            print case.ws, case.randomseed, fast.getMaxPower()  ### this may not exist, just an example
+            print "%.2f  %.2f   %.2f" % (case.ws, case.fst_params['WaveHs'], fast.getMaxPower())  ### this may not exist, just an example
 
 #######################################
         
@@ -170,9 +174,13 @@ class RunControlInput(object):
 def get_options():
     from optparse import OptionParser
     parser = OptionParser()    
-    parser.add_option("-i", "--input", dest="main_input",  type="string", default="pgcases.txt",
+#    parser.add_option("-i", "--input", dest="main_input",  type="string", default="pgcases.txt",
+#                                    help="main input file")
+#    parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="generic_88-329",
+#                                    help="input file type: one of:old_perl, generic_88-329, list. default:generic_88-329")
+    parser.add_option("-i", "--input", dest="main_input",  type="string", default="dlcgenericproto.txt",
                                     help="main input file")
-    parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="generic_88-329",
+    parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="generic_88-329-distn",
                                     help="input file type: one of:old_perl, generic_88-329, list. default:generic_88-329")
     parser.add_option("-p", "--parallel", dest="run_parallel", help="run in parallel", action="store_true", default=False)
     
@@ -196,10 +204,15 @@ def parse_input(infile, options):
         # for old users
         ctrl.cases['source_type'] = "old_perl"
         ctrl.cases['source_file'] = infile
-    elif (options.input_type == "generic_88-329"):
+    elif (options.input_type == "generic_88-329-csv"):
         # this evolving into a csv-format that could potentially be exported form excel.
         # each row represents a single DLC from 88_329 standard
-        ctrl.cases['source_type'] = "generic_88-329"
+        ctrl.cases['source_type'] = "generic_88-329-csv"
+        ctrl.cases['source_file'] = infile        
+    elif (options.input_type == "generic_88-329-distn"):
+        # this evolving into a csv-format that could potentially be exported form excel.
+        # each row represents a single DLC from 88_329 standard
+        ctrl.cases['source_type'] = "generic_88-329-distn"
         ctrl.cases['source_file'] = infile        
     else:
         ## strictly for testing the dispatcher 
@@ -229,8 +242,11 @@ def create_load_cases(case_params):
             for subcase in case.subcases:
                 print subcase.ws, subcase.randomseed
         cases = obj.cases
-    elif (case_params['source_type'] == "generic_88-329"):
+    elif (case_params['source_type'] == "generic_88-329-csv"):
         obj = NREL13_88_329Input()
+        obj.initFromFile(case_params['source_file'], verbose=True)
+    elif (case_params['source_type'] == "generic_88-329-distn"):
+        obj = NREL13_88_329FromDistn()
         obj.initFromFile(case_params['source_file'], verbose=True)
     elif (case_params['source_type'] == "list"):
         case_list = ctrl.cases['case_list']  ## testing    
@@ -258,7 +274,7 @@ def create_aerocode_wrapper(aerocode_params):
 
     if solver=='FAST':
         ## TODO, changed when we have a real turbine
-        geometry, atm = mkgeom.makeGeometry()
+        geometry, atm = makeGeometry()
         w = openFAST(geometry, atm)
     elif solver == 'HAWC2':
         w = openHAWC2(None)

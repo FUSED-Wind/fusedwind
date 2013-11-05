@@ -4,11 +4,13 @@ from openmdao.main.api import Component, Assembly, FileMetadata
 from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.datatypes.slot import Slot 
 
-from twister.models.FAST.runFAST import runFAST
-from twister.models.FAST import mkgeom
+### For NREL insiders
+#from twister.models.FAST.runFAST import runFAST
+### for others
+from twister_runFAST import runFAST
 
 #from design_load_case import DesignLoadCase, DLCResult,  FASTRunCase, FASTDLCResult, NREL13_88_329Input, FASTRunCaseBuilder
-from design_load_case import DesignLoadCase, DLCResult, FASTDLCResult,  FASTRunCaseBuilder
+from design_load_case import DesignLoadCase, DLCResult, FASTDLCResult,  FASTRunCaseBuilder, GenericFASTRunCaseBuilder
 
 ########### aerocode #####################
 ## generic aeroelastic analysis code (e.g. FAST, HAWC2,)
@@ -45,7 +47,8 @@ class openFAST(openAeroCode):
     def genRunCases(self,case):
         """ from, e.g., 'DLC1.1', generate FAST specific RunCases """
 #        mycases = FASTRunCaseBuilder.genRunCases(case, {"@WindSpeeds":["11,", "13"], "NumSeeds":"2", "NumWavePer":"3"})
-        mycases = FASTRunCaseBuilder.genRunCases(case, case.params)
+#        mycases = FASTRunCaseBuilder.genRunCases(case, case.params)
+        mycases = GenericFASTRunCaseBuilder.genRunCases(case)
         return mycases
 
 class runFASText(ExternalCode):
@@ -121,6 +124,8 @@ class runFASText(ExternalCode):
             # self.copy_results_dirs(results_dir, '', overwrite=True)
 
             files = glob.glob('test' + '.*')  # TODO: "test" b/c coded into runFAST.py
+            for f in glob.glob('NREL' + '*.*'):  # TODO: "NREL" b/c name of template file
+                files.append(f)
             files.append('error.out')  #  TODO: other files we need ?
             
             for filename in files:
