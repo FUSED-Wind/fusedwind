@@ -8,7 +8,7 @@
 
 
 from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
-from numpy import pi, sqrt, dot
+from numpy import pi, sqrt, dot, diff
 from numpy.linalg.linalg import norm
 from openmdao.lib.datatypes.api import  Bool, VarTree, Float, Slot, Array, List, Int, Str, Dict
 #from openmdao.lib.drivers.api import CaseIteratorDriver # KLD: temporary version issues
@@ -18,6 +18,7 @@ from openmdao.lib.casehandlers.api import ListCaseIterator
 from openmdao.main.interfaces import implements, ICaseRecorder, ICaseIterator
 from openmdao.main.case import Case
 
+import matplotlib.pylab as plt
 
 # ---------------------------------------------------------
 # Variable Tree Containers
@@ -48,16 +49,39 @@ class ExtendedWindTurbinePowerCurveVT(GenericWindTurbinePowerCurveVT):
     pitch_curve = Array(desc='The wind turbine pitch curve', unit='deg') # P-E: It goes hand in hand with RPM curve usually
     #dB_curve = Array(desc='Machine decibal output [dB] by wind speed at hub') # KLD: important but perhaps not for generic analysis #P-E: I have never seen these types of curves, but if you have these as data inputs, why not
 
+class GenericWindRoseVT(VariableTree):
+    directions = Array(desc='Direction sectors angles [n_wd]', unit='deg')
+    speeds = Array(desc='wind speeds sectors [n_ws]', unit='m/s')
+    frequency_array = Array(desc='Frequency by direction sectors and by wind speed sectors [n_wd, n_ws]', unit='')   
+
+    def contourf(self):
+        """ Plot a contour of the wind rose """
+        fig = plt.figure()
+        ax = fig.add_subplot(111, polar=True)
+        def mirror(d):
+            out = 90.0 - d
+            if out <0.0:
+                return 360.0 + out
+            return out
+        ax.set_xticklabels([u'%d\xb0'%(mirror(d)) for d in linspace(0.0, 360.0,9)[:-1]])
+        dirs = array(self.directions.tolist()+[360])
+        freq = self.frequency_array[range(len(self.directions))+[0],:]
+        c=ax.contourf(pi/2.0-dirs* pi / 180.,
+                    self.speeds, freq.T, 100, cmap=plt.cm.gist_ncar_r)
+        fig.colorbar(c)
+
 # KLD: added for both AEP and wind farm assemblies, P-E: OK!
 class GenericWindFarmTurbineLayout(VariableTree):
 # MODIFIED 17/06 KLD: only one farm layout class necessary if single turbine is a list of 1
     wt_list = List(GenericWindTurbinePowerCurveVT(), iotype='in', desc='The wind turbine list of descriptions') # KLD: shouldnt these include power curves?
     wt_positions = Array([], unit='m', iotype='in', desc='Array of wind turbines attached to particular positions') # KLD: no particular units? (lat, long)? # P-E: I would rather have the unit defined, otherwise we might introduce some bugs 
+    wt_wind_roses = List(iotype='in', desc='wind rose for each wind turbine position')
 
 #MODIFIED 19/06 P-E: Extending the class to handle single wind turbine farms as well
     single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
     wind_turbine = VarTree(GenericWindTurbinePowerCurveVT(), iotype='in', desc='wind turbine power curve') 
         
+    @property
     def n_wt(self):
         return self.wt_positions.shape[0]
 
@@ -73,7 +97,7 @@ class GenericWindFarmTurbineLayout(VariableTree):
 
         if len(self.wt_list) > 0:
             self.wind_turbine = self.wt_list[0]
-        self.wt_list = [self.wind_turbine] * self.n_wt()    
+        self.wt_list = [self.wind_turbine] * self.n_wt    
         self.single_wind_turbine = True
 
 # KLD: added for both AEP and wind farm assemblies

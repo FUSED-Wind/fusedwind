@@ -1,0 +1,226 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>fused_wake.noj &mdash; fused_wake 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="fused_wake 0.1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">fused_wake 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for fused_wake.noj</h1><div class="highlight"><pre>
+<span class="c">#__all__ = [&#39;fused_wake&#39;]</span>
+
+<span class="c">#FUSED-Wake imports</span>
+<span class="c">#from fused_wake.io import GenericWindTurbineVT</span>
+<span class="c">#from fused_wake.windturbine import WindTurbinePowerCurve</span>
+<span class="c">#from io import GenericWindTurbineVT</span>
+<span class="kn">from</span> <span class="nn">wake</span> <span class="kn">import</span> <span class="n">GenericWindFarmWake</span><span class="p">,</span> \
+    <span class="n">HomogeneousInflowGenerator</span><span class="p">,</span> <span class="n">QuadraticWakeSum</span><span class="p">,</span> \
+    <span class="n">HubCenterWSPosition</span><span class="p">,</span> <span class="n">HubCenterWS</span><span class="p">,</span> <span class="n">GenericEngineeringWakeModel</span>
+
+<span class="c">#FUSED Wind imports</span>
+<span class="kn">from</span> <span class="nn">fusedwind.plant_flow.fused_plant_vt</span> <span class="kn">import</span> <span class="n">GenericWindTurbineVT</span>
+<span class="kn">from</span> <span class="nn">fusedwind.plant_flow.fused_plant_comp</span> <span class="kn">import</span> <span class="n">WindTurbinePowerCurve</span>
+
+<span class="c">#OpenMDAO imports</span>
+<span class="kn">from</span> <span class="nn">openmdao.lib.datatypes.api</span> <span class="kn">import</span> <span class="n">VarTree</span><span class="p">,</span> <span class="n">Float</span>
+
+<span class="c">#Other imports</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">sin</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">arccos</span>
+
+
+<div class="viewcode-block" id="NOJWakeModel"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.NOJWakeModel">[docs]</a><span class="k">class</span> <span class="nc">NOJWakeModel</span><span class="p">(</span><span class="n">GenericEngineeringWakeModel</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The N.O. Jensen wake model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">k</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="mf">0.04</span><span class="p">,</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;The wake spreading parameter&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NOJWakeModel.single_wake"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.NOJWakeModel.single_wake">[docs]</a>    <span class="k">def</span> <span class="nf">single_wake</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">dr</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        X : Stream wise wake distance</span>
+<span class="sd">        dr: Cross wise wake distance</span>
+<span class="sd">        ws: local inflow wind speed</span>
+
+<span class="sd">        Output:</span>
+<span class="sd">        DU: the axial velocity deficit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">X</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="c"># No wake upstream in this model!</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_desc</span><span class="o">.</span><span class="n">rotor_diameter</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="c"># NOJ Specific</span>
+        <span class="n">Rw</span> <span class="o">=</span> <span class="n">R</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">*</span> <span class="n">X</span>  <span class="c"># upstream turbine wake radius</span>
+        <span class="n">DU</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_t</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="o">/</span> <span class="n">R</span><span class="p">)</span> <span class="o">**</span> <span class="mf">2.0</span>
+
+        <span class="k">if</span> <span class="n">dr</span> <span class="o">&lt;</span> <span class="nb">abs</span><span class="p">(</span><span class="n">Rw</span><span class="p">):</span>
+            <span class="k">return</span> <span class="o">-</span> <span class="n">ws</span><span class="o">*</span><span class="n">DU</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+</div></div>
+<div class="viewcode-block" id="MozaicTileWakeModel"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.MozaicTileWakeModel">[docs]</a><span class="k">class</span> <span class="nc">MozaicTileWakeModel</span><span class="p">(</span><span class="n">NOJWakeModel</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The N.O. Jensen wake model, the wake model will assume that there is a</span>
+<span class="sd">    downstream wind turbine, and the deficit will be calculated</span>
+<span class="sd">    using the mozaic tile approach.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">down_wt_desc</span> <span class="o">=</span> <span class="n">VarTree</span><span class="p">(</span><span class="n">GenericWindTurbineVT</span><span class="p">(),</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span>
+                           <span class="n">desc</span><span class="o">=</span><span class="s">&#39;Downstream wind turbine descriptor (only used when partial=True)&#39;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="MozaicTileWakeModel.single_wake"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.MozaicTileWakeModel.single_wake">[docs]</a>    <span class="k">def</span> <span class="nf">single_wake</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">dr</span><span class="p">,</span> <span class="n">ws</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        X : Stream wise wake distance</span>
+<span class="sd">        dr: Cross wise wake distance</span>
+<span class="sd">        ws: local inflow wind speed</span>
+
+
+<span class="sd">        Output:</span>
+<span class="sd">        Return the axial velocity deficit</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">X</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="c"># No wake upstream in this model!</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+
+        <span class="n">R</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_desc</span><span class="o">.</span><span class="n">rotor_diameter</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="n">Rw</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">R</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span>  <span class="c"># upstream turbine wake radius</span>
+        <span class="n">DU</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">sqrt</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_t</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">*</span> <span class="n">X</span><span class="p">)</span> <span class="o">/</span> <span class="n">R</span><span class="p">)</span> <span class="o">**</span> <span class="mf">2.0</span>
+
+        <span class="c"># There is a downstream wind turbine, so we activate the partial wake</span>
+        <span class="c"># calculation</span>
+        <span class="n">cR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">down_wt_desc</span><span class="o">.</span><span class="n">rotor_diameter</span> <span class="o">/</span> <span class="mf">2.0</span>
+        <span class="k">if</span> <span class="n">dr</span> <span class="o">+</span> <span class="n">cR</span> <span class="o">&lt;</span> <span class="n">Rw</span><span class="p">:</span>
+            <span class="c"># Complete wake</span>
+            <span class="k">return</span> <span class="o">-</span> <span class="n">ws</span><span class="o">*</span><span class="n">DU</span>
+        <span class="k">elif</span> <span class="n">dr</span> <span class="o">&gt;</span> <span class="n">cR</span> <span class="o">+</span> <span class="n">Rw</span><span class="p">:</span>
+            <span class="c"># Outside the wake</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Partial wake</span>
+            <span class="n">alpha1</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">arccos</span><span class="p">((</span>
+                <span class="n">cR</span> <span class="o">**</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">dr</span> <span class="o">**</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="n">Rw</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">cR</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dr</span><span class="p">)))</span>
+            <span class="n">alpha2</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">arccos</span><span class="p">((</span>
+                <span class="n">Rw</span> <span class="o">**</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">dr</span> <span class="o">**</span> <span class="mf">2.0</span> <span class="o">-</span> <span class="n">cR</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mf">2.0</span> <span class="o">*</span> <span class="n">Rw</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">dr</span><span class="p">)))</span>
+            <span class="n">qki</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">cR</span> <span class="o">**</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">alpha1</span> <span class="o">-</span> <span class="n">sin</span><span class="p">(</span><span class="n">alpha1</span><span class="p">))</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">Rw</span> <span class="o">**</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="p">(</span>
+                <span class="n">alpha2</span> <span class="o">-</span> <span class="n">sin</span><span class="p">(</span><span class="n">alpha2</span><span class="p">)))</span> <span class="o">/</span> <span class="p">(</span><span class="n">pi</span> <span class="o">*</span> <span class="n">cR</span> <span class="o">**</span> <span class="mf">2.0</span><span class="p">)</span>
+            <span class="n">DU</span> <span class="o">=</span> <span class="p">(</span><span class="n">DU</span> <span class="o">*</span> <span class="n">qki</span><span class="p">)</span>
+            <span class="k">return</span> <span class="o">-</span> <span class="n">ws</span><span class="o">*</span><span class="n">DU</span>
+
+</div></div>
+<div class="viewcode-block" id="NOJWindFarmWake"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.NOJWindFarmWake">[docs]</a><span class="k">class</span> <span class="nc">NOJWindFarmWake</span><span class="p">(</span><span class="n">GenericWindFarmWake</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The Original NOJ model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="NOJWindFarmWake.configure"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.NOJWindFarmWake.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">NOJWindFarmWake</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;ws_positions&#39;</span><span class="p">,</span> <span class="n">HubCenterWSPosition</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;wake_sum&#39;</span><span class="p">,</span> <span class="n">QuadraticWakeSum</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;hub_wind_speed&#39;</span><span class="p">,</span> <span class="n">HubCenterWS</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;wt_model&#39;</span><span class="p">,</span> <span class="n">WindTurbinePowerCurve</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;wake_model&#39;</span><span class="p">,</span> <span class="n">NOJWakeModel</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;inflow_gen&#39;</span><span class="p">,</span> <span class="n">HomogeneousInflowGenerator</span><span class="p">())</span>
+        <span class="k">if</span> <span class="s">&#39;k&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_inputs</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_passthrough</span><span class="p">(</span><span class="s">&#39;wake_model.k&#39;</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="MozaicTileWindFarmWake"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.MozaicTileWindFarmWake">[docs]</a><span class="k">class</span> <span class="nc">MozaicTileWindFarmWake</span><span class="p">(</span><span class="n">NOJWindFarmWake</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The Mozaic Tile model from Rathmann. Based on the NOJ model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="MozaicTileWindFarmWake.configure"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.MozaicTileWindFarmWake.configure">[docs]</a>    <span class="k">def</span> <span class="nf">configure</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MozaicTileWindFarmWake</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">configure</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s">&#39;wake_model&#39;</span><span class="p">,</span> <span class="n">MozaicTileWakeModel</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wake_driver</span><span class="o">.</span><span class="n">wt_connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;wake_model.down_wt_desc&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MozaicTileWindFarmWake.configure_single_turbine_type"><a class="viewcode-back" href="../../srcdocs.html#fused_wake.noj.MozaicTileWindFarmWake.configure_single_turbine_type">[docs]</a>    <span class="k">def</span> <span class="nf">configure_single_turbine_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MozaicTileWindFarmWake</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">configure_single_turbine_type</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s">&#39;wt_list[0]&#39;</span><span class="p">,</span> <span class="s">&#39;wake_model.down_wt_desc&#39;</span><span class="p">)</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">fused_wake 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright .
+      Last updated on Sep 17, 2013.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>
