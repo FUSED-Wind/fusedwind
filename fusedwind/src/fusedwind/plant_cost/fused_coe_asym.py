@@ -1,29 +1,14 @@
 # KLD: Cost model for FUSED_Wind - most basic structure
 
-from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
-from numpy import pi, sqrt, dot
-from numpy.linalg.linalg import norm
-from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str, Dict
-#from openmdao.lib.drivers.api import CaseIteratorDriver # KLD: temporary version issues
-from openmdao.main.api import Driver, Run_Once
-from openmdao.main.api import Component, Assembly, VariableTree, Container  # , IOInterface
-from openmdao.lib.casehandlers.api import ListCaseIterator
-from openmdao.main.interfaces import implements, ICaseRecorder, ICaseIterator
-from openmdao.main.case import Case
-from fused_plant import GenericAEPModel
+from openmdao.lib.datatypes.api import Float, Int
+from openmdao.main.api import Component, Assembly
 
+from fusedwind.plant_flow.fused_plant_asym import GenericAEPModel
 
-# ------------------------------------------------------------
-# Components and Assembly Base Classes
-class GenericTurbineCapitalCostModel(Assembly):
-    """
-    Framework for a turbine capital cost model
-    """
+##########################################################
+# Plant Cost Models 
 
-    # Outputs
-    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
-
-
+# Balance of Station Cost Model
 class GenericBOSCostModel(Assembly):
     """
     Framework for a balance of station cost model
@@ -32,7 +17,16 @@ class GenericBOSCostModel(Assembly):
     # Outputs
     bos_cost = Float(0.0, iotype='out', desc='Overall wind plant balance of station/system costs up to point of comissioning')
 
+class ExtendedBOSCostModel(GenericBOSCostModel):
+    """
+    Framework for a balance of station cost model
+    """
 
+    # Outputs
+    #bos_cost = Float(0.0, iotype='out', desc='Overall wind plant balance of station/system costs up to point of comissioning')
+
+
+# OPEX Model
 class GenericOPEXModel(Assembly):
     """
     Framework for a operations expenditures model that gives a single annual average operations expenditure over the plants lifetime
@@ -59,7 +53,7 @@ class GenericDECOMEXModel(Assembly):
     # Outputs
     decomex = Float(0.0, iotype='out', desc='General DECOMEX model produces Decomissioning Expenditures for a wind plant for the end of its life')
 
-
+# Financial Model
 class GenericFinancialModel(Assembly):
     """
     Framework for a general financial model with upfront capital cost inputs and long-term averages for OPEX and net annual energy production
@@ -74,7 +68,7 @@ class GenericFinancialModel(Assembly):
     #Outputs
     lcoe = Float(0.0, iotype='out', desc='Levelized cost of energy for the wind plant')
 
-class EnhancedFinancialModel(GeneralFinancialModel):
+class EnhancedFinancialModel(GenericFinancialModel):
     """
     Framework for an enhanced financial / cash flow model that takes into account the variability of OPEX and net annual energy production over time
     """
@@ -84,8 +78,9 @@ class EnhancedFinancialModel(GeneralFinancialModel):
     annual_net_aep = Array([], iotype='in', desc='Array of net annual energy production which may vary over time')
 
 
-# -----------------------------------------------------------------------
-# Implementation assembly shells
+
+#########################################################################
+# Implementation assembly shells-
 
 #KLD: this assembly will probably not be in typical use cases
 class CAPEXAnalysis(Assembly):
@@ -106,7 +101,6 @@ class CAPEXAnalysis(Assembly):
         super(CAPEXAnalysis, self).execute()
         
         self.capex = tcc.turbine_cost + bos.bos_cost
-
 
 # Main financial assembly
 class GenericFinancialAnalysis(Assembly):
