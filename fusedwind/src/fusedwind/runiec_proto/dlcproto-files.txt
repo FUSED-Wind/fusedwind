@@ -1,0 +1,5 @@
+# key = value file of locations of various files to read and
+# to write
+
+main_output_file = "dlcproto.out"
+
