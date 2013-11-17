@@ -97,10 +97,10 @@ def parse_arg(a):
         z1 = z.group(1).strip()
         z2 = z.group(2).strip()
         z3 = z.group(3).strip()
-        print "found complex arg:", z1, z2, z3 
+#        print "found complex arg:", z1, z2, z3 
         alist = [z1,z2,z3]
     else:
-        print "found simple arg:", a
+#        print "found simple arg:", a
         alist = [a.strip()]
     return alist
 
@@ -178,7 +178,7 @@ class DistnParser(object):
             if (len(ln) > 0 and ln[0] != "#"):
                 # first get rid of anything past any "#" on the right
                 ln = ln.split("#")[0]
-                print "your line: ", ln
+ #               print "your line: ", ln
                 # separate vars from the distn
                 tok = ln.split("=")
                 if len(tok) > 1:
@@ -207,21 +207,21 @@ class DistnParser(object):
                         for a in args:
                             alist = parse_arg(a)
                             arglist.append(alist)    
-                        print "found dist=", dist, " arglist=", arglist
+#                        print "found dist=", dist, " arglist=", arglist
                         self.dlist.append(FnDistn(vstr,dist,arglist, self))
                     elif dspec[0] == "{":
                         # found a set
                         args = [s.strip() for s in dspec.strip("{").strip("}").split(",")]
 #                        args = [float(s) for s in args]
-                        print "found set ", args
+#                        print "found set ", args
                         args = [parse_arg(a) for a in args]
-                        print "FOUND set ", args
+#                        print "FOUND set ", args
                         self.dlist.append(EnumDistn(vstr,args, self))
                     else:
                         try:
                             arg = [parse_arg(dspec)]
                             # found a value. TODO: tuples
-                            print "found number ", arg
+#                            print "found number ", arg
                             self.dlist.append(EnumDistn(vstr, arg, self))
                         except:
                             print "cannot parse distribution spec ", dspec
@@ -251,7 +251,7 @@ class DistnParser(object):
         self.clear_values()
         for d in self.dlist:
             s = d.sample()
-            print "sampled ", d.vstr, " and got ", s
+#            print "sampled ", d.vstr, " and got ", s
             self.set_value(d.vstr,s)
 
     def add_enum(self, slist, enum):
@@ -261,7 +261,7 @@ class DistnParser(object):
         output = slist X enum.items
         """
         newlist = []
-        print "add enum, slist, enum.items", slist, enum.items
+#        print "add enum, slist, enum.items", slist, enum.items
         for s in slist: 
             for x in enum.items:
                 item = {}
@@ -270,8 +270,8 @@ class DistnParser(object):
                     self.set_value(y,s[y])
                 item[enum.vstr] = self.resolve_value(x)
                 newlist.append(item)                
-                print "appended item to newlist" , item, newlist
-        print newlist
+#                print "appended item to newlist" , item, newlist
+#        print newlist
         return newlist
 
     def expand_enums(self):
@@ -288,17 +288,17 @@ class DistnParser(object):
         for d in self.dlist:
             if (hasattr(d,"fn")):
                 s = d.sample()
-                print "sampled ", d.vstr, " and got ", s
+#                print "sampled ", d.vstr, " and got ", s
                 self.set_value(d.vstr,s)
         return self.values
 
     def multi_sample(self, numsamples, expand_enums=False):
         slist = []
         if (expand_enums):
-            print "expanding set variables, then sampling %d times" % numsamples
+#            print "expanding set variables, then sampling %d times" % numsamples
             # make slist of product space of set vars.
             enum_list = self.expand_enums()
-            print "enum_list", enum_list
+#            print "enum_list", enum_list
             for e in enum_list:
                 self.clear_values()
                 self.set_values(e)
@@ -306,33 +306,30 @@ class DistnParser(object):
                     # now truly sampled vars to each of them                    
                     # combine real samples to enum cases
                     vals = self.sample_fns()
-                    print vals, e
+#                    print vals, e
                     vals = merge_dicts(vals, e)
                     slist.append(vals)
         else:            
-            print "sampling %d times" % numsamples
+#            print "sampling %d times" % numsamples
             for i in range(numsamples):
                 self.clear_values()
                 vals = self.sample()
-                print "sample %d = " % i, self.values
+#                print "sample %d = " % i, self.values
                 slist.append(self.values)
         
         return slist
 
     def resolve_one_value(self,a):
-        print "resolve_one_value()", a        
+#        print "resolve_one_value()", a        
         if (is_float(a)):
             return float(a)
         else:
             for d in self.dlist:
-                print "comparing :%s: and :%s:" % (a, d.vstr)
                 if a == d.vstr:
-                    print "need to resolve self.values[%s]" % a
                     return self.values[a]
 
 
     def resolve_value(self,a):
-        print "resolve_value()", a
         if (len(a) == 1):
             return self.resolve_one_value(a[0])
         else:

@@ -103,7 +103,7 @@ class CaseAnalyzer(Assembly):
         # comment this line out to run sequentially
         self.ws_driver.sequential = not self.run_parallel
         # uncomment to keep simulation directories for debugging purposes
-     #   os.environ['OPENMDAO_KEEPDIRS'] = '1'
+        #os.environ['OPENMDAO_KEEPDIRS'] = '1'
 
 
         print "dispatcher configured\n-------------------------------------------\n"
@@ -144,14 +144,19 @@ class CaseAnalyzer(Assembly):
             print "aerocode wrapper's underlying code = ", fast
             print case.ws, case.randomseed, max(fast.getOutputValue("RotPwr"))
 #        print "again: windspeed, randomseed, max power"
-        print "again: windspeed, waveheight, max power"
+        fout = file(output_params['main_output_file'], "w")
+        fout.write( "#Results summary: \n")
+        fout.write( "#Vs Hs Tp WaveDir, TwrBsMxt \n")
         for c in self.ws_driver.recorders[0].get_iterator():
             res =  c['runner.output']
             aero = res.aerocode
             fast = aero.rawfast  ### this may not exist, only for fast wrapper
             case = c['runner.input']
 #            print case.ws, case.randomseed, fast.getMaxPower()  ### this may not exist, just an example
-            print "%.2f  %.2f   %.2f" % (case.ws, case.fst_params['WaveHs'], fast.getMaxPower())  ### this may not exist, just an example
+#            print "%.2f  %.2f   %.2f" % (case.ws, case.fst_params['WaveHs'], fast.getMaxPower())  ### this may not exist, just an example
+
+#            print "%s   %.2f" % (case.name, fast.getMaxOutputValue('TwrBsMxt', directory=aero.results_dir))  ### this may not exist, just an example
+            fout.write( "%.2f %.2f %.2f %.2f   %.2f\n" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], fast.getMaxOutputValue('TwrBsMxt', directory=aero.results_dir)))  ### this may not exist, just an example
 
 #######################################
         
@@ -178,14 +183,28 @@ def get_options():
 #                                    help="main input file")
 #    parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="generic_88-329",
 #                                    help="input file type: one of:old_perl, generic_88-329, list. default:generic_88-329")
-    parser.add_option("-i", "--input", dest="main_input",  type="string", default="dlcgenericproto.txt",
-                                    help="main input file")
+    parser.add_option("-i", "--input", dest="main_input",  type="string", default="dlcproto-cases.txt",
+                                    help="main input file describing cases to run")
+    parser.add_option("-f", "--files", dest="file_locs",  type="string", default="dlcproto-files.txt",
+                                    help="main input file describing locations of template files, and output files to write")
     parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="generic_88-329-distn",
                                     help="input file type: one of:old_perl, generic_88-329, list. default:generic_88-329")
     parser.add_option("-p", "--parallel", dest="run_parallel", help="run in parallel", action="store_true", default=False)
     
     (options, args) = parser.parse_args()
     return options, args
+
+def read_file_string(tag, fname):
+    lns = file(fname).readlines()
+    for ln in lns:
+        ln = ln.strip()
+        if ln == "" or ln[0] == "#":
+            pass
+        else:
+            ln = ln.split("=")
+            if ln[0].strip() == tag:
+                val = ln[1].strip().strip("\"").strip("\'")
+                return val
 
 def parse_input(infile, options):
     """ input comes in a lot of categories, roughly broken into:
@@ -223,6 +242,9 @@ def parse_input(infile, options):
         ## turns on openmdao concurrent execution stuff
         print "parallel run"
         ctrl.dispatcher['parallel'] = True
+
+    # read file locations
+    ctrl.output['main_output_file'] = read_file_string("main_output_file", options.file_locs)
 
     return ctrl
 

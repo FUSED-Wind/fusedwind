@@ -59,11 +59,26 @@ class runFASText(ExternalCode):
     input = Slot(DesignLoadCase, iotype='in')
     output = Slot(DLCResult, iotype='out')
 
+#    fast_outputs = ['WindVxi', 'Azimuth', 'RotSpeed',  'BldPitch1',  'RotTorq', 'RotPwr',  'RotThrust', 'GenPwr' , 'GenTq' , 'OoPDefl1',
+#                    'IPDefl1', 'TwstDefl1', 'RootMxc1']
+    fast_outputs = ['WindVxi','RotSpeed', 'RotPwr', 'GenPwr', 'RootMxc1', 'RootMyc1', 'LSSGagMya', 'LSSGagMza', 'YawBrMxp', 'YawBrMyp','TwrBsMxt',
+                    'Fair1Ten', 'Fair2Ten', 'Fair3Ten', 'Anch1Ten', 'Anch2Ten', 'Anch3Ten']
     def __init__(self, geom, atm):
         super(runFASText,self).__init__()
         self.rawfast = runFAST(geom, atm)
+#        self.rawfast.setFastFile("MyFastInputTemplate.fst")  # still needs to live in "InputFilesToWrite/"
+        self.rawfast.model_path = 'ModelFiles/'
+        self.rawfast.template_path = "InputFilesToWrite/"
+        self.rawfast.wamit_path = "ModelFiles/WAMIT/spar"
+        self.rawfast.setFastFile("floater.fst")  # still needs to live in "InputFilesToWrite/"
+        self.rawfast.setOutputs(self.fast_outputs)
+
+        self.basedir = os.path.join(os.getcwd(),"all_runs")
+        try:
+            os.mkdir(self.basedir)
+        except:
+            print "failed to make base dir all_runs; or it exists"
         
-        self.basedir = os.getcwd()
         self.copyback_files = True
         
         self.appname = self.rawfast.getBin()
@@ -71,11 +86,26 @@ class runFASText(ExternalCode):
 #        noiset = os.path.join(template_dir, self.rawfast.noise_template)
 #        fastt = os.path.join(template_dir, self.rawfast.template_file)
         noiset = os.path.join("InputFilesToWrite", "Noise.v7.02.ipt")
-        fastt = os.path.join("InputFilesToWrite", "NREL5MW_Monopile_Rigid.v7.02.fst")
+        adt = os.path.join("InputFilesToWrite", "NREL5MW.ad")
+        bladet = os.path.join("InputFilesToWrite", "NREL5MW_Blade.dat")
+        ptfmt = os.path.join("InputFilesToWrite", "test.ptfm")
+        foundationt = os.path.join("ModelFiles", "NREL5MW_Monopile_Tower_RigFnd.dat")
+        spar1 = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.1"))
+        spar3 = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.3"))
+        sparhst = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.hst"))
+#        fastt = os.path.join("InputFilesToWrite", "NREL5MW_Monopile_Rigid.v7.02.fst")
+        fastt = os.path.join("InputFilesToWrite",  self.rawfast.fast_file)
         self.command = [self.appname, "test.fst"]
                 
         self.external_files = [
             FileMetadata(path=noiset, binary=False),
+            FileMetadata(path=adt, binary=False),
+            FileMetadata(path=bladet, binary=False),
+            FileMetadata(path=ptfmt, binary=False),
+            FileMetadata(path=spar1, binary=False),
+            FileMetadata(path=spar3, binary=False),
+            FileMetadata(path=sparhst, binary=False),
+            FileMetadata(path=foundationt, binary=False),
             FileMetadata(path=fastt, binary=False)]
         for nm in self.rawfast.getafNames():  
             self.external_files.append(FileMetadata(path="%s" % nm, binary=False))
@@ -112,9 +142,9 @@ class runFASText(ExternalCode):
         
         # also, copy all the output and input back "home"
         if (self.copyback_files):
-            results_dir = os.path.join(self.basedir, case.name)
+            self.results_dir = os.path.join(self.basedir, case.name)
             try:
-                os.mkdir(results_dir)
+                os.mkdir(self.results_dir)
             except:
                 # print 'error creating directory', results_dir
                 # print 'it probably already exists, so no problem'
@@ -130,5 +160,5 @@ class runFASText(ExternalCode):
             
             for filename in files:
 #                print "wanting to copy %s to %s" % (filename, results_dir) ## for debugging, don't clobber stuff you care about!
-                shutil.copy(filename, results_dir)
+                shutil.copy(filename, self.results_dir)
 

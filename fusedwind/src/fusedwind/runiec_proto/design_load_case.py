@@ -87,6 +87,9 @@ class FASTRunCase(WindRandomSeedRunCase):
     def __init__(self, parent, windspeed, randomseed, fst_params):
         super(FASTRunCase,self).__init__(parent, windspeed, randomseed)
         self.fst_params = copy.deepcopy(fst_params) # dict of FAST keywords/values to override
+        # override name for uniqueness
+        for p in fst_params:
+            self.name += "%s.%.1f" % (p[0:3],fst_params[p])
 
         
 class NREL13_88_329Input(object):
@@ -136,13 +139,13 @@ class NREL13_88_329FromDistn(object):
     def initFromFile(self, filename, verbose =True):
         """ make design load cases from simple line by line spec """    
         fin = file(filename).readlines()
-        print "lines: ", fin
+#       print "lines: ", fin
         thiscase = []
         casename = ""
         self.cases = []
         for iln in range(len(fin)):
             ln = fin[iln]
-            print ln
+#            print ln
             if (iln == len(fin)-1 or fin[iln+1][0:5] == "--DLC"):
                 # found new case.  first finish up the old one:
                 if (casename == ""):
@@ -264,6 +267,8 @@ class DLCRunCaseBuilder(object):
 
 
 class GenericFASTRunCaseBuilder(DLCRunCaseBuilder):
+    # generic parser and sampler, but then we still fill a FAST-specific dictionary
+
     @staticmethod
     def genRunCases(dlc):
 
@@ -276,29 +281,38 @@ class GenericFASTRunCaseBuilder(DLCRunCaseBuilder):
         cases = []
         params = {}
 
+        s = -1 # random seed, not used
         for sample in slist:
-            w = sample['Vhub']
-            s = -1 # random seed, not used
-            blpitch1 = DLCRunCaseBuilder.GetPitch(w)
-            rotspeed = DLCRunCaseBuilder.GetRotSpd(w)
-            params['RotSpeed'] = rotspeed
-            params['BlPitch1'] = blpitch1
-            params['BlPitch2'] = blpitch1
-            params['BlPitch3'] = blpitch1
+            if ('Vhub' in sample):
+                w = sample['Vhub']
+                blpitch1 = DLCRunCaseBuilder.GetPitch(w)
+                rotspeed = DLCRunCaseBuilder.GetRotSpd(w)
+                params['RotSpeed'] = rotspeed
+                params['BlPitch1'] = blpitch1
+                params['BlPitch2'] = blpitch1
+                params['BlPitch3'] = blpitch1
             ## these b/c some FAST files (that might be the template) use parens:
-            params['BlPitch(1)'] = blpitch1  
-            params['BlPitch(2)'] = blpitch1
-            params['BlPitch(3)'] = blpitch1
+                params['BlPitch(1)'] = blpitch1  
+                params['BlPitch(2)'] = blpitch1
+                params['BlPitch(3)'] = blpitch1
+                
+            if ('TStart' in sample):
+                params['TStart'] = sample['TStart']
+            if ('AnalTime' in sample):
+                params['TMax'] = params['TStart'] + sample['AnalTime']
 
-            params['TStart'] = sample['TStart']
-            params['TMax'] = params['TStart'] + sample['AnalTime']
-
-            epsHs = 0.1
+            # smallest values in case sampling produced bad results
+            epsHs = 0.1  # TODO why did I set epsHs 0.1
             epsTp = 0
             if ("Hs" in sample):
                 params['WaveHs'] = max(epsHs,sample['Hs'])
             if ("Tp" in sample):
                 params['WaveTp'] = max(epsTp,sample['Tp'])
+
+            if ('WaveDir' in sample):
+                ## wind-wave misalignment.  for RunIEC.pl, involves changing wave direction AND yaw.
+                # but Jason's study just considers misalignment.  I start there, meaning now yaw changes yet
+                params['WaveDir'] = sample['WaveDir']
 
             subcase = FASTRunCase(dlc,w,s,params)
             cases.append(subcase)
