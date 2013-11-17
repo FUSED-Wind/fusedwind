@@ -69,8 +69,9 @@ class runFASText(ExternalCode):
 #        self.rawfast.setFastFile("MyFastInputTemplate.fst")  # still needs to live in "InputFilesToWrite/"
         self.rawfast.model_path = 'ModelFiles/'
         self.rawfast.template_path = "InputFilesToWrite/"
+        self.rawfast.ptfm_file = "NREL5MW_Platform.ptfm"
         self.rawfast.wamit_path = "ModelFiles/WAMIT/spar"
-        self.rawfast.setFastFile("floater.fst")  # still needs to live in "InputFilesToWrite/"
+        self.rawfast.setFastFile("NREL5MW_Monopile_Floating.fst")  # still needs to live in "InputFilesToWrite/"
         self.rawfast.setOutputs(self.fast_outputs)
 
         self.basedir = os.path.join(os.getcwd(),"all_runs")
@@ -88,7 +89,7 @@ class runFASText(ExternalCode):
         noiset = os.path.join("InputFilesToWrite", "Noise.v7.02.ipt")
         adt = os.path.join("InputFilesToWrite", "NREL5MW.ad")
         bladet = os.path.join("InputFilesToWrite", "NREL5MW_Blade.dat")
-        ptfmt = os.path.join("InputFilesToWrite", "test.ptfm")
+        ptfmt = os.path.join("InputFilesToWrite", "NREL5MW_Platform.ptfm")
         foundationt = os.path.join("ModelFiles", "NREL5MW_Monopile_Tower_RigFnd.dat")
         spar1 = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.1"))
         spar3 = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.3"))
