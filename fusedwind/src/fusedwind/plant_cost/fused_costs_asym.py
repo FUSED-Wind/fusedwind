@@ -142,7 +142,7 @@ class BaseOPEXModel(Assembly):
 
         self.create_passthrough('opex.avg_annual_opex')
         
-class OPEXVT(VariableTree):
+class OPEXVarTree(VariableTree):
 
     preventative_opex = Float(desc='annual expenditures on preventative maintenance - BOP and turbines')
     corrective_opex = Float(desc='annual unscheduled maintenance costs (replacements) - BOP and turbines')
@@ -151,7 +151,7 @@ class OPEXVT(VariableTree):
 
 class ExtendedOPEXAggregator(BaseOPEXAggregator):
 
-    OPEX_breakdown = VarTree(OPEXVT(),iotype='out')
+    OPEX_breakdown = VarTree(OPEXVarTree(),iotype='out')
     
     def __init__(self):
     	  
@@ -167,13 +167,13 @@ class ExtendedOPEXModel(BaseOPEXModel):
     	  
     	  self.create_passthrough('opex.OPEX_breakdown')
 
-class FullOPEXModel(BaseOPEXModel):
+'''class FullOPEXAggregator(BaseOPEXAggregator):
     """
     Framework for an enhanced operations expenditures model that gives a series of annual operating expenditures over the the plants lifetime
     """
 
     # Outputs
-    annual_opex = Array(iotype='out', desc='Array of annual Operating Expenditure estimates for each year of expected project operation')
+    annual_opex = Array(iotype='out', desc='Array of annual Operating Expenditure estimates for each year of expected project operation')'''
 
 
 ########################################################################################
