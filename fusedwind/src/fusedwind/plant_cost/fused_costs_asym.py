@@ -1,4 +1,4 @@
-# KLD: Cost model for FUSED_Wind - most basic structure
+# KLD: _cost model for FUSED_Wind - most basic structure
 
 from openmdao.lib.datatypes.api import Float, Int, Array, VarTree
 from openmdao.main.api import Component, Assembly, VariableTree
@@ -8,7 +8,7 @@ from fusedwind.plant_cost.fused_tcc_asym import BaseTurbineCapitalCostModel
 ##########################################################
 # Plant Balance of Station and CAPEX Models
 
-# Balance of Station Cost Model
+# Balance of Station _cost Model
 class BaseBOSCostAggregator(Component):
 
     # Outputs
@@ -40,7 +40,7 @@ class BOSVarTree(VariableTree):
     transmission_and_interconnection_costs = Float(desc='Transmission and grid interconnection costs')
     assembly_and_installation_costs = Float(desc='Assembly and installation costs')
     contingencies_and_insurance_costs = Float(desc='Contingencies, bonds, reserves for project')
-    decommissioning_costs = Float(desc='Costs associated with plant decommissioning at end of life')
+    decommissioning_costs = Float(desc='_costs associated with plant decommissioning at end of life')
     construction_financing_costs = Float(desc='Construction financing costs')
     other_costs = Float(desc='Bucket for any other costs not captured above')
     developer_profits = Float(desc='Developer profits')
@@ -55,7 +55,7 @@ class ExtendedBOSCostAggregator(BaseBOSCostAggregator):
     rotor_diameter=Float(iotype='in', units='m', desc='rotor diameter')
     hub_height = Float(iotype='in', units='m', desc='hub height')
     RNA_mass = Float(iotype='in', units='kg', desc='Rotor Nacelle Assembly mass')
-    turbine_cost = Float(iotype='in', units='USD', desc='Single Turbine Capital Costs')
+    turbine_cost = Float(iotype='in', units='USD', desc='Single Turbine Capital _costs')
     
     # parameters
     turbine_number = Int(iotype='in', desc='number of turbines in project')
@@ -88,9 +88,9 @@ class ExtendedBOSCostModel(BaseBOSCostModel):
 class BaseCAPEXAggregator(Component):
 
     # Inputs
-    turbine_cost = Float(iotype='in', desc = 'A Wind Turbine Capital Cost')
+    turbine_cost = Float(iotype='in', desc = 'A Wind Turbine Capital _cost')
     turbine_number = Int(iotype = 'in', desc = 'number of turbines at plant')
-    bos_cost = Float(iotype='in', desc='A Wind Plant Balance of Station Cost Model')
+    bos_cost = Float(iotype='in', desc='A Wind Plant Balance of Station _cost Model')
 
     # Outputs
     capex = Float(0.0, iotype='out', desc='Overall wind plant capital expenditures including turbine and balance of station costs') 
