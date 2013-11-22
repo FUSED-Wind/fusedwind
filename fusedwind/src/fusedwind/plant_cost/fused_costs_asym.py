@@ -31,19 +31,14 @@ class BaseBOSCostModel(Assembly):
 
 class BOSVarTree(VariableTree):
 
-    management_costs = Float(desc='Project management costs')
     development_costs = Float(desc='Overall wind plant balance of station/system costs up to point of comissioning')
     preparation_and_staging_costs = Float(desc='Site preparation and staging')
-    transportation_costs = Float(desc='Any transportation costs to site / staging site')
+    transportation_costs = Float(desc='Any transportation costs to site / staging site') #BOS or turbine cost?
     foundation_and_substructure_costs = Float(desc='Foundation and substructure costs')
-    collection_and_substation_costs = Float(desc='Collection system and onsite substation costs')
-    transmission_and_interconnection_costs = Float(desc='Transmission and grid interconnection costs')
+    electrical_costs = Float(desc='Collection system, substation, transmission and interconnect costs')
     assembly_and_installation_costs = Float(desc='Assembly and installation costs')
-    contingencies_and_insurance_costs = Float(desc='Contingencies, bonds, reserves for project')
-    decommissioning_costs = Float(desc='_costs associated with plant decommissioning at end of life')
-    construction_financing_costs = Float(desc='Construction financing costs')
+    soft_costs = Float(desc='Contingencies, bonds, reserves, decommissioning, profits, and construction financing costs')
     other_costs = Float(desc='Bucket for any other costs not captured above')
-    developer_profits = Float(desc='Developer profits')
 
 class ExtendedBOSCostAggregator(BaseBOSCostAggregator):
     """
@@ -83,6 +78,44 @@ class ExtendedBOSCostModel(BaseBOSCostModel):
         self.create_passthrough('bos.turbine_cost')
 
         self.create_passthrough('bos.BOS_breakdown')
+
+'''class FullBOSCostAggregator(BaseBOSCostAggregator):
+
+    management_costs = Float(desc='Project management costs')
+    development_costs = Float(desc='Overall wind plant balance of station/system costs up to point of comissioning')
+    preparation_and_staging_costs = Float(desc='Site preparation and staging')
+    transportation_costs = Float(desc='Any transportation costs to site / staging site')
+    foundation_and_substructure_costs = Float(desc='Foundation and substructure costs')
+    collection_and_substation_costs = Float(desc='Collection system and onsite substation costs')
+    transmission_and_interconnection_costs = Float(desc='Transmission and grid interconnection costs')
+    assembly_and_installation_costs = Float(desc='Assembly and installation costs')
+    contingencies_and_insurance_costs = Float(desc='Contingencies, bonds, reserves for project')
+    decommissioning_costs = Float(desc='_costs associated with plant decommissioning at end of life')
+    construction_financing_costs = Float(desc='Construction financing costs')
+    other_costs = Float(desc='Bucket for any other costs not captured above')
+    developer_profits = Float(desc='Developer profits')
+
+    # outputs
+    BOS_breakdown = VarTree(BOSVarTree(), iotype='out', desc='BOS cost breakdown')
+
+class BaseBOSComponentCostModel(Component):
+
+    # outputs
+    cost = Float(iotype='out', 'Output BOS cost elements')
+
+class FullBOSCostModel(BaseBOSCostModel):
+
+    def configure(self):
+      
+        super(FullBOSCostModel, self).configure()
+        
+        self.replace('bos', FullBOSCostAggregator())
+        self.add('foundation', BaseBOSComponentCostModel())
+        self.add('electrical', BaseBOSComponentCostModel())
+        self.add('assembly', BaseBOSComponentCostModel())
+        self.add('siteprep', BaseBOSComponentCostModel())
+
+        self.create_passthrough('bos.BOS_breakdown')   '''
 
 # CAPEX Models
 class BaseCAPEXAggregator(Component):
