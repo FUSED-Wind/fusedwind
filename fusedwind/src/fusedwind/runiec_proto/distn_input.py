@@ -92,15 +92,15 @@ def is_float(s):
 
 
 def parse_arg(a):
-    z = re.match("([^+\-*/]*)([+\-*/])(.*)", a)
+    z = re.match("([^+\-*/]+)([+\-*/])(.+)", a)
     if (z != None):
         z1 = z.group(1).strip()
         z2 = z.group(2).strip()
         z3 = z.group(3).strip()
-#        print "found complex arg:", z1, z2, z3 
+        print "found complex arg:", z1, z2, z3 
         alist = [z1,z2,z3]
     else:
-#        print "found simple arg:", a
+        print "found simple arg:", a
         alist = [a.strip()]
     return alist
 

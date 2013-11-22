@@ -10,7 +10,7 @@ from openmdao.main.case import Case
 from openmdao.main.datatypes.slot import Slot 
 #from openmdao.lib.drivers.api import CaseIteratorDriver  ## brings in cobyla driver, which has bug on Peter's intel mac
 from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
-from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator
+from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator, CSVCaseRecorder
 from openmdao.lib.datatypes.api import Str, Int
 
 ### For NREL insiders:
@@ -103,8 +103,7 @@ class CaseAnalyzer(Assembly):
         # comment this line out to run sequentially
         self.ws_driver.sequential = not self.run_parallel
         # uncomment to keep simulation directories for debugging purposes
-        #os.environ['OPENMDAO_KEEPDIRS'] = '1'
-
+        os.environ['OPENMDAO_KEEPDIRS'] = '1'
 
         print "dispatcher configured\n-------------------------------------------\n"
     
@@ -119,44 +118,32 @@ class CaseAnalyzer(Assembly):
             for runcase in allruns:
                 print 'Adding Case for run case %s' % runcase.name
                 # create the case
-                self.runcases.append(Case(inputs= [('runner.input', runcase)],   
-                                          outputs=['runner.output', 'runner.input']))
+#                self.runcases.append(Case(inputs= [('runner.input', runcase)],   
+#                                          outputs=['runner.output', 'runner.input']))
+                self.runcases.append(Case(inputs= [('runner.input', runcase)]))
                            ## vars used here need to exist in relevant (sub)-objects
                            ##(ie aerocode.input needs to exist--eg in openAeroCode) , else openMDAO throws exception
                            ## This will result in aerocode.execute() being called with self.input = runcase = relevant RunCase
 
         self.ws_driver.iterator = ListCaseIterator(self.runcases)
-        self.ws_driver.recorders = [ListCaseRecorder()]
+#        self.ws_driver.recorders = [ListCaseRecorder()]
+#        self.ws_driver.recorders = [CSVCaseRecorder()]
 #        self.ws_driver.case_outputs = ['runner.output']  ## I think the above "outputs=" in Case constructor takes care of this
 
         
     def collect_output(self, output_params):
-        print "collecting ALL the output"
-        for c in self.ws_driver.recorders[0].get_iterator():
-            res =  c['runner.output']
-            aero = res.aerocode
-            fast = aero.rawfast  ### this may not exist, only for fast wrapper
-            case = c['runner.input']
-            print "!@#$!@#$!@#$"
-            print "output for case ", case
-            print "dlcresult = ", res
-            print "aerocode wrapper= ", aero
-            print "aerocode wrapper's underlying code = ", fast
-            print case.ws, case.randomseed, max(fast.getOutputValue("RotPwr"))
-#        print "again: windspeed, randomseed, max power"
+        print "RUNS ARE DONE:"
+        print "collecting output from copied-back files (not from case recorder)"
         fout = file(output_params['main_output_file'], "w")
         fout.write( "#Results summary: \n")
         fout.write( "#Vs Hs Tp WaveDir, TwrBsMxt \n")
-        for c in self.ws_driver.recorders[0].get_iterator():
-            res =  c['runner.output']
-            aero = res.aerocode
-            fast = aero.rawfast  ### this may not exist, only for fast wrapper
-            case = c['runner.input']
-#            print case.ws, case.randomseed, fast.getMaxPower()  ### this may not exist, just an example
-#            print "%.2f  %.2f   %.2f" % (case.ws, case.fst_params['WaveHs'], fast.getMaxPower())  ### this may not exist, just an example
 
-#            print "%s   %.2f" % (case.name, fast.getMaxOutputValue('TwrBsMxt', directory=aero.results_dir))  ### this may not exist, just an example
-            fout.write( "%.2f %.2f %.2f %.2f   %.2f\n" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], fast.getMaxOutputValue('TwrBsMxt', directory=aero.results_dir)))  ### this may not exist, just an example
+        for fullcase in self.runcases:
+            case = fullcase._inputs['runner.input']
+            results_dir = os.path.join(self.aerocode.basedir, case.name)
+            myfast = self.aerocode.runfast.rawfast
+            fout.write( "%.2f %.2f %.2f %.2f   %.2f\n" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
+        return
 
 #######################################
         
@@ -195,6 +182,7 @@ def get_options():
     return options, args
 
 def read_file_string(tag, fname):
+    print os.getcwd()
     lns = file(fname).readlines()
     for ln in lns:
         ln = ln.strip()

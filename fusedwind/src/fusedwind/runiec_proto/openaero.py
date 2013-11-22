@@ -24,7 +24,12 @@ class openAeroCode(Assembly):
 
     def __init__(self):
         super(openAeroCode, self).__init__()
-
+        self.basedir = os.path.join(os.getcwd(),"all_runs")
+        try:
+            os.mkdir(self.basedir)
+        except:
+            print "failed to make base dir all_runs; or it exists"
+        
 
 class openFAST(openAeroCode):
 
@@ -73,6 +78,9 @@ class runFASText(ExternalCode):
         self.rawfast.wamit_path = "ModelFiles/WAMIT/spar"
         self.rawfast.setFastFile("NREL5MW_Monopile_Floating.fst")  # still needs to live in "InputFilesToWrite/"
         self.rawfast.setOutputs(self.fast_outputs)
+
+#        self.stderr = "error.out"
+#        self.stdout = "mystdout"
 
         self.basedir = os.path.join(os.getcwd(),"all_runs")
         try:
