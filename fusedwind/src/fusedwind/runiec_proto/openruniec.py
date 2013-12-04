@@ -14,9 +14,9 @@ from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator, CS
 from openmdao.lib.datatypes.api import Str, Int
 
 ### For NREL insiders:
-#from twister.models.FAST.mkgeom import makeGeometry
+from twister.models.FAST.mkgeom import makeGeometry
 ### For the rest
-from twister_mkgeom import makeGeometry
+#from twister_mkgeom import makeGeometry
 
 from openaero import openFAST
 from design_load_case import  NREL13_88_329Input, NREL13_88_329FromDistn
