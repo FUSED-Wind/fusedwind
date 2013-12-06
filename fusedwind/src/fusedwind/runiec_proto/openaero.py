@@ -2,15 +2,19 @@ import os,glob,shutil
 
 from openmdao.main.api import Component, Assembly, FileMetadata
 from openmdao.lib.components.external_code import ExternalCode
-from openmdao.main.datatypes.slot import Slot 
+from openmdao.main.datatypes.slot import Slot
+from openmdao.main.datatypes.api import Array, Float
 
 ### For NREL insiders
 from twister.models.FAST.runFAST import runFAST
+from twister.models.FAST.mkgeom import makeGeometry
 ### for others
 #from twister_runFAST import runFAST
+#from twister_mkgeom import makeGeometry
+
 
 #from design_load_case import DesignLoadCase, DLCResult,  FASTRunCase, FASTDLCResult, NREL13_88_329Input, FASTRunCaseBuilder
-from design_load_case import DesignLoadCase, DLCResult, FASTDLCResult,  FASTRunCaseBuilder, GenericFASTRunCaseBuilder
+from design_load_case import DesignLoadCase, DLCResult, FASTDLCResult,  FASTRunCaseBuilder, GenericFASTRunCaseBuilder, ParamDesignLoadCaseBuilder, GenericIECDesignLoadCase
 
 ########### aerocode #####################
 ## generic aeroelastic analysis code (e.g. FAST, HAWC2,)
@@ -29,7 +33,8 @@ class openAeroCode(Assembly):
             os.mkdir(self.basedir)
         except:
             print "failed to make base dir all_runs; or it exists"
-        
+
+
 
 class openFAST(openAeroCode):
 
@@ -55,6 +60,36 @@ class openFAST(openAeroCode):
 #        mycases = FASTRunCaseBuilder.genRunCases(case, case.params)
         mycases = GenericFASTRunCaseBuilder.genRunCases(case)
         return mycases
+
+
+class designFAST(openFAST):        
+    """ base class for cases where we have parametric design (e.g. dakota),
+    corresponding to a driver that are for use within a Driver that "has_parameters" """
+    x = Array(iotype='in')   ## exact size of this gets filled in study.setup_cases(), which call create_x, below
+    f = Float(iotype='out')
+    # need some mapping back and forth
+    param_names = []
+
+    def __init__(self,geom,atm):
+        super(designFAST, self).__init__(geom,atm)
+
+    def create_x(self, size):
+        """ just needs to exist and be right size to use has_parameters stuff """
+        self.x = [0 for i in range(size)]
+
+    def dlc_from_params(self,x):
+        print x, self.param_names, self.dlc.name
+        case = ParamDesignLoadCaseBuilder.buildRunCase_x(x, self.param_names, self.dlc)
+        print case.fst_params
+        return case
+
+    def execute(self):
+        # build DLC from x, if we're using it
+        print "in design code. execute()", self.x
+        self.input = self.dlc_from_params(self.x)
+        super(designFAST, self).execute()
+        myfast = self.runfast.rawfast
+        self.f = myfast.getMaxOutputValue('TwrBsMxt', directory=os.getcwd())
 
 class runFASText(ExternalCode):
     """ 
@@ -174,3 +209,28 @@ class runFASText(ExternalCode):
 #                print "wanting to copy %s to %s" % (filename, results_dir) ## for debugging, don't clobber stuff you care about!
                 shutil.copy(filename, self.results_dir)
 
+
+
+def run_test():
+    geometry, atm = makeGeometry()
+    w = designFAST(geometry, atm)
+
+    ## sort of hacks to save this info
+    w.param_names = ['Vhub']
+    w.dlc = GenericIECDesignLoadCase("DLC-testcase", {}, None)
+    print "set aerocode dlc"
+    ##
+
+    res = []
+    for x in range(10,16,2):
+        w.x = [x]
+        w.execute()
+        res.append([ w.dlc.name, w.x, w.f])
+    for r in res:
+        print r
+
+    # (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir))
+
+
+if __name__=="__main__":
+    run_test()

@@ -18,9 +18,10 @@ from twister.models.FAST.mkgeom import makeGeometry
 ### For the rest
 #from twister_mkgeom import makeGeometry
 
-from openaero import openFAST
+from openaero import openFAST, designFAST
 from design_load_case import  NREL13_88_329Input, NREL13_88_329FromDistn
 
+from opendakota import DakotaParamStudy, DakotaSamplingStudy
 #import logging
 #logging.getLogger().setLevel(logging.DEBUG)
 #from openmdao.main.api import enable_console
@@ -79,8 +80,11 @@ class CaseAnalyzer(Assembly):
     def __init__(self, params):
         super(CaseAnalyzer, self).__init__()
         self.run_parallel = False
+        self.run_dakota = False
         if ('parallel' in params):
             self.run_parallel = params['parallel']
+        if ('dakota' in params):
+            self.run_dakota = params['dakota']
         
     def presetup_workflow(self, aerocode, turbine, cases):
         self.aerocode = aerocode
@@ -90,7 +94,15 @@ class CaseAnalyzer(Assembly):
     def configure(self):
         print "configuring dispatcher:"
         super(CaseAnalyzer, self).configure()
-        self.add('ws_driver', CaseIteratorDriver())
+
+        if (self.run_dakota):
+            #            driver = DakotaParamStudy()
+            driver = DakotaSamplingStudy()
+            driver.samples = 5
+            driver.tabular_graphics_data = True  ### special flag to turn on graphics, don't just write into strategy field!
+        else:
+            driver = CaseIteratorDriver()
+        self.add('ws_driver', driver)
         self.driver.workflow.add(['ws_driver'])
 
         self.add('runner', self.aerocode )
@@ -109,41 +121,50 @@ class CaseAnalyzer(Assembly):
     
     def setup_cases(self):
         """ setup the cases """
-        self.runcases = []
-        ## cases should be list of DesignLoadCases
-        for dlc in self.studycases:
-            print 'Generating run cases for study case %s' % dlc.name
-            # ask aero code to produce runcass for this study case
-            allruns = self.aerocode.genRunCases(dlc)
-            for runcase in allruns:
-                print 'Adding Case for run case %s' % runcase.name
-                # create the case
-#                self.runcases.append(Case(inputs= [('runner.input', runcase)],   
-#                                          outputs=['runner.output', 'runner.input']))
-                self.runcases.append(Case(inputs= [('runner.input', runcase)]))
-                           ## vars used here need to exist in relevant (sub)-objects
-                           ##(ie aerocode.input needs to exist--eg in openAeroCode) , else openMDAO throws exception
-                           ## This will result in aerocode.execute() being called with self.input = runcase = relevant RunCase
+        if (self.run_dakota):
+            self.ws_driver.setup_cases(self.studycases, self.aerocode)
+        else:
+            self.runcases = []
+            ## cases should be list of DesignLoadCases
+            for dlc in self.studycases:
+                print 'Generating run cases for study case %s' % dlc.name
+                # ask aero code to produce runcass for this study case
+                allruns = self.aerocode.genRunCases(dlc)
+                for runcase in allruns:
+                    print 'Adding Case for run case %s' % runcase.name
+                    # create the case
+    #                self.runcases.append(Case(inputs= [('runner.input', runcase)],   
+    #                                          outputs=['runner.output', 'runner.input']))
+                    self.runcases.append(Case(inputs= [('runner.input', runcase)]))
+                               ## vars used here need to exist in relevant (sub)-objects
+                               ##(ie aerocode.input needs to exist--eg in openAeroCode) , else openMDAO throws exception
+                               ## This will result in aerocode.execute() being called with self.input = runcase = relevant RunCase
 
-        self.ws_driver.iterator = ListCaseIterator(self.runcases)
-#        self.ws_driver.recorders = [ListCaseRecorder()]
-#        self.ws_driver.recorders = [CSVCaseRecorder()]
-#        self.ws_driver.case_outputs = ['runner.output']  ## I think the above "outputs=" in Case constructor takes care of this
+            self.ws_driver.iterator = ListCaseIterator(self.runcases)
+    #        self.ws_driver.recorders = [ListCaseRecorder()]
+    #        self.ws_driver.recorders = [CSVCaseRecorder()]
+    #        self.ws_driver.case_outputs = ['runner.output']  ## I think the above "outputs=" in Case constructor takes care of this
 
         
     def collect_output(self, output_params):
         print "RUNS ARE DONE:"
-        print "collecting output from copied-back files (not from case recorder)"
-        fout = file(output_params['main_output_file'], "w")
-        fout.write( "#Results summary: \n")
-        fout.write( "#Vs Hs Tp WaveDir, TwrBsMxt \n")
 
-        for fullcase in self.runcases:
-            case = fullcase._inputs['runner.input']
-            results_dir = os.path.join(self.aerocode.basedir, case.name)
-            myfast = self.aerocode.runfast.rawfast
-            fout.write( "%.2f %.2f %.2f %.2f   %.2f\n" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
-        return
+        if (self.run_dakota):
+            print "DAKOTA done, see dakota_tabular.dat"
+        else:
+            print "collecting output from copied-back files (not from case recorder), see %s" % output_params['main_output_file']
+            fout = file(output_params['main_output_file'], "w")
+            fout.write( "#Results summary: \n")
+            fout.write( "#Vs Hs Tp WaveDir, TwrBsMxt \n")
+
+            for fullcase in self.runcases:
+                case = fullcase._inputs['runner.input']
+                results_dir = os.path.join(self.aerocode.basedir, case.name)
+                myfast = self.aerocode.runfast.rawfast
+                fout.write( "%.2f %.2f %.2f %.2f   %.2f\n" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
+#                fout.write( "%.2f    %.2f\n" % (case.ws,  myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
+
+
 
 #######################################
         
@@ -177,6 +198,8 @@ def get_options():
     parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="generic_88-329-distn",
                                     help="input file type: one of:old_perl, generic_88-329, list. default:generic_88-329")
     parser.add_option("-p", "--parallel", dest="run_parallel", help="run in parallel", action="store_true", default=False)
+#    parser.add_option("-d", "--dakota", dest="run_dakota", help="run cases via dakota", action="store_false", default=True)
+    parser.add_option("-d", "--dakota", dest="run_dakota", help="run cases via dakota", action="store_true", default=False)
     
     (options, args) = parser.parse_args()
     return options, args
@@ -231,6 +254,11 @@ def parse_input(infile, options):
         print "parallel run"
         ctrl.dispatcher['parallel'] = True
 
+    if (options.run_dakota):
+        ## turns on openmdao concurrent execution stuff
+        print "dakota run"
+        ctrl.dispatcher['dakota'] = True
+
     # read file locations
     ctrl.output['main_output_file'] = read_file_string("main_output_file", options.file_locs)
 
@@ -276,7 +304,7 @@ def create_turbine(turbine_params):
     t = Turbine()
     return t
 
-def create_aerocode_wrapper(aerocode_params):
+def create_aerocode_wrapper(aerocode_params, options):
     """ create  wind code wrapper"""
     
     solver = 'FAST'
@@ -285,7 +313,10 @@ def create_aerocode_wrapper(aerocode_params):
     if solver=='FAST':
         ## TODO, changed when we have a real turbine
         geometry, atm = makeGeometry()
-        w = openFAST(geometry, atm)
+        if (options.run_dakota):
+            w = designFAST(geometry, atm)
+        else:
+            w = openFAST(geometry, atm)
     elif solver == 'HAWC2':
         w = openHAWC2(None)
         #raise NotImplementedError, "HAWC2 aeroecode wrapper not implemented in runIeC context yet"
@@ -331,7 +362,7 @@ def rundlcs():
     # and a turbine
     turbine = create_turbine(ctrl.turbine)
     # and the appropriate wind code wrapper...
-    aerocode = create_aerocode_wrapper(ctrl.aerocode)
+    aerocode = create_aerocode_wrapper(ctrl.aerocode, options)
     # and the appropriate dispatcher...
     dispatcher = create_dlc_dispatcher(ctrl.dispatcher)
     ### After this point everything should be generic, all appropriate subclass object created

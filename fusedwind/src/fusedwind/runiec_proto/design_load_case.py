@@ -266,6 +266,57 @@ class DLCRunCaseBuilder(object):
         return np.interp(ws, FASTRunCaseBuilder.WSRpm, FASTRunCaseBuilder.Rpm)
 
 
+def sample2FASTparams(sample):
+    params = {}
+    s = -1 # random seed, not used
+    if ('Vhub' in sample):
+        w = sample['Vhub']
+        blpitch1 = DLCRunCaseBuilder.GetPitch(w)
+        rotspeed = DLCRunCaseBuilder.GetRotSpd(w)
+        params['RotSpeed'] = rotspeed
+        params['BlPitch1'] = blpitch1
+        params['BlPitch2'] = blpitch1
+        params['BlPitch3'] = blpitch1
+            ## these b/c some FAST files (that might be the template) use parens:
+        params['BlPitch(1)'] = blpitch1  
+        params['BlPitch(2)'] = blpitch1
+        params['BlPitch(3)'] = blpitch1
+        
+    params['TStart'] = 0
+    if ('TStart' in sample):
+        params['TStart'] = sample['TStart']
+    if ('AnalTime' in sample):
+        params['TMax'] = params['TStart'] + sample['AnalTime']
+        
+        # smallest values in case sampling produced bad results
+    epsHs = 0.1  # TODO why did I set epsHs 0.1
+    epsTp = 0
+    if ("Hs" in sample):
+        params['WaveHs'] = max(epsHs,sample['Hs'])
+    if ("Tp" in sample):
+        params['WaveTp'] = max(epsTp,sample['Tp'])
+
+    if ('WaveDir' in sample):
+                ## wind-wave misalignment.  for RunIEC.pl, involves changing wave direction AND yaw.
+        # but Jason's study just considers misalignment.  I start there, meaning now yaw changes yet
+        params['WaveDir'] = sample['WaveDir']
+    return w,s,params
+
+class ParamDesignLoadCaseBuilder(DLCRunCaseBuilder):
+    """ build sample from x, for use with the RunCaseBuilders """
+
+    @staticmethod
+    def buildRunCase_x(x, names, dlc):
+        sample = {names[i]:x[i] for i in range(len(x))}
+
+        name = dlc.name
+        print "setting up dlc name %s" % name
+
+        w,s,params = sample2FASTparams(sample)
+        subcase = FASTRunCase(dlc,w,s,params)
+
+        return subcase
+
 class GenericFASTRunCaseBuilder(DLCRunCaseBuilder):
     # generic parser and sampler, but then we still fill a FAST-specific dictionary
 
@@ -279,41 +330,9 @@ class GenericFASTRunCaseBuilder(DLCRunCaseBuilder):
         name = dlc.name
         print "setting up dlc name %s" % name
         cases = []
-        params = {}
 
-        s = -1 # random seed, not used
         for sample in slist:
-            if ('Vhub' in sample):
-                w = sample['Vhub']
-                blpitch1 = DLCRunCaseBuilder.GetPitch(w)
-                rotspeed = DLCRunCaseBuilder.GetRotSpd(w)
-                params['RotSpeed'] = rotspeed
-                params['BlPitch1'] = blpitch1
-                params['BlPitch2'] = blpitch1
-                params['BlPitch3'] = blpitch1
-            ## these b/c some FAST files (that might be the template) use parens:
-                params['BlPitch(1)'] = blpitch1  
-                params['BlPitch(2)'] = blpitch1
-                params['BlPitch(3)'] = blpitch1
-                
-            if ('TStart' in sample):
-                params['TStart'] = sample['TStart']
-            if ('AnalTime' in sample):
-                params['TMax'] = params['TStart'] + sample['AnalTime']
-
-            # smallest values in case sampling produced bad results
-            epsHs = 0.1  # TODO why did I set epsHs 0.1
-            epsTp = 0
-            if ("Hs" in sample):
-                params['WaveHs'] = max(epsHs,sample['Hs'])
-            if ("Tp" in sample):
-                params['WaveTp'] = max(epsTp,sample['Tp'])
-
-            if ('WaveDir' in sample):
-                ## wind-wave misalignment.  for RunIEC.pl, involves changing wave direction AND yaw.
-                # but Jason's study just considers misalignment.  I start there, meaning now yaw changes yet
-                params['WaveDir'] = sample['WaveDir']
-
+            w,s,params = sample2FASTparams(sample)
             subcase = FASTRunCase(dlc,w,s,params)
             cases.append(subcase)
         
