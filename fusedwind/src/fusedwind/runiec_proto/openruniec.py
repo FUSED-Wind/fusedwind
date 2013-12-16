@@ -3,6 +3,7 @@
 # George Scott, Peter Graf, Katherined Dykes, Andrew Ning, NWTC SE team
 
 import os
+from math import pi
 
 from openmdao.main.api import Assembly, Component, FileMetadata
 from openmdao.lib.components.external_code import ExternalCode
@@ -18,8 +19,10 @@ from twister.models.FAST.mkgeom import makeGeometry
 ### For the rest
 #from twister_mkgeom import makeGeometry
 
+import sampler
+
 from openaero import openFAST, designFAST
-from design_load_case import  NREL13_88_329Input, NREL13_88_329FromDistn
+from design_load_case import  NREL13_88_329Input, NREL13_88_329FromDistn, RawCases, ParamDesignLoadCaseBuilder, save_run_cases
 
 from opendakota import DakotaParamStudy, DakotaSamplingStudy
 #import logging
@@ -81,11 +84,15 @@ class CaseAnalyzer(Assembly):
         super(CaseAnalyzer, self).__init__()
         self.run_parallel = False
         self.run_dakota = False
+        self.raw_cases = False
         if ('parallel' in params):
             self.run_parallel = params['parallel']
         if ('dakota' in params):
             self.run_dakota = params['dakota']
-        
+        if ('raw_cases' in params):
+            self.raw_cases = params['raw_cases']
+            print "raw cases found, = ", self.raw_cases
+
     def presetup_workflow(self, aerocode, turbine, cases):
         self.aerocode = aerocode
         self.turbine = turbine
@@ -127,18 +134,24 @@ class CaseAnalyzer(Assembly):
             self.runcases = []
             ## cases should be list of DesignLoadCases
             for dlc in self.studycases:
-                print 'Generating run cases for study case %s' % dlc.name
-                # ask aero code to produce runcass for this study case
-                allruns = self.aerocode.genRunCases(dlc)
-                for runcase in allruns:
-                    print 'Adding Case for run case %s' % runcase.name
-                    # create the case
-    #                self.runcases.append(Case(inputs= [('runner.input', runcase)],   
-    #                                          outputs=['runner.output', 'runner.input']))
+                if (self.raw_cases):  # goes with "tabular" input distn format
+                    print "building dlc for: ", dlc.x
+                    runcase = ParamDesignLoadCaseBuilder.buildRunCase_x(dlc.x, dlc.param_names, dlc)
                     self.runcases.append(Case(inputs= [('runner.input', runcase)]))
+                else:
+                    print 'Generating run cases for study case %s' % dlc.name
+# ask aero code to produce runcass for this study case
+                    allruns = self.aerocode.genRunCases(dlc)
+                    for runcase in allruns:
+                        print 'Adding Case for run case %s' % runcase.name
+                        # create the case
+                        #                self.runcases.append(Case(inputs= [('runner.input', runcase)],   
+                        #                                          outputs=['runner.output', 'runner.input']))
+                        self.runcases.append(Case(inputs= [('runner.input', runcase)]))
                                ## vars used here need to exist in relevant (sub)-objects
                                ##(ie aerocode.input needs to exist--eg in openAeroCode) , else openMDAO throws exception
                                ## This will result in aerocode.execute() being called with self.input = runcase = relevant RunCase
+                        save_run_cases(dlc.name, allruns)
 
             self.ws_driver.iterator = ListCaseIterator(self.runcases)
     #        self.ws_driver.recorders = [ListCaseRecorder()]
@@ -149,25 +162,115 @@ class CaseAnalyzer(Assembly):
     def collect_output(self, output_params):
         print "RUNS ARE DONE:"
 
+        sctx = sampler.Context()
+
         if (self.run_dakota):
             print "DAKOTA done, see dakota_tabular.dat"
         else:
+            fields = ['RootMxc1', 'RootMyc1','LSSGagMya','LSSGagMza','YawBrMxp', 'YawBrMyp',  'TwrBsMxt',  'TwrBsMyt', 'Fair1Ten', 'Fair2Ten', 'Fair3Ten','Anch1Ten', 'Anch2Ten', 'Anch3Ten']
             print "collecting output from copied-back files (not from case recorder), see %s" % output_params['main_output_file']
             fout = file(output_params['main_output_file'], "w")
             fout.write( "#Results summary: \n")
-            fout.write( "#Vs Hs Tp WaveDir, TwrBsMxt \n")
+#            fout.write( "#Vs Hs Tp WaveDir, TwrBsMxt \n")
+            fout.write( "#Vs Hs Tp WaveDir Prob")
+            for f in fields:
+                fout.write(" %s " % f)
+            for f in fields:
+                fout.write(" %sStd " % f)
+            fout.write("\n")
 
+            fail_count = [0 for i in 2*range(len(fields))]
             for fullcase in self.runcases:
                 case = fullcase._inputs['runner.input']
                 results_dir = os.path.join(self.aerocode.basedir, case.name)
                 myfast = self.aerocode.runfast.rawfast
-                fout.write( "%.2f %.2f %.2f %.2f   %.2f\n" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
-#                fout.write( "%.2f    %.2f\n" % (case.ws,  myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
+#                fout.write( "%.2f %.2f %.2f %.2f   %.2f\n" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
 
+                x = [case.ws, case.fst_params['WaveDir'], case.fst_params['WaveHs'], case.fst_params['WaveTp']]
+                prob = sctx.calc_prob(x)
+
+                vals = []
+                stdvals = []
+                for i in range(len(fields)):
+                    vstr = fields[i]
+                    val = myfast.getMaxOutputValue(vstr, directory=results_dir)
+                    stdval = myfast.getMaxOutputValueStdDev(vstr, directory=results_dir)
+                    if (val != None):
+                        vals.append(val)
+                    else:
+                        fail_count[i] += 1
+                        vals.append(-99999.9999)
+                    if (stdval != None):
+                        stdvals.append(stdval)
+                    else:
+                        fail_count[len(fields) + i] += 1
+                        stdvals.append(-99999.9999)
+                        
+                fout.write( "%.2f %.2f %.2f %.2f   %e" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], prob))
+                for i in range(len(fields)):
+                    v = vals[i]
+                    fout.write(" %.6e " % v)
+                for i in range(len(fields)):
+                    v = stdvals[i]
+                    fout.write(" %.6e " % v)
+                fout.write("\n")
+                      ### this may not exist, just an example
+#                fout.write( "%.2f    %.2f\n" % (case.ws,  myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
+            print "ran %d cases, failcounts:" % len(self.runcases)
+            print fields, fields
+            print fail_count
 
 
 #######################################
-        
+
+def final_load_calc(sctx, fname, use_prob, field_idx, nsamples = -1):
+    ### lots of assumptions here, reading what is written in collect_output, do final integration
+    # nsamples = -1 => use them all
+    # use_prob = True for regular integration (E[f(x)] = \int{f(x)p(x)dx}).  
+    # MC case already has sampled from prob distn (E(f(x)] = 1/N \sum f(xi), xi~p)
+    fin = file(fname)
+    ln = fin.readline()  # skip header
+    ln = fin.readline()  # skip header
+    ln = fin.readline().strip()
+    lsum = 0
+    psum = 0
+    cnt = 0
+    while (ln != "" and (nsamples == -1 or cnt < nsamples)):
+        ln = ln.split()
+        ln = [float(s) for s in ln]
+        load = ln[field_idx]
+        prob = ln[4]
+#        x = [ln[0], ln[3], ln[1], ln[2]]
+#        prob = sctx.calc_prob(x)
+#        print x,prob0, prob
+        psum += prob
+        if (use_prob):
+            load *= prob
+        lsum += load
+        cnt += 1
+        ln = fin.readline()
+    if (use_prob):
+#        lsum /= psum
+        # multiply "dx", which depends on sample ranges, but is about 2*2*30*pi/180*1 for test case
+        # new test: dx = 5 *2 *2 * 1
+        lsum *= 20
+#        print psum * 120 * pi / 180.0
+    else:
+        lsum /= float(cnt)
+    fin.close()
+    print "Load for %d samples = %e  (psum = %e)" % (cnt, lsum, psum)
+    return [cnt,lsum,psum]
+
+def test_convergence(fname, use_prob, field_idx,minsamp, maxsamp, incr):
+    sctx = sampler.Context()
+    nsamp = minsamp
+    foutname = "%s.conv" % (fname)
+    fout = file(foutname, "w")
+    while (nsamp < maxsamp):
+        onedat = final_load_calc(sctx,fname,  use_prob, field_idx,nsamp)
+        fout.write("%d %e %e\n" % (onedat[0], onedat[1], onedat[2]))
+        nsamp += incr
+    fout.close()
 
 #----------------------------------------------
 ##### dealing with input, suggestive code, playing with ideas
@@ -191,15 +294,18 @@ def get_options():
 #                                    help="main input file")
 #    parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="generic_88-329",
 #                                    help="input file type: one of:old_perl, generic_88-329, list. default:generic_88-329")
-    parser.add_option("-i", "--input", dest="main_input",  type="string", default="dlcproto-cases.txt",
+    parser.add_option("-i", "--input", dest="main_input",  type="string", default="dlcproto-samples.txt",
                                     help="main input file describing cases to run")
+#    parser.add_option("-i", "--input", dest="main_input",  type="string", default="dlcproto-cases.txt",
+#                                    help="main input file describing cases to run")
     parser.add_option("-f", "--files", dest="file_locs",  type="string", default="dlcproto-files.txt",
                                     help="main input file describing locations of template files, and output files to write")
-    parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="generic_88-329-distn",
-                                    help="input file type: one of:old_perl, generic_88-329, list. default:generic_88-329")
+    parser.add_option("-j", "--input_type", dest="input_type",  type="string", default="raw_cases",
+                                    help="input file type: one of:old_perl, generic_88-329-distn, raw_cases, list. default:raw_cases")
     parser.add_option("-p", "--parallel", dest="run_parallel", help="run in parallel", action="store_true", default=False)
 #    parser.add_option("-d", "--dakota", dest="run_dakota", help="run cases via dakota", action="store_false", default=True)
     parser.add_option("-d", "--dakota", dest="run_dakota", help="run cases via dakota", action="store_true", default=False)
+    parser.add_option("-r", "--raw_cases", dest="raw_cases", help="DO NOT run raw cases via openmdao", action="store_false", default=True)
     
     (options, args) = parser.parse_args()
     return options, args
@@ -239,6 +345,11 @@ def parse_input(infile, options):
         # each row represents a single DLC from 88_329 standard
         ctrl.cases['source_type'] = "generic_88-329-csv"
         ctrl.cases['source_file'] = infile        
+    elif (options.input_type == "raw_cases"):
+        # this evolving into a csv-format that could potentially be exported form excel.
+        # each row represents a single DLC from 88_329 standard
+        ctrl.cases['source_type'] = "raw_cases"
+        ctrl.cases['source_file'] = infile        
     elif (options.input_type == "generic_88-329-distn"):
         # this evolving into a csv-format that could potentially be exported form excel.
         # each row represents a single DLC from 88_329 standard
@@ -255,9 +366,14 @@ def parse_input(infile, options):
         ctrl.dispatcher['parallel'] = True
 
     if (options.run_dakota):
-        ## turns on openmdao concurrent execution stuff
+        ## run through dakota driver
         print "dakota run"
         ctrl.dispatcher['dakota'] = True
+
+    if (options.raw_cases):
+        ## input is raw cases
+        print "dakota run"
+        ctrl.dispatcher['raw_cases'] = True
 
     # read file locations
     ctrl.output['main_output_file'] = read_file_string("main_output_file", options.file_locs)
@@ -285,6 +401,9 @@ def create_load_cases(case_params):
         obj.initFromFile(case_params['source_file'], verbose=True)
     elif (case_params['source_type'] == "generic_88-329-distn"):
         obj = NREL13_88_329FromDistn()
+        obj.initFromFile(case_params['source_file'], verbose=True)
+    elif (case_params['source_type'] == "raw_cases"):
+        obj = RawCases()
         obj.initFromFile(case_params['source_file'], verbose=True)
     elif (case_params['source_type'] == "list"):
         case_list = ctrl.cases['case_list']  ## testing    
@@ -375,8 +494,11 @@ def rundlcs():
 
     # TODO:  more complexity will be needed for difference between "run now" and "run later" cases.
     dispatcher.collect_output(ctrl.output)
+    sctx = sampler.Context()
+    
+    field_idx = 20   # = RootMyc1Std
+    final_load_calc(sctx, "dlcproto.out", not dispatcher.raw_cases, field_idx)
     
 
 if __name__=="__main__":
     rundlcs()
-    

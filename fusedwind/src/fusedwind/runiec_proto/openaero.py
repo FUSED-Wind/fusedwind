@@ -102,6 +102,7 @@ class runFASText(ExternalCode):
 #    fast_outputs = ['WindVxi', 'Azimuth', 'RotSpeed',  'BldPitch1',  'RotTorq', 'RotPwr',  'RotThrust', 'GenPwr' , 'GenTq' , 'OoPDefl1',
 #                    'IPDefl1', 'TwstDefl1', 'RootMxc1']
     fast_outputs = ['WindVxi','RotSpeed', 'RotPwr', 'GenPwr', 'RootMxc1', 'RootMyc1', 'LSSGagMya', 'LSSGagMza', 'YawBrMxp', 'YawBrMyp','TwrBsMxt',
+                    'TwrBsMyt',
                     'Fair1Ten', 'Fair2Ten', 'Fair3Ten', 'Anch1Ten', 'Anch2Ten', 'Anch3Ten']
     def __init__(self, geom, atm):
         super(runFASText,self).__init__()
