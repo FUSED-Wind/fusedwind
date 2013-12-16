@@ -1,5 +1,6 @@
 import os, copy
 import numpy as np
+from math import pi
 
 """
 DLC -> IECDLC
@@ -67,7 +68,6 @@ class RunCase(DesignLoadCase):
         super(RunCase,self).__init__(parent)
         self.parent = parent
         
-        
 class WindRandomSeedRunCase(RunCase):
     """ a single run of the aerocode.
         meant to be the non-turbine driving parameters like wind speed,
@@ -90,6 +90,15 @@ class FASTRunCase(WindRandomSeedRunCase):
         # override name for uniqueness
         for p in fst_params:
             self.name += "%s.%.1f" % (p[0:3],fst_params[p])
+
+class RawDesignLoadCase(DesignLoadCase):
+    """ Like Run case, but only base key value info"""
+    def __init__(self,casename, param_names, ln):
+        super(RawDesignLoadCase,self).__init__(casename)
+        self.x = np.array(ln)
+        self.param_names = param_names
+        self.name = casename
+        
 
         
 class NREL13_88_329Input(object):
@@ -162,6 +171,25 @@ class NREL13_88_329FromDistn(object):
             else:
                 thiscase.append(ln)
         print "generic 88_329 cases = ", [[c.name, c.parser] for c in self.cases]
+
+class RawCases(object):
+    def __init__(self):
+        super(RawCases, self).__init__()
+
+    def initFromFile(self, filename, verbose =True):
+        ## special "table"-like file: one line header of variable names then data only
+        print "reading raw cases from ", filename
+        fin = file(filename).readlines()
+#       print "lines: ", fin
+        casename = "raw_cases"
+        self.cases = []
+        param_names = fin[0].split()
+        for iln in range(1,len(fin)):
+            ln = fin[iln].strip().split()
+#            print "parsing:", ln
+            ln = [float(f) for f in ln]
+            self.cases.append(RawDesignLoadCase(casename, param_names, ln))
+            
 
 #-----------------------------------------------
 ##### stub so far;  needs to get actual results from run ###
@@ -242,7 +270,32 @@ def has_waveper(name):
     
 def has_wavecases(name):
     return (has_key(name, 'wavecases'))
+
+def myfixangle(theta):
+    # maybe convert from radians
+    # maybe wrap
+    # maybe limit range
+    v = theta * 180.0 / pi
+    if (v < -180):
+        v += 360
+    if (v > 180):
+        v -= 360
+    v = max(v,-179.99)
+    v = min(v, 179.99)
+    return v
+
+def save_run_cases(casename, cases):
+    # write in file like sampler writes
+    fout = file("dlcscanpoints.txt" , "w")
+    fout.write("Vhub WaveDir Hs Tp \n")
+    for i in range(len(cases)):
+        case = cases[i]
+        fst = case.fst_params
+#        import pdb; pdb.set_trace()
+        fout.write("%f %f %f %f\n" % (case.ws, pi/180.0 * fst['WaveDir'], fst['WaveHs'], fst['WaveTp']))
+    fout.close()
     
+
 
 class DLCRunCaseBuilder(object):
     """ superclass for run cases, ie a single aerodcode run.
@@ -266,6 +319,57 @@ class DLCRunCaseBuilder(object):
         return np.interp(ws, FASTRunCaseBuilder.WSRpm, FASTRunCaseBuilder.Rpm)
 
 
+def sample2FASTparams(sample):
+    params = {}
+    s = -1 # random seed, not used
+    if ('Vhub' in sample):
+        w = sample['Vhub']
+        blpitch1 = DLCRunCaseBuilder.GetPitch(w)
+        rotspeed = DLCRunCaseBuilder.GetRotSpd(w)
+        params['RotSpeed'] = rotspeed
+        params['BlPitch1'] = blpitch1
+        params['BlPitch2'] = blpitch1
+        params['BlPitch3'] = blpitch1
+            ## these b/c some FAST files (that might be the template) use parens:
+        params['BlPitch(1)'] = blpitch1  
+        params['BlPitch(2)'] = blpitch1
+        params['BlPitch(3)'] = blpitch1
+        
+    params['TStart'] = 0
+    if ('TStart' in sample):
+        params['TStart'] = sample['TStart']
+    if ('AnalTime' in sample):
+       params['TMax'] = params['TStart'] + sample['AnalTime']
+        
+        # smallest values in case sampling produced bad results
+    epsHs = 0.001  # TODO why did I set epsHs to certain value?
+    epsTp = 0.001
+    if ("Hs" in sample):
+        params['WaveHs'] = max(epsHs,sample['Hs'])
+    if ("Tp" in sample):
+        params['WaveTp'] = max(epsTp,sample['Tp'])
+
+    if ('WaveDir' in sample):
+                ## wind-wave misalignment.  for RunIEC.pl, involves changing wave direction AND yaw.
+        # but Jason's study just considers misalignment.  I start there, meaning now yaw changes yet
+        params['WaveDir'] = myfixangle(sample['WaveDir'])
+    return w,s,params
+
+class ParamDesignLoadCaseBuilder(DLCRunCaseBuilder):
+    """ build sample from x, for use with the RunCaseBuilders """
+
+    @staticmethod
+    def buildRunCase_x(x, names, dlc):
+        sample = {names[i]:x[i] for i in range(len(x))}
+
+        name = dlc.name
+        print "setting up dlc name %s" % name
+
+        w,s,params = sample2FASTparams(sample)
+        subcase = FASTRunCase(dlc,w,s,params)
+
+        return subcase
+
 class GenericFASTRunCaseBuilder(DLCRunCaseBuilder):
     # generic parser and sampler, but then we still fill a FAST-specific dictionary
 
@@ -279,41 +383,9 @@ class GenericFASTRunCaseBuilder(DLCRunCaseBuilder):
         name = dlc.name
         print "setting up dlc name %s" % name
         cases = []
-        params = {}
 
-        s = -1 # random seed, not used
         for sample in slist:
-            if ('Vhub' in sample):
-                w = sample['Vhub']
-                blpitch1 = DLCRunCaseBuilder.GetPitch(w)
-                rotspeed = DLCRunCaseBuilder.GetRotSpd(w)
-                params['RotSpeed'] = rotspeed
-                params['BlPitch1'] = blpitch1
-                params['BlPitch2'] = blpitch1
-                params['BlPitch3'] = blpitch1
-            ## these b/c some FAST files (that might be the template) use parens:
-                params['BlPitch(1)'] = blpitch1  
-                params['BlPitch(2)'] = blpitch1
-                params['BlPitch(3)'] = blpitch1
-                
-            if ('TStart' in sample):
-                params['TStart'] = sample['TStart']
-            if ('AnalTime' in sample):
-                params['TMax'] = params['TStart'] + sample['AnalTime']
-
-            # smallest values in case sampling produced bad results
-            epsHs = 0.1  # TODO why did I set epsHs 0.1
-            epsTp = 0
-            if ("Hs" in sample):
-                params['WaveHs'] = max(epsHs,sample['Hs'])
-            if ("Tp" in sample):
-                params['WaveTp'] = max(epsTp,sample['Tp'])
-
-            if ('WaveDir' in sample):
-                ## wind-wave misalignment.  for RunIEC.pl, involves changing wave direction AND yaw.
-                # but Jason's study just considers misalignment.  I start there, meaning now yaw changes yet
-                params['WaveDir'] = sample['WaveDir']
-
+            w,s,params = sample2FASTparams(sample)
             subcase = FASTRunCase(dlc,w,s,params)
             cases.append(subcase)
         

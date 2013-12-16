@@ -116,6 +116,14 @@ class Distribution(object):
         self.vstr = vstr # what variable is being defined
         self.ctx = ctx
 
+    def get_bounds(self):
+        pass
+    def get_partitions(self):
+        pass
+    def get_name(self):
+        return self.vstr
+    
+    
 class EnumDistn(Distribution):
     """ class for distributions that are just list of numbers or single numbers,
     'sampling' is just going to return all values"""
@@ -131,6 +139,16 @@ class EnumDistn(Distribution):
         res = self.ctx.resolve_value(res)
         return res
 
+    def get_bounds(self):
+        """ assumes numbers """
+        nums = [float(i[0]) for i in self.items]
+        return [min(nums), max(nums)]
+
+    def get_partitions(self):
+        return (len(self.items) - 1)
+        
+
+    
 
 class FnDistn(Distribution):
     """ class for 'real' distributions like Gaussians, etc. 
@@ -344,6 +362,30 @@ class DistnParser(object):
             return int(self.values['NumSamples'])
         else:
             return 1
+
+    def get_bounds(self):
+        """ assume all enum distns, get their bounds for conversion to dakota """
+        bounds = []
+        for d in self.dlist:
+            bounds.append(d.get_bounds())
+        low = [b[0] for b in bounds]
+        high = [b[1] for b in bounds]
+        return [low,high]
+
+    def get_partitions(self):
+        """ assume all enum, get their length, assume uniform incrs to convert to dakota """
+        part = []
+        for d in self.dlist:
+            part.append(d.get_partitions())
+        return part
+
+    def get_names(self):
+        """ get names of all the distn's (what vars are defined), for mapping from dakota variable list """
+        part = []
+        for d in self.dlist:
+            part.append(d.get_name())
+        return part
+
 
 if __name__=="__main__":
     dparser = DistnParser()
