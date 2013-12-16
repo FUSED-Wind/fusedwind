@@ -133,22 +133,31 @@ def int_det2(nsample):
     return lsum
 
 
-def int_det4(sctx,nsample):
+def int_det4(sctx,nsample,write,read):
     ns = np.array(nsample)
     dx = np.divide((xmax-xmin),(ns-1.0))
     lsum = 0
     psum = 0
     done =False
     midx = MultiIndex(dim, ns)
+    idx = 0
     while not done:
         x = xmin + np.multiply(dx, np.array(midx.midx))
-        val = fn(x)
+        if (write):
+            for j in range(dim):
+                fscan.write("%f " % x[j])
+            fscan.write("\n")
+        if (read):
+            val = fscanlines[i][20]  ### NOTE exact field of interest!
+        else:
+            val = fn(x)
         prob = sctx.calc_prob(x)
 #        prob = pdf2(x)
         psum += prob
         lsum += (val * prob * prod(dx))
 #        print x, val, prob, lsum, psum, dx
         done = midx.incr()
+        idx += 1
     print "det int done, ", lsum, psum,  psum * prod(dx)
     return lsum
 
@@ -175,7 +184,7 @@ def int_mc2(ns):
     lsum /= nsample
     return lsum
 
-def int_mc4(sctx,ns):
+def int_mc4(sctx,ns,write,read):
     nsample = prod(ns)
     sctx.sample(nsample)
     if (dim == 1):
@@ -189,7 +198,14 @@ def int_mc4(sctx,ns):
         x = np.array(xx[i])
         if (dim == 1):
             x = np.array([x])
-        val = fn(x)
+        if (write):
+            for j in range(dim):
+                fsamp.write("%f " % x[j])
+            fsamp.write("\n")
+        if (read):
+            val = fsamplines[i][20]  ### NOTE exact field of interest!
+        else:
+            val = fn(x)
         lsum += val
 #        print x,val, lsum
     lsum /= nsample
@@ -252,9 +268,14 @@ def less_simple_test():
         lsum2 = int_mc2(ns)
         print ns, lsum1, lsum2
 
-def real_test():
+def real_test(write=False, read=False):
     import sampler
     global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
+    global fsamp
+    global fscan
+    global fsamplines
+    global fscanlines
+
 
     shape = 2.120
     scale = 9.767
@@ -275,20 +296,55 @@ def real_test():
 #    allns = [[5,9],[11,9],[21,9] , [100,100]  ]
 
     dim = 4
-    xmin = np.array([0,-pi,0,0])
+    xmin = np.array([1,-pi,0,0])
     xmax = np.array([30,pi,6,6])
-    allns = [[4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
+#    allns = [[4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
+    allns = [[4,4,3,3], [8,8,6,6]  ]
 
     sctx = sampler.Context(dim)
 
     for ns in allns:
-        lsum1 = int_det4(sctx,ns)
-        lsum2 = int_mc4(sctx,ns)
+        if (write):
+            fname = "mc_samples"
+            for d in ns:
+                fname += "%d" % d
+            fname += ".txt"
+            fsamp = file(fname,"w")
+            fsamp.write("Vhub WaveDir Hs Tp\n");
+            fname = "int_samples"
+            for d in ns:
+                fname += "%d" % d
+            fname += ".txt"
+            fscan = file(fname, "w")
+            fscan.write("Vhub WaveDir Hs Tp\n");
+        if (read):
+            fname = "mc_samples"
+            for d in ns:
+                fname += "%d" % d
+            fname += ".out"
+            fsamp = file(fname).readlines()
+            fsamplines = fsamp[1:]
+            fsamplines = [[float(x) for x in ln] for ln in fsamplines]
+            fname = "int_samples"
+            for d in ns:
+                fname += "%d" % d
+            fname += ".out"
+            fscan = file(fname).readlines()
+            fscanlines = fscan[1:]
+            fscanlines = [[float(x) for x in ln] for ln in fscanlines]
+    
+        lsum1 = int_det4(sctx,ns,write,read)
+        lsum2 = int_mc4(sctx,ns,write,read)
         print ns, lsum1, lsum2
 #        print ns,  lsum2
+        fsamp.close()
+        fscan.close()
+
     
 
 if __name__=="__main__":
 #    simple_test()
 #    less_simple_test()
-    real_test()
+#    real_test(write=True, read=False)
+    real_test(write=False, read=True)
+

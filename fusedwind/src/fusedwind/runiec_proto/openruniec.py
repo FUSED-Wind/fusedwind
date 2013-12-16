@@ -31,7 +31,6 @@ import sampler
 from openaero import openFAST, designFAST
 from design_load_case import  NREL13_88_329Input, NREL13_88_329FromDistn, RawCases, ParamDesignLoadCaseBuilder, save_run_cases
 
-from opendakota import DakotaParamStudy, DakotaSamplingStudy
 #import logging
 #logging.getLogger().setLevel(logging.DEBUG)
 #from openmdao.main.api import enable_console
@@ -110,7 +109,9 @@ class CaseAnalyzer(Assembly):
         super(CaseAnalyzer, self).configure()
 
         if (self.run_dakota):
-            #            driver = DakotaParamStudy()
+            from opendakota import DakotaParamStudy, DakotaSamplingStudy
+            #            driver = DakotaParamStudy(
+
             driver = DakotaSamplingStudy()
             driver.samples = 5
             driver.tabular_graphics_data = True  ### special flag to turn on graphics, don't just write into strategy field!
