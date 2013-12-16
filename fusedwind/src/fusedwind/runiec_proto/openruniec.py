@@ -5,6 +5,7 @@
 import os
 
 from openmdao.main.api import Assembly, Component, FileMetadata
+from openmdao.main.resource import ResourceAllocationManager as RAM
 from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.case import Case
 from openmdao.main.datatypes.slot import Slot 
@@ -13,10 +14,16 @@ from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
 from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator, CSVCaseRecorder
 from openmdao.lib.datatypes.api import Str, Int
 
+from openmdao.main.pbs import PBS_Allocator as PBS
+from openmdao.main.resource import ResourceAllocationManager as RAM
+from openmdao.util.testutil import find_python
+from PeregrineClusterAllocator import ClusterAllocator
+
+
 ### For NREL insiders:
-#from twister.models.FAST.mkgeom import makeGeometry
+from twister.models.FAST.mkgeom import makeGeometry
 ### For the rest
-from twister_mkgeom import makeGeometry
+#from twister_mkgeom import makeGeometry
 
 from openaero import openFAST
 from design_load_case import  NREL13_88_329Input, NREL13_88_329FromDistn
@@ -55,18 +62,18 @@ class Turbine(object):
 
 ##############################################
 class MyCode(ExternalCode):  ### for testing
-    case = Int(iotype = 'in')
+    input = Int(iotype = 'in')
     def __init__(self):
         super(MyCode,self).__init__()
-        self.appname = "/Users/pgraf/work/wese/RunIEC/python/src/extcodetest/testapp"
+	self.appname = os.path.join(os.path.dirname(os.path.realpath(__file__)),'genoutfile.py')
         self.external_files = [
             FileMetadata(path="myfile.txt" , input=True, binary=False, desc='a test file')]
         self.command = ["%s" % self.appname]
         
     def execute(self):
-        print "I am working on case %d" % self.case
+        print "I am working on case %d" % self.input
         super(MyCode,self).execute()
-        print "case %d is done\n" % self.case
+        print "case %d is done\n" % self.input
 ################################################
 
 ###############################################
@@ -111,6 +118,7 @@ class CaseAnalyzer(Assembly):
         """ setup the cases """
         self.runcases = []
         ## cases should be list of DesignLoadCases
+        casenum = 0
         for dlc in self.studycases:
             print 'Generating run cases for study case %s' % dlc.name
             # ask aero code to produce runcass for this study case
@@ -121,9 +129,12 @@ class CaseAnalyzer(Assembly):
 #                self.runcases.append(Case(inputs= [('runner.input', runcase)],   
 #                                          outputs=['runner.output', 'runner.input']))
                 self.runcases.append(Case(inputs= [('runner.input', runcase)]))
+#                self.runcases.append(Case(inputs= [('runner.input', casenum)]))
+
                            ## vars used here need to exist in relevant (sub)-objects
                            ##(ie aerocode.input needs to exist--eg in openAeroCode) , else openMDAO throws exception
                            ## This will result in aerocode.execute() being called with self.input = runcase = relevant RunCase
+                casenum += 1
 
         self.ws_driver.iterator = ListCaseIterator(self.runcases)
 #        self.ws_driver.recorders = [ListCaseRecorder()]
@@ -134,6 +145,7 @@ class CaseAnalyzer(Assembly):
     def collect_output(self, output_params):
         print "RUNS ARE DONE:"
         print "collecting output from copied-back files (not from case recorder)"
+
         fout = file(output_params['main_output_file'], "w")
         fout.write( "#Results summary: \n")
         fout.write( "#Vs Hs Tp WaveDir, TwrBsMxt \n")
@@ -320,6 +332,9 @@ def rundlcs():
     collect and save output
     """
     
+    cluster=ClusterAllocator()
+    RAM.insert_allocator(0,cluster)
+
     options, arg = get_options()
     ctrl = parse_input(options.main_input, options)
     # ctrl will be just the input, but broken up into separate categories, e.g.
@@ -336,10 +351,10 @@ def rundlcs():
     dispatcher = create_dlc_dispatcher(ctrl.dispatcher)
     ### After this point everything should be generic, all appropriate subclass object created
 
-
     dispatcher.presetup_workflow(aerocode, turbine, cases)  # just makes sure parts are there when configure() is called
     # Now tell the dispatcher to (setup and ) run the cases using the aerocode on the turbine.
     # calling configure() is done inside run().
+
     dispatcher.run()
 
     # TODO:  more complexity will be needed for difference between "run now" and "run later" cases.

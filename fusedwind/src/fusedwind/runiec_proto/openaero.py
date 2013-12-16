@@ -5,9 +5,9 @@ from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.datatypes.slot import Slot 
 
 ### For NREL insiders
-#from twister.models.FAST.runFAST import runFAST
+from twister.models.FAST.runFAST import runFAST
 ### for others
-from twister_runFAST import runFAST
+#from twister_runFAST import runFAST
 
 #from design_load_case import DesignLoadCase, DLCResult,  FASTRunCase, FASTDLCResult, NREL13_88_329Input, FASTRunCaseBuilder
 from design_load_case import DesignLoadCase, DLCResult, FASTDLCResult,  FASTRunCaseBuilder, GenericFASTRunCaseBuilder
