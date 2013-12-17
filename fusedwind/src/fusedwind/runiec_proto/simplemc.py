@@ -148,7 +148,7 @@ def int_det4(sctx,nsample,write,read):
                 fscan.write("%f " % x[j])
             fscan.write("\n")
         if (read):
-            val = fscanlines[i][20]  ### NOTE exact field of interest!
+            val = fscanlines[idx][20]  ### NOTE exact field of interest!
         else:
             val = fn(x)
         prob = sctx.calc_prob(x)
@@ -298,9 +298,12 @@ def real_test(write=False, read=False):
     dim = 4
     xmin = np.array([1,-pi,0,0])
     xmax = np.array([30,pi,6,6])
-#    allns = [[4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
-    allns = [[4,4,3,3], [8,8,6,6]  ]
-
+    allns = [  [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [8,8,6,6] ,[10,10,8,8] ]
+#    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
+#    allns = [[2,2,3,3]  ]
+#    allns = [ [3,3,3,3], [4,4,4,4] ]
+#    allns = [ [10,10,8,8] ]
+    allns = [[6,6,4,4], [6,6,6,6]]
     sctx = sampler.Context(dim)
 
     for ns in allns:
@@ -322,23 +325,24 @@ def real_test(write=False, read=False):
             for d in ns:
                 fname += "%d" % d
             fname += ".out"
-            fsamp = file(fname).readlines()
-            fsamplines = fsamp[1:]
-            fsamplines = [[float(x) for x in ln] for ln in fsamplines]
+            fsamplines = file(fname).readlines()
+            fsamplines = fsamplines[1:]
+            fsamplines = [[float(x) for x in ln.split()] for ln in fsamplines]
             fname = "int_samples"
             for d in ns:
                 fname += "%d" % d
             fname += ".out"
-            fscan = file(fname).readlines()
-            fscanlines = fscan[1:]
-            fscanlines = [[float(x) for x in ln] for ln in fscanlines]
+            fscanlines = file(fname).readlines()
+            fscanlines = fscanlines[1:]
+            fscanlines = [[float(x) for x in ln.split()] for ln in fscanlines]
     
         lsum1 = int_det4(sctx,ns,write,read)
         lsum2 = int_mc4(sctx,ns,write,read)
         print ns, lsum1, lsum2
 #        print ns,  lsum2
-        fsamp.close()
-        fscan.close()
+        if (write):
+            fsamp.close()
+            fscan.close()
 
     
 

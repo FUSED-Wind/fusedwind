@@ -178,7 +178,6 @@ class CaseAnalyzer(Assembly):
             fields = ['RootMxc1', 'RootMyc1','LSSGagMya','LSSGagMza','YawBrMxp', 'YawBrMyp',  'TwrBsMxt',  'TwrBsMyt', 'Fair1Ten', 'Fair2Ten', 'Fair3Ten','Anch1Ten', 'Anch2Ten', 'Anch3Ten']
             print "collecting output from copied-back files (not from case recorder), see %s" % output_params['main_output_file']
             fout = file(output_params['main_output_file'], "w")
-            fout.write( "#Results summary: \n")
 #            fout.write( "#Vs Hs Tp WaveDir, TwrBsMxt \n")
             fout.write( "#Vs Hs Tp WaveDir Prob")
             for f in fields:
