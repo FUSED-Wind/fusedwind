@@ -196,23 +196,27 @@ class CaseAnalyzer(Assembly):
                 x = [case.ws, case.fst_params['WaveDir'], case.fst_params['WaveHs'], case.fst_params['WaveTp']]
                 prob = sctx.calc_prob(x)
 
-                vals = []
-                stdvals = []
+                vals = myfast.getMaxOutputValues(fields, directory=results_dir)
+                stdvals = myfast.getMaxOutputValueStdDevs(fields, directory=results_dir)
+                
+#                vals = []
+#                stdvals = []
                 for i in range(len(fields)):
-                    vstr = fields[i]
-                    val = myfast.getMaxOutputValue(vstr, directory=results_dir)
-                    stdval = myfast.getMaxOutputValueStdDev(vstr, directory=results_dir)
+#                    vstr = fields[i]
+#                    val = myfast.getMaxOutputValue(vstr, directory=results_dir)
+#                    stdval = myfast.getMaxOutputValueStdDev(vstr, directory=results_dir)
+                    val = vals[i]
+                    stdval = stdvals[i]
                     if (val != None):
                         vals.append(val)
                     else:
                         fail_count[i] += 1
-                        vals.append(-99999.9999)
+                        vals[i] = -99999.9999
                     if (stdval != None):
                         stdvals.append(stdval)
                     else:
                         fail_count[len(fields) + i] += 1
-                        stdvals.append(-99999.9999)
-                        
+                        stdvals[i] = -99999.9999
                 fout.write( "%.2f %.2f %.2f %.2f   %e" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], prob))
                 for i in range(len(fields)):
                     v = vals[i]
@@ -313,6 +317,7 @@ def get_options():
 #    parser.add_option("-d", "--dakota", dest="run_dakota", help="run cases via dakota", action="store_false", default=True)
     parser.add_option("-d", "--dakota", dest="run_dakota", help="run cases via dakota", action="store_true", default=False)
     parser.add_option("-r", "--raw_cases", dest="raw_cases", help="DO NOT run raw cases via openmdao", action="store_false", default=True)
+    parser.add_option("-c", "--cluster", dest="cluster_allocator", help="run using cluster allocator", action="store_true", default=False)
     
     (options, args) = parser.parse_args()
     return options, args
@@ -477,13 +482,15 @@ def rundlcs():
     collect and save output
     """
     
-    cluster=ClusterAllocator()
-    RAM.insert_allocator(0,cluster)
 
     options, arg = get_options()
     ctrl = parse_input(options.main_input, options)
     # ctrl will be just the input, but broken up into separate categories, e.g.
     # ctrl.cases, ctrl.app, ctrl.dispatch, ...
+
+    if (options.cluster_allocator):
+        cluster=ClusterAllocator()
+        RAM.insert_allocator(0,cluster)
             
     ###  using "factory" functions to create specific subclasses (e.g. distinguish between FAST and HAWC2)
     # Then we use these to create the cases...
