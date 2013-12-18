@@ -1,4 +1,4 @@
-
+import os
 import operator
 import numpy as np
 from numpy.random import weibull
@@ -303,7 +303,7 @@ def real_test(write=False, read=False):
 #    allns = [[2,2,3,3]  ]
 #    allns = [ [3,3,3,3], [4,4,4,4] ]
 #    allns = [ [10,10,8,8] ]
-    allns = [[6,6,4,4], [6,6,6,6]]
+#    allns = [[6,6,4,4], [6,6,6,6]]
     sctx = sampler.Context(dim)
 
     for ns in allns:
@@ -344,11 +344,94 @@ def real_test(write=False, read=False):
             fsamp.close()
             fscan.close()
 
+
+def run_fast():
+    import sampler
+    global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
+    global fsamp
+    global fscan
+    global fsamplines
+    global fscanlines
+
+
+    shape = 2.120
+    scale = 9.767
+    gshape = 10
+    gscale = .2
+    kappa = 1
+    kappa0 = 1
+    loc = -0.1
+
+    dim = 1
+    xmin = np.array([0])
+    xmax = np.array([50])
+    allns = [[20] ]
+
+#    dim = 2
+#    xmin = np.array([0,-pi+0.001])
+#    xmax = np.array([30,pi-0.001])
+#    allns = [[5,9],[11,9],[21,9] , [100,100]  ]
+
+    dim = 4
+    xmin = np.array([1,-pi,0,0])
+    xmax = np.array([30,pi,6,6])
+#    allns = [  [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [8,8,6,6] ,[10,10,8,8] ]
+#    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
+    ns = [2,2,2,2] 
+#    allns = [ [3,3,3,3], [4,4,4,4] ]
+#    allns = [ [10,10,8,8] ]
+#    allns = [[6,6,4,4], [6,6,6,6]]
+    sctx = sampler.Context(dim)
+
+    ## this code will go off a single ns that we can subdivide later, ie do one big run, then mine it.
+    # these params generate big MC we can also consider sequentially
+
+    # setup the samples for both MC and brute force
+    base1 = "mc_samples"
+    tag = ""
+    for d in ns:
+        tag += "%d" % d
+    fname1 = base1 + tag + ".txt"
+    fsamp = file(fname1,"w")
+    fsamp.write("Vhub WaveDir Hs Tp\n");
+    base2 = "int_samples"
+    fname2 = base2 + tag + ".txt"
+    fscan = file(fname2, "w")
+    fscan.write("Vhub WaveDir Hs Tp\n");
+
+    # will compute the test integral, but mainly write the samples
+    lsum1 = int_det4(sctx,ns,True,False)
+    lsum2 = int_mc4(sctx,ns,True,False)
+    fsamp.close()
+    fscan.close()
+    print "for TEST integral:", ns, lsum1, lsum2
+
+    # now actually do the runs, by calling openruniec.py
+    os.system("python openruniec.py -i %s -p" % fname1)
+    os.system("cp dlcproto.out %s.out" % (base1+tag))
+    os.system("python openruniec.py -i %s -p" % fname2)
+    os.system("cp dlcproto.out %s.out" % (base2+tag))
+
+    # now compute the integrals
+    fname1 = base1+tag+".out"
+    fsamplines = file(fname1).readlines()
+    fsamplines = fsamplines[1:]
+    fsamplines = [[float(x) for x in ln.split()] for ln in fsamplines]
+    fname2 = base2+tag+".out"
+    fscanlines = file(fname2).readlines()
+    fscanlines = fscanlines[1:]
+    fscanlines = [[float(x) for x in ln.split()] for ln in fscanlines]
+
+    # will compute the real integral, by reading the samples
+    lsum1 = int_det4(sctx,ns,False,True)
+    lsum2 = int_mc4(sctx,ns,False,True)
+    print "for REAL integral:", ns, lsum1, lsum2
     
 
 if __name__=="__main__":
 #    simple_test()
 #    less_simple_test()
-#    real_test(write=True, read=False)
-    real_test(write=False, read=True)
+#    real_test(write=True, read=False)   # generate samples, evaluate and integrate test function
+#    real_test(write=False, read=True)   # read samples and function values, just do integration of read-in values
+    run_fast()
 
