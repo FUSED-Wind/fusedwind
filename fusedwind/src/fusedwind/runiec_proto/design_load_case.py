@@ -184,6 +184,7 @@ class RawCases(object):
         casename = "raw_cases"
         self.cases = []
         param_names = fin[0].split()
+        print "PNAMES",param_names
         for iln in range(1,len(fin)):
             ln = fin[iln].strip().split()
 #            print "parsing:", ln
@@ -351,7 +352,7 @@ def sample2FASTparams(sample):
 
     if ('WaveDir' in sample):
                 ## wind-wave misalignment.  for RunIEC.pl, involves changing wave direction AND yaw.
-        # but Jason's study just considers misalignment.  I start there, meaning now yaw changes yet
+        # but Jason's study just considers misalignment.  I start there, meaning no yaw changes yet
         params['WaveDir'] = myfixangle(sample['WaveDir'])
     return w,s,params
 
@@ -366,6 +367,8 @@ class ParamDesignLoadCaseBuilder(DLCRunCaseBuilder):
         print "setting up dlc name %s" % name
 
         w,s,params = sample2FASTparams(sample)
+        print "got params", params
+        print "from sample", sample
         subcase = FASTRunCase(dlc,w,s,params)
 
         return subcase

@@ -130,7 +130,7 @@ class CaseAnalyzer(Assembly):
         # comment this line out to run sequentially
         self.ws_driver.sequential = not self.run_parallel
         # uncomment to keep simulation directories for debugging purposes
-        os.environ['OPENMDAO_KEEPDIRS'] = '1'
+#        os.environ['OPENMDAO_KEEPDIRS'] = '1'
 
         print "dispatcher configured\n-------------------------------------------\n"
     

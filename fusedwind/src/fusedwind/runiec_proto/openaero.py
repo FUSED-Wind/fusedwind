@@ -7,6 +7,7 @@ from openmdao.main.datatypes.api import Array, Float
 
 ### For NREL insiders
 from twister.models.FAST.runFAST import runFAST
+from twister.models.FAST.runTurbSim import runTurbSim
 from twister.models.FAST.mkgeom import makeGeometry
 ### for others
 #from twister_runFAST import runFAST
@@ -143,6 +144,7 @@ class runFASText(ExternalCode):
         sparhst = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.hst"))
 #        fastt = os.path.join("InputFilesToWrite", "NREL5MW_Monopile_Rigid.v7.02.fst")
         fastt = os.path.join("InputFilesToWrite",  self.rawfast.fast_file)
+        tst = "turbsim_template.inp"
         self.command = [self.appname, "test.fst"]
                 
         self.external_files = [
@@ -153,7 +155,8 @@ class runFASText(ExternalCode):
             FileMetadata(path=spar1, binary=False),
             FileMetadata(path=spar3, binary=False),
             FileMetadata(path=sparhst, binary=False),
-            FileMetadata(path=foundationt, binary=False),
+            FileMetadata(path=foundationt, binary=False), 
+            FileMetadata(path=tst, binary=False),
             FileMetadata(path=fastt, binary=False)]
         for nm in self.rawfast.getafNames():  
             self.external_files.append(FileMetadata(path="%s" % nm, binary=False))
@@ -177,6 +180,16 @@ class runFASText(ExternalCode):
 #        self.rawfast.set_wind_file(case.windfile)  ## slows us down a lot, delete for testing; also,
         # overrides given wind speed; but this is what is in RunIEC.pl
         ### end of key moment!
+
+        # run TurbSim to generate the wind:
+        
+        tmax = 2  ## should not be hard default ##
+        if ('TMax' in case.fst_params):  ## Note, this gets set via "AnalTime" in input files--FAST peculiarity ? ##
+            tmax = case.fst_params['TMax']
+        ts = runTurbSim()
+        ts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
+        ts.execute() ## cheating to not use assembly ##
+        self.rawfast.set_wind_file("turbsim_test.wnd")
 
         # let the FAST object write its inputs
         self.rawfast.write_inputs(case.fst_params)
