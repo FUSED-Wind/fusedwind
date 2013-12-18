@@ -161,6 +161,30 @@ def int_det4(sctx,nsample,write,read):
     print "det int done, ", lsum, psum,  psum * prod(dx)
     return lsum
 
+def int_det4_cumulative(sctx,nsample,nsub):
+    ns = np.array(nsample)
+    res = []
+    for isub in range(nsub):
+        dx = np.divide((xmax-xmin),(ns-1.0))
+        lsum = 0
+        psum = 0
+        done =False
+        midx = MultiIndex(dim, ns)
+        idx = 0
+        while not done:
+            x = xmin + np.multiply(dx, np.array(midx.midx))
+            val = fscanlines[idx][20]  ### NOTE exact field of interest!
+            prob = sctx.calc_prob(x)
+    #        prob = pdf2(x)
+            psum += prob
+            lsum += (val * prob * prod(dx))
+    #        print x, val, prob, lsum, psum, dx
+            done = midx.incr()
+            idx += 1
+        print "det int done, ", lsum, psum,  psum * prod(dx)
+        ns = ns/2.0
+        res.append(lsum)
+    return res
 
 def int_mc(nsample_per_dim):
     nsample = nsample_per_dim ** dim
@@ -210,6 +234,35 @@ def int_mc4(sctx,ns,write,read):
 #        print x,val, lsum
     lsum /= nsample
     return lsum
+
+def int_mc4_cumulative(sctx,ns,incr):
+    nsample = prod(ns)
+    sctx.sample(nsample)
+    if (dim == 1):
+        xx = sctx.Vhub
+    elif (dim == 2):
+        xx = zip(sctx.Vhub, sctx.WaveDir)
+    elif(dim == 4):
+        xx = zip(sctx.Vhub, sctx.WaveDir, sctx.Hs, sctx.Tp)
+    lsum = 0
+    for i in range(nsample):
+        x = np.array(xx[i])
+        if (dim == 1):
+            x = np.array([x])
+        val = fsamplines[i][20]  ### NOTE exact field of interest!
+        lsum += val
+        
+        if (i > 0 and i % incr == 0):
+            vals = fsamplines[0:i]
+            vals = [vals[j][20] for j in range(i)]
+            sd = np.std(vals)
+            est = lsum/float(i)
+            err = sd/np.sqrt(i)
+            print i, est, sd, err, est+err, est-err
+
+    lsum /= nsample
+    return lsum
+
 
 
 def simple_test():
@@ -298,7 +351,7 @@ def real_test(write=False, read=False):
     dim = 4
     xmin = np.array([1,-pi,0,0])
     xmax = np.array([30,pi,6,6])
-    allns = [  [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [8,8,6,6] ,[10,10,8,8] ]
+    allns = [ [2,2,2,2], [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [6,6,4,4],[6,6,6,6],[8,8,6,6] ]
 #    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
 #    allns = [[2,2,3,3]  ]
 #    allns = [ [3,3,3,3], [4,4,4,4] ]
@@ -345,6 +398,107 @@ def real_test(write=False, read=False):
             fscan.close()
 
 
+def int_test():
+    import sampler
+    global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
+    global fsamp
+    global fscan
+    global fsamplines
+    global fscanlines
+
+
+    shape = 2.120
+    scale = 9.767
+    gshape = 10
+    gscale = .2
+    kappa = 1
+    kappa0 = 1
+    loc = -0.1
+
+    dim = 1
+    xmin = np.array([0])
+    xmax = np.array([50])
+    allns = [[20] ]
+
+#    dim = 2
+#    xmin = np.array([0,-pi+0.001])
+#    xmax = np.array([30,pi-0.001])
+#    allns = [[5,9],[11,9],[21,9] , [100,100]  ]
+
+    dim = 4
+    xmin = np.array([1,-pi,0,0])
+    xmax = np.array([30,pi,6,6])
+#    allns = [  [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [8,8,6,6] ,[10,10,8,8] ]
+#    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
+#    allns = [[2,2,3,3]  ]
+#    allns = [ [3,3,3,3], [4,4,4,4] ]
+    allns = [ [10,10,8,8] ]
+#    allns = [[6,6,4,4], [6,6,6,6]]
+    sctx = sampler.Context(dim)
+
+    for ns in allns:
+        fname = "int_samples"
+        for d in ns:
+            fname += "%d" % d
+        fname += ".out"
+        fscanlines = file(fname).readlines()
+        fscanlines = fscanlines[1:]
+        fscanlines = [[float(x) for x in ln.split()] for ln in fscanlines]
+    
+        res = int_det4_cumulative(sctx,ns,2)
+        print ns, res
+
+def mc_test():
+    import sampler
+    global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
+    global fsamp
+    global fscan
+    global fsamplines
+    global fscanlines
+
+
+    shape = 2.120
+    scale = 9.767
+    gshape = 10
+    gscale = .2
+    kappa = 1
+    kappa0 = 1
+    loc = -0.1
+
+    dim = 1
+    xmin = np.array([0])
+    xmax = np.array([50])
+    allns = [[20] ]
+
+#    dim = 2
+#    xmin = np.array([0,-pi+0.001])
+#    xmax = np.array([30,pi-0.001])
+#    allns = [[5,9],[11,9],[21,9] , [100,100]  ]
+
+    dim = 4
+    xmin = np.array([1,-pi,0,0])
+    xmax = np.array([30,pi,6,6])
+#    allns = [  [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [8,8,6,6] ,[10,10,8,8] ]
+#    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
+#    allns = [[2,2,3,3]  ]
+#    allns = [ [3,3,3,3], [4,4,4,4] ]
+    allns = [ [10,10,8,8] ]
+#    allns = [[6,6,4,4], [6,6,6,6]]
+    sctx = sampler.Context(dim)
+
+    for ns in allns:
+        fname = "mc_samples"
+        for d in ns:
+            fname += "%d" % d
+        fname += ".out"
+        fsamplines = file(fname).readlines()
+        fsamplines = fsamplines[1:]
+        fsamplines = [[float(x) for x in ln.split()] for ln in fsamplines]
+    
+        lsum2 = int_mc4_cumulative(sctx,ns,10)
+        print ns, lsum2
+
+
 def run_fast():
     import sampler
     global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
@@ -377,7 +531,8 @@ def run_fast():
     xmax = np.array([30,pi,6,6])
 #    allns = [  [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [8,8,6,6] ,[10,10,8,8] ]
 #    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
-    ns = [2,2,2,2] 
+#    ns = [16,16,16,16] 
+    ns = [10,10,8,8] 
 #    allns = [ [3,3,3,3], [4,4,4,4] ]
 #    allns = [ [10,10,8,8] ]
 #    allns = [[6,6,4,4], [6,6,6,6]]
@@ -431,7 +586,9 @@ def run_fast():
 if __name__=="__main__":
 #    simple_test()
 #    less_simple_test()
-#    real_test(write=True, read=False)   # generate samples, evaluate and integrate test function
+    real_test(write=True, read=False)   # generate samples, evaluate and integrate test function
 #    real_test(write=False, read=True)   # read samples and function values, just do integration of read-in values
-    run_fast()
+#    run_fast()
 
+#    mc_test()
+#    int_test()
