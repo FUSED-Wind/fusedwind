@@ -181,8 +181,10 @@ class Context(object):
         self.Tp = Tp
         self.Prob = Prob
 
-    def write_samples(self, write_prob = False):
+    def write_samples(self, write_prob = False, gdict = {}):
         fout = file("dlcsamples.txt", "w")
+        for key in gdict:
+            fout.write("%s " % key)
         fout.write("Vhub WaveDir Hs Tp Prob\n")
         for i in range(len(self.Vhub)):
             if (write_prob):
@@ -190,6 +192,8 @@ class Context(object):
                 p2 = self.calc_prob(x)
                 fout.write("%f %f %f %f   %e %e\n" % (self.Vhub[i], self.WaveDir[i], self.Hs[i], self.Tp[i], self.Prob[i], p2))
             else:
+                for key in gdict:
+                    fout.write("%f " % gdict[key])
                 fout.write("%f %f %f %f\n" % (self.Vhub[i], self.WaveDir[i], self.Hs[i], self.Tp[i]))
         fout.close()
 
@@ -242,7 +246,7 @@ if __name__=="__main__":
 
     print ctx.Vbounds
 
-    ns  = 400
+    ns  = 50
     ctx.sample(ns)
 
 
@@ -256,6 +260,8 @@ if __name__=="__main__":
     print "Hs= ", mean(ctx.Hs), min(ctx.Hs), max(ctx.Hs)
     print "Tp= ", mean(ctx.Tp), min(ctx.Tp), max(ctx.Tp)
 
-    ctx.write_samples()
+
+    global_dict = {'AnalTime': 12}
+    ctx.write_samples(gdict=global_dict)
 
 

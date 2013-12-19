@@ -398,7 +398,7 @@ def parse_input(infile, options):
 ### separated out here.
 def create_load_cases(case_params):
     """ create load cases """
-    if (case_params['source_type'] == "old_perl"):
+    if (case_params['source_type'] == "old_perl"):  ### will be trashed
         obj = PerlRuniecInput()
     #    obj.initFromLines(lns)
         obj.initFromFile(case_params['source_file'], verbose=True)
@@ -408,15 +408,19 @@ def create_load_cases(case_params):
             for subcase in case.subcases:
                 print subcase.ws, subcase.randomseed
         cases = obj.cases
-    elif (case_params['source_type'] == "generic_88-329-csv"):
+    elif (case_params['source_type'] == "generic_88-329-csv"):  ### maybe too simple
         obj = NREL13_88_329Input()
         obj.initFromFile(case_params['source_file'], verbose=True)
-    elif (case_params['source_type'] == "generic_88-329-distn"):
+
+
+    elif (case_params['source_type'] == "generic_88-329-distn"):  ### maybe use this still for generation of samples, but decoupled from run.
         obj = NREL13_88_329FromDistn()
         obj.initFromFile(case_params['source_file'], verbose=True)
-    elif (case_params['source_type'] == "raw_cases"):
+
+    elif (case_params['source_type'] == "raw_cases"):  #### everything heading here  for actual runs
         obj = RawCases()
         obj.initFromFile(case_params['source_file'], verbose=True)
+
     elif (case_params['source_type'] == "list"):
         case_list = ctrl.cases['case_list']  ## testing    
         ncases = len(case_list)  
