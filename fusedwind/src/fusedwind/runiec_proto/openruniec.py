@@ -318,6 +318,9 @@ def get_options():
     parser.add_option("-d", "--dakota", dest="run_dakota", help="run cases via dakota", action="store_true", default=False)
     parser.add_option("-r", "--raw_cases", dest="raw_cases", help="DO NOT run raw cases via openmdao", action="store_false", default=True)
     parser.add_option("-c", "--cluster", dest="cluster_allocator", help="run using cluster allocator", action="store_true", default=False)
+    parser.add_option("-n", "--norun", dest="norun", help="just process results", action="store_true", default=False)
+    parser.add_option("-s", "--start_at", dest="start_at", help="index of sample to start at", type="int", default=0)
+        
     
     (options, args) = parser.parse_args()
     return options, args
@@ -396,7 +399,7 @@ def parse_input(infile, options):
 ###########################################################################
 ### "Factories" for making the appropriate objects, given the input. This is inevitable and
 ### separated out here.
-def create_load_cases(case_params):
+def create_load_cases(case_params, options):
     """ create load cases """
     if (case_params['source_type'] == "old_perl"):  ### will be trashed
         obj = PerlRuniecInput()
@@ -417,9 +420,11 @@ def create_load_cases(case_params):
         obj = NREL13_88_329FromDistn()
         obj.initFromFile(case_params['source_file'], verbose=True)
 
-    elif (case_params['source_type'] == "raw_cases"):  #### everything heading here  for actual runs
+################### #### everything heading here  for actual runs #########
+    elif (case_params['source_type'] == "raw_cases"): 
         obj = RawCases()
-        obj.initFromFile(case_params['source_file'], verbose=True)
+        obj.initFromFile(case_params['source_file'], verbose=True, start_at = options.start_at)
+####################### ######################
 
     elif (case_params['source_type'] == "list"):
         case_list = ctrl.cases['case_list']  ## testing    
@@ -498,7 +503,7 @@ def rundlcs():
             
     ###  using "factory" functions to create specific subclasses (e.g. distinguish between FAST and HAWC2)
     # Then we use these to create the cases...
-    cases = create_load_cases(ctrl.cases)
+    cases = create_load_cases(ctrl.cases, options)
     # and a turbine
     turbine = create_turbine(ctrl.turbine)
     # and the appropriate wind code wrapper...
@@ -506,12 +511,14 @@ def rundlcs():
     # and the appropriate dispatcher...
     dispatcher = create_dlc_dispatcher(ctrl.dispatcher)
     ### After this point everything should be generic, all appropriate subclass object created
-
+    
     dispatcher.presetup_workflow(aerocode, turbine, cases)  # just makes sure parts are there when configure() is called
+    dispatcher.configure()
     # Now tell the dispatcher to (setup and ) run the cases using the aerocode on the turbine.
     # calling configure() is done inside run().
-
-    dispatcher.run()
+    
+    if (not options.norun):
+        dispatcher.run()
 
     # TODO:  more complexity will be needed for difference between "run now" and "run later" cases.
     dispatcher.collect_output(ctrl.output)

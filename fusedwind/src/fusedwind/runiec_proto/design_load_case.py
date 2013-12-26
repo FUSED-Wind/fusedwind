@@ -176,7 +176,7 @@ class RawCases(object):
     def __init__(self):
         super(RawCases, self).__init__()
 
-    def initFromFile(self, filename, verbose =True):
+    def initFromFile(self, filename, start_at = 0, verbose =True):
         ## special "table"-like file: one line header of variable names then data only
         print "reading raw cases from ", filename
         fin = file(filename).readlines()
@@ -186,10 +186,11 @@ class RawCases(object):
         param_names = fin[0].split()
         print "PNAMES",param_names
         for iln in range(1,len(fin)):
-            ln = fin[iln].strip().split()
+            if (iln > start_at):  # beware indexing: 0th sample is on line 1, after header, so we need line idex > start_at
+                ln = fin[iln].strip().split()
 #            print "parsing:", ln
-            ln = [float(f) for f in ln]
-            self.cases.append(RawDesignLoadCase(casename, param_names, ln))
+                ln = [float(f) for f in ln]
+                self.cases.append(RawDesignLoadCase(casename, param_names, ln))
             
 
 #-----------------------------------------------
