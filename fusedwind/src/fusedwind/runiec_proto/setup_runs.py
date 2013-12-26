@@ -44,7 +44,7 @@ def split_input(options):
     return all_files
 
 
-def write_pbs(fname, fno, est_time_hrs=1):
+def write_pbs(fname, fno, est_time_hrs=10):
     lines = file("runjob.pbs.template").readlines()
     newlines = []
     for ln in lines:

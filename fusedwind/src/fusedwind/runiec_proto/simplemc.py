@@ -398,7 +398,7 @@ def real_test(write=False, read=False):
             fscan.close()
 
 
-def int_test():
+def int_test(fname = None):
     import sampler
     global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
     global fsamp
@@ -432,15 +432,16 @@ def int_test():
 #    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
 #    allns = [[2,2,3,3]  ]
 #    allns = [ [3,3,3,3], [4,4,4,4] ]
-    allns = [ [10,10,8,8] ]
+    allns = [ [16,16,16,16] ]
 #    allns = [[6,6,4,4], [6,6,6,6]]
     sctx = sampler.Context(dim)
 
     for ns in allns:
-        fname = "int_samples"
-        for d in ns:
-            fname += "%d" % d
-        fname += ".out"
+        if (fname == None):
+            fname = "int_samples"
+            for d in ns:
+                fname += "%d" % d
+            fname += ".out"
         fscanlines = file(fname).readlines()
         fscanlines = fscanlines[1:]
         fscanlines = [[float(x) for x in ln.split()] for ln in fscanlines]
@@ -448,7 +449,7 @@ def int_test():
         res = int_det4_cumulative(sctx,ns,2)
         print ns, res
 
-def mc_test():
+def mc_test(fname = None):
     import sampler
     global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
     global fsamp
@@ -482,15 +483,17 @@ def mc_test():
 #    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
 #    allns = [[2,2,3,3]  ]
 #    allns = [ [3,3,3,3], [4,4,4,4] ]
-    allns = [ [10,10,8,8] ]
+    allns = [ [16,16,16,16] ]
 #    allns = [[6,6,4,4], [6,6,6,6]]
     sctx = sampler.Context(dim)
 
     for ns in allns:
-        fname = "mc_samples"
-        for d in ns:
-            fname += "%d" % d
-        fname += ".out"
+        if (fname == None):
+            fname = "mc_samples"
+            for d in ns:
+                fname += "%d" % d
+            fname += ".out"
+
         fsamplines = file(fname).readlines()
         fsamplines = fsamplines[1:]
         fsamplines = [[float(x) for x in ln.split()] for ln in fsamplines]
@@ -586,9 +589,9 @@ def run_fast():
 if __name__=="__main__":
 #    simple_test()
 #    less_simple_test()
-    real_test(write=True, read=False)   # generate samples, evaluate and integrate test function
+#    real_test(write=True, read=False)   # generate samples, evaluate and integrate test function
 #    real_test(write=False, read=True)   # read samples and function values, just do integration of read-in values
 #    run_fast()
 
-#    mc_test()
-#    int_test()
+#    mc_test("mc.16161616.60s.txt.out")
+    int_test("grid.16161616.60s.txt.out")
