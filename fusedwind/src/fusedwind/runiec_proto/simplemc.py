@@ -174,14 +174,15 @@ def int_det4_cumulative(sctx,nsample,nsub):
         while not done:
             x = xmin + np.multiply(dx, np.array(midx.midx))
             val = fscanlines[idx][20]  ### NOTE exact field of interest!
-            prob = sctx.calc_prob(x)
+#            prob = sctx.calc_prob(x)
+            prob = fscanlines[idx][4]
     #        prob = pdf2(x)
             psum += prob
             lsum += (val * prob * prod(dx))
     #        print x, val, prob, lsum, psum, dx
             done = midx.incr()
             idx += 1
-        print "det int done, ", lsum, psum,  psum * prod(dx)
+#        print "det int done, ", lsum, psum,  psum * prod(dx)
         ns = ns/2.0
         res.append(lsum)
     return res
@@ -398,7 +399,7 @@ def real_test(write=False, read=False):
             fscan.close()
 
 
-def int_test(fname = None):
+def int_test(fnamein = None, head = None, tail = None):
     import sampler
     global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
     global fsamp
@@ -436,18 +437,28 @@ def int_test(fname = None):
 #    allns = [[6,6,4,4], [6,6,6,6]]
     sctx = sampler.Context(dim)
 
+    allns = [[4,4,4,4],   [6,6,4,4],   [  6,6,6,6],   [8,8,6,6],    [8,8,8,8], [10,10,8,8], [16,16,12,12],  [16,16,16,16]]
     for ns in allns:
-        if (fname == None):
-            fname = "int_samples"
+        if (fnamein != None):
+            fname = fnamein
+        else:
+            if (head == None):
+                fname = "int_samples"
+            else:
+                fname = head
             for d in ns:
                 fname += "%d" % d
-            fname += ".out"
+            if (tail == None):
+                fname += ".out" 
+            else:
+                fname += tail
+#        print "reading from ", fname, "   ns = ", ns
         fscanlines = file(fname).readlines()
         fscanlines = fscanlines[1:]
         fscanlines = [[float(x) for x in ln.split()] for ln in fscanlines]
     
-        res = int_det4_cumulative(sctx,ns,2)
-        print ns, res
+        res = int_det4_cumulative(sctx,ns,1)
+        print ns, prod(ns), res
 
 def mc_test(fname = None):
     import sampler
@@ -594,4 +605,7 @@ if __name__=="__main__":
 #    run_fast()
 
 #    mc_test("mc.16161616.60s.txt.out")
-    int_test("grid.16161616.60s.txt.out")
+#    int_test(fname="grid.16161616.60s.txt.out")
+    int_test(head="grid.", tail = ".60s.txt.out")
+
+#  LocalWords:  allns
