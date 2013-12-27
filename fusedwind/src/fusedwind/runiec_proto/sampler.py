@@ -1,5 +1,6 @@
 from scipy.stats import vonmises, gamma
 from numpy.random import weibull
+import numpy.random as npr
 from math import pi, isnan, exp
 from numpy import mean
 import numpy as np
@@ -76,6 +77,8 @@ def interp_tab2(fname):
 
 class Context(object):
     def __init__(self,dim=4):
+        npr.seed(1)
+
         self.WindDirKappaTab,self.Vbounds = interp_tab1("windwavedistn/WindDir_kappa.txt")
         self.WindDirLocTab,dummy = interp_tab1("windwavedistn/WindDir_loc.txt")
         self.HsShapeTab = interp_tab2("windwavedistn/Hs_shape.txt")
@@ -185,16 +188,22 @@ class Context(object):
         fout = file("dlcsamples.txt", "w")
         for key in gdict:
             fout.write("%s " % key)
-        fout.write("Vhub WaveDir Hs Tp Prob\n")
+        fout.write("Vhub WaveDir Hs Tp")
+        if (write_prob):
+            fout.write(" Prob")
+        fout.write("\n")
         for i in range(len(self.Vhub)):
+            for key in gdict:
+                fout.write("%e " % gdict[key])
+            fout.write("%.16e %.16e %.16e %.16e" % (self.Vhub[i], self.WaveDir[i], self.Hs[i], self.Tp[i]))
             if (write_prob):
-                x = [self.Vhub[i], self.WaveDir[i], self.Hs[i], self.Tp[i]]
-                p2 = self.calc_prob(x)
-                fout.write("%f %f %f %f   %e %e\n" % (self.Vhub[i], self.WaveDir[i], self.Hs[i], self.Tp[i], self.Prob[i], p2))
-            else:
-                for key in gdict:
-                    fout.write("%f " % gdict[key])
-                fout.write("%f %f %f %f\n" % (self.Vhub[i], self.WaveDir[i], self.Hs[i], self.Tp[i]))
+#                y = [self.Vhub[i], self.WaveDir[i], self.Hs[i], self.Tp[i]]
+#                s = ["%.2f" % yf for yf in y]
+#                x = [float(ss) for ss in s]
+#                p2 = self.calc_prob(x)
+#                p3 = self.calc_prob(y)
+                fout.write(" %.16e" % (self.Prob[i]))
+            fout.write("\n")
         fout.close()
 
 
@@ -234,9 +243,19 @@ class Context(object):
 #        print "returning 0 prob, out of bounds ", x
         return 0
 
+def get_options():
+    from optparse import OptionParser
+    parser = OptionParser()    
+    parser.add_option("-p", "--writeprob", dest="writeprob", help="include prob in sample list", action="store_true", default=False)
+    
+    (options, args) = parser.parse_args()
+    return options, args
+
+
+
 if __name__=="__main__":
     ctx = Context()
-    
+    options, args = get_options()
     V = 13
     k = ctx.WindDirKappaTab(V)
     l = ctx.WindDirLocTab(V)
@@ -246,7 +265,7 @@ if __name__=="__main__":
 
     print ctx.Vbounds
 
-    ns  = 50
+    ns  = 4
     ctx.sample(ns)
 
 
@@ -262,6 +281,6 @@ if __name__=="__main__":
 
 
     global_dict = {'AnalTime': 12}
-    ctx.write_samples(gdict=global_dict)
+    ctx.write_samples(write_prob = options.writeprob, gdict=global_dict)
 
 

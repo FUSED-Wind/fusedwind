@@ -194,7 +194,9 @@ class CaseAnalyzer(Assembly):
 #                fout.write( "%.2f %.2f %.2f %.2f   %.2f\n" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir)))  ### this may not exist, just an example
 
                 x = [case.ws, case.fst_params['WaveDir'], case.fst_params['WaveHs'], case.fst_params['WaveTp']]
+                x[1] *= pi/180.0    ## sampler works in radians, and different order than we print results (because PG is an idiot!)
                 prob = sctx.calc_prob(x)
+                print "got ", x, "  prob= ", prob
 
                 vals = myfast.getMaxOutputValues(fields, directory=results_dir)
                 stdvals = myfast.getMaxOutputValueStdDevs(fields, directory=results_dir)
@@ -217,7 +219,7 @@ class CaseAnalyzer(Assembly):
                     else:
                         fail_count[len(fields) + i] += 1
                         stdvals[i] = -99999.9999
-                fout.write( "%.2f %.2f %.2f %.2f   %e" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], prob))
+                fout.write( "%.16e %.16e %.16e %.16e   %.16e" % (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], prob))
                 for i in range(len(fields)):
                     v = vals[i]
                     fout.write(" %.6e " % v)
