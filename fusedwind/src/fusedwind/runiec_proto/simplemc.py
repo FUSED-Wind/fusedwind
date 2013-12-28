@@ -238,21 +238,26 @@ def int_mc4(sctx,ns,write,read):
 
 def int_mc4_cumulative(sctx,ns,incr):
     nsample = prod(ns)
-    sctx.sample(nsample)
-    if (dim == 1):
-        xx = sctx.Vhub
-    elif (dim == 2):
-        xx = zip(sctx.Vhub, sctx.WaveDir)
-    elif(dim == 4):
-        xx = zip(sctx.Vhub, sctx.WaveDir, sctx.Hs, sctx.Tp)
+#    sctx.sample(nsample)
+#    if (dim == 1):
+#        xx = sctx.Vhub
+#    elif (dim == 2):
+#        xx = zip(sctx.Vhub, sctx.WaveDir)
+#    elif(dim == 4):
+#        xx = zip(sctx.Vhub, sctx.WaveDir, sctx.Hs, sctx.Tp)
     lsum = 0
     for i in range(nsample):
-        x = np.array(xx[i])
+        y = [fsamplines[i][j] for j in range(dim)]
+        x = [y[0],pi/180. * y[3], y[1],y[2]]
+        x = np.array(x)
+#        x = np.array(xx[i])
         if (dim == 1):
             x = np.array([x])
         val = fsamplines[i][20]  ### NOTE exact field of interest!
         lsum += val
-        
+        if (check_prob):
+            prob = sctx.calc_prob(x)
+            print i, x, "   %e" %( prob)
         if (i > 0 and i % incr == 0):
             vals = fsamplines[0:i]
             vals = [vals[j][20] for j in range(i)]
@@ -467,8 +472,9 @@ def mc_test(fname = None):
     global fscan
     global fsamplines
     global fscanlines
+    global check_prob
 
-
+    check_prob = True
     shape = 2.120
     scale = 9.767
     gshape = 10
@@ -498,14 +504,18 @@ def mc_test(fname = None):
 #    allns = [[6,6,4,4], [6,6,6,6]]
     sctx = sampler.Context(dim)
 
+    if (fname != None):
+        fsamplines = file(fname).readlines()
+        ll = len(fsamplines) -1
+        allns = [[ll]] ## hopefully just tricks code below
     for ns in allns:
         if (fname == None):
             fname = "mc_samples"
             for d in ns:
                 fname += "%d" % d
             fname += ".out"
-
-        fsamplines = file(fname).readlines()
+            fsamplines = file(fname).readlines()
+    
         fsamplines = fsamplines[1:]
         fsamplines = [[float(x) for x in ln.split()] for ln in fsamplines]
     
@@ -604,8 +614,8 @@ if __name__=="__main__":
 #    real_test(write=False, read=True)   # read samples and function values, just do integration of read-in values
 #    run_fast()
 
-#    mc_test("mc.16161616.60s.txt.out")
+    mc_test("dlcproto.out")
 #    int_test(fname="grid.16161616.60s.txt.out")
-    int_test(head="grid.", tail = ".60s.txt.out")
+#    int_test(head="grid.", tail = ".60s.txt.out")
 
 #  LocalWords:  allns
