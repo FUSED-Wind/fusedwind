@@ -174,6 +174,7 @@ def int_det4_cumulative(sctx,nsample,nsub):
         idx = 0
         while not done:
             x = xmin + np.multiply(dx, np.array(midx.midx))
+#            print idx, x
             val = fscanlines[idx][20]  ### NOTE exact field of interest!
 #            prob = sctx.calc_prob(x)
             prob = fscanlines[idx][4]
@@ -183,9 +184,9 @@ def int_det4_cumulative(sctx,nsample,nsub):
     #        print x, val, prob, lsum, psum, dx
             done = midx.incr()
             idx += 1
-#        print "det int done, ", lsum, psum,  psum * prod(dx)
+ #       print "det int done, ", lsum, psum,  psum * prod(dx)
         ns = ns/2.0
-        res.append(lsum)
+        res.append(lsum/(psum * prod(dx)))
     return res
 
 def int_mc(nsample_per_dim):
@@ -296,11 +297,12 @@ def simple_test():
 #    dim = 4
 #    allns = [5,9,17,33]
 
-#    dim = 1
-#    allns = [5,11,21,41,81,161,321,641,1281,2561,5121]
-    dim = 5
-    allns = [64]
-#    allns = [5,6,7]
+    dim = 1
+    allns = [5,11,21,41,81,161,321,641,1281,2561,5121]
+#    dim = 2
+#    allns = [5,11,21,41,81]
+    dim = 4
+    allns = [2,4,8,16]
 
     for ns in allns:
         lsum1 = int_det(ns)
@@ -360,12 +362,13 @@ def real_test(write=False, read=False):
     dim = 4
     xmin = np.array([1,-pi,0,0])
     xmax = np.array([30,pi,6,6])
-    allns = [ [2,2,2,2], [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [6,6,4,4],[6,6,6,6],[8,8,6,6] ]
+#    allns = [ [2,2,2,2], [2,2,3,3], [3,3,3,3],  [4,4,3,3], [4,4,4,4], [6,6,4,4],[6,6,6,6],[8,8,6,6],
+#              [8,8,8,8],[10,10,8,8],[10,10,10,10],[12,12,12,12],[16,16,12,12],[16,16,16,16]]
 #    allns = [   [4,4,3,3], [8,8,6,6] , [16,16,12,12]    ]
 #    allns = [[2,2,3,3]  ]
 #    allns = [ [3,3,3,3], [4,4,4,4] ]
 #    allns = [ [10,10,8,8] ]
-#    allns = [[6,6,4,4], [6,6,6,6]]
+    allns = [[20,20,20,20]]
     sctx = sampler.Context(dim)
 
     for ns in allns:
@@ -446,6 +449,10 @@ def int_test(fnamein = None, head = None, tail = None):
     sctx = sampler.Context(dim)
 
     allns = [[4,4,4,4],   [6,6,4,4],   [  6,6,6,6],   [8,8,6,6],    [8,8,8,8], [10,10,8,8], [16,16,12,12],  [16,16,16,16]]
+#int_samples101088.out    int_samples2222.out  int_samples3333.out  int_samples4444.out  int_samples6666.out  int_samples8888.out
+#int_samples16161616.out  int_samples2233.out  int_samples4433.out  int_samples6644.out  int_samples8866.out
+    allns = [[4,4,4,4],   [6,6,4,4],   [  6,6,6,6],   [8,8,6,6],    [8,8,8,8], [10,10,8,8],  [16,16,16,16]]
+    allns = [[20,20,20,20]]
     for ns in allns:
         if (fnamein != None):
             fname = fnamein
@@ -619,6 +626,9 @@ if __name__=="__main__":
 
 #    mc_test("dlcproto.out")
 #    int_test(fname="grid.16161616.60s.txt.out")
-#    int_test(head="grid.", tail = ".60s.txt.out")
+#    print "2 second runs"
+#    int_test(head="/scratch/pgraf/runiec/proto2/int_samples", tail = ".out")
+#    print "60 second runs"
+    int_test(head="int_samples", tail = ".txt.out")
 
 #  LocalWords:  allns
