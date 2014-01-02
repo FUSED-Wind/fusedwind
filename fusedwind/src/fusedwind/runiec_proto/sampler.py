@@ -90,7 +90,7 @@ class Context(object):
         # should be outside of whatever FAST actually runs, so we can always compute probability if we want
         # but should be inside of what FAST _can_ run, so we don't generate illegal (ie crash-causing) samples
         # Real issue is the _lower_ bounds. (and both for winddir). These match "design_load_case.py"
-        self.WindDirBounds = [-179.999, 179.999]
+        self.WindDirBounds = [-3.14159, 3.14159]
         self.HsBounds = [0.001, 20]
         self.TpBounds = [0.001, 30]
         self.Vbounds = [0,30]
