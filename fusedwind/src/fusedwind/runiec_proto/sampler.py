@@ -265,7 +265,7 @@ if __name__=="__main__":
 
     print ctx.Vbounds
 
-    ns  = 4
+    ns  = 10000
     ctx.sample(ns)
 
 

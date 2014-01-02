@@ -111,8 +111,9 @@ def int_det(nsample):
         lsum += (val * prob * dx**dim)
 #        print x, val, prob, lsum, psum, dx
         done = midx.incr()
-    print "det int done, ", lsum, psum,  psum * dx**dim
-    return lsum
+    print "#det int done, ", lsum, psum,  psum * dx**dim
+    return lsum /  (psum * dx**dim)
+#    return lsum 
 
 def int_det2(nsample):
     ns = np.array(nsample)
@@ -272,10 +273,11 @@ def int_mc4_cumulative(sctx,ns,incr):
 
 
 def simple_test():
+    global xmin, xmax, shape, scale, gshape, gscale, kappa, loc, dim, kappa0
     fvm = file("vm.dat", "w")
 
     xmin = 0
-    xmax = 10
+    xmax = 30
     shape = 2.120
     scale = 9.767
     gshape = 10
@@ -294,10 +296,11 @@ def simple_test():
 #    dim = 4
 #    allns = [5,9,17,33]
 
-    dim = 1
-    allns = [5,11,21,41,81,161,321,641,1281,2561,5121]
-#    dim = 2
-#    allns = [5,11,21,41,81]
+#    dim = 1
+#    allns = [5,11,21,41,81,161,321,641,1281,2561,5121]
+    dim = 5
+    allns = [64]
+#    allns = [5,6,7]
 
     for ns in allns:
         lsum1 = int_det(ns)
@@ -319,7 +322,7 @@ def less_simple_test():
     kappa0 = 1
     loc = -0.1
 
-    dim = 2
+    dim = 1
     allns = [5,11,21,41,81]
     for ns in allns:
         ns = [ns for i in range(dim)]
@@ -608,13 +611,13 @@ def run_fast():
     
 
 if __name__=="__main__":
-#    simple_test()
+    simple_test()
 #    less_simple_test()
 #    real_test(write=True, read=False)   # generate samples, evaluate and integrate test function
 #    real_test(write=False, read=True)   # read samples and function values, just do integration of read-in values
 #    run_fast()
 
-    mc_test("dlcproto.out")
+#    mc_test("dlcproto.out")
 #    int_test(fname="grid.16161616.60s.txt.out")
 #    int_test(head="grid.", tail = ".60s.txt.out")
 
