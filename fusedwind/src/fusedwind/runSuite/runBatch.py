@@ -2,7 +2,7 @@
 
 # main python driver to run wind load cases in a variety of ways, uses openMDAO
 # Copyright NREL, 2013
-# George Scott, Peter Graf, Katherined Dykes, Andrew Ning, NWTC SE team
+# George Scott, Peter Graf, Katherine Dykes, Andrew Ning, NWTC SE team
 
 import os
 from math import pi
@@ -21,16 +21,15 @@ from openmdao.lib.datatypes.api import Str, Int
 from openmdao.main.pbs import PBS_Allocator as PBS
 from openmdao.main.resource import ResourceAllocationManager as RAM
 from openmdao.util.testutil import find_python
+
 from PeregrineClusterAllocator import ClusterAllocator
 
+# this is temporary:
+from AeroelasticSE.mkgeom import makeGeometry
 
-### For NREL insiders:
-from twister.models.FAST.mkgeom import makeGeometry
-### For the rest
-#from twister_mkgeom import makeGeometry
-
-
+# aero code stuff
 from runAero import openFAST, designFAST
+# run case stuff
 from runCase import GenericRunCaseTable
 
 #import logging
@@ -45,7 +44,7 @@ RunCase-- description for single run of unerlying aerocode assembly (RunCases co
 FASTRunCase
 GenericRunCase
 RunResult -- results for a single case -- so far no need for openMDAO
-Turbine -- the turbine to run against -- will use "world object", generic turbine variable tree
+Turbine -- the turbine to run against -- will use "world object", generic turbine variable tree; unimplemented
 AeroCode -- application that will run a RunCase--subclass of Assembly, represents generic aerocode, including any input building
 Dispatcher/CaseAnalyzer -- sets up DLC/App sets to run in different ways (serial, parallel-cluster, parallel-grid, etc.)--wraps openMDAO CaseIterDriver
 """
@@ -260,7 +259,7 @@ def create_turbine(turbine_params):
     t = Turbine()
     return t
 
-def create_aerocode_wrapper(aerocode_params, options):
+def create_aerocode_wrapper(aerocode_params, output_params, options):
     """ create  wind code wrapper"""
     
     solver = 'FAST'
@@ -270,9 +269,10 @@ def create_aerocode_wrapper(aerocode_params, options):
         ## TODO, changed when we have a real turbine
         geometry, atm = makeGeometry()
         w = openFAST(geometry, atm)
+        w.setOutput(output_params)
     elif solver == 'HAWC2':
         w = openHAWC2(None)
-        #raise NotImplementedError, "HAWC2 aeroecode wrapper not implemented in runIeC context yet"
+        raise NotImplementedError, "HAWC2 aeroecode wrapper not implemented in runBatch.py yet"
     else:
         raise ValueError, "unknown aerocode: %s" % solver
     return w
@@ -320,7 +320,7 @@ def rundlcs():
     # and a turbine
     turbine = create_turbine(ctrl.turbine)
     # and the appropriate wind code wrapper...
-    aerocode = create_aerocode_wrapper(ctrl.aerocode, options)
+    aerocode = create_aerocode_wrapper(ctrl.aerocode, ctrl.output, options)
     # and the appropriate dispatcher...
     dispatcher = create_dlc_dispatcher(ctrl.dispatcher)
     ### After this point everything should be generic, all appropriate subclass object created

@@ -143,9 +143,10 @@ def prob_vonmises(x, kappa, loc):
     return p
 
 def prob_multivariate_normal(x, mu, sigma):
+## not in scipy < 0.14:
 #    p = multivariate_normal.pdf(x,mean,cov)
 #    return p
-#def norm_pdf_multivariate(x, mu, sigma):
+# instead:
     x = np.array(x)
     mu = np.array(mu)
     sigma = matrix(sigma)
@@ -555,7 +556,7 @@ class DistnParser(object):
 def get_options():
     from optparse import OptionParser
     parser = OptionParser()    
-    parser.add_option("-i", "--input", dest="main_input",  type="string", default="runcasegen-dist.txt",
+    parser.add_option("-i", "--input", dest="main_input",  type="string", default="runbatch-dist.txt",
                                     help="main input file describing distribution, ie cases to run")
     parser.add_option("-n", "--nsamples", dest="nsamples", help="how many samples to generate", type="int", default=5)
     parser.add_option("-o", "--output", dest="main_output",  type="string", default="runcases.txt",

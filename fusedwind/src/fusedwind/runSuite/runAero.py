@@ -5,19 +5,11 @@ from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.datatypes.slot import Slot
 from openmdao.main.datatypes.api import Array, Float
 
-### For NREL insiders
-#from twister.models.FAST.runFAST import runFAST
-#from twister.models.FAST.runTurbSim import runTurbSim
 from AeroelasticSE.runFAST import runFAST
 from AeroelasticSE.runTurbSim import runTurbSim
-from twister.models.FAST.mkgeom import makeGeometry
-### for others
-#from twister_runFAST import runFAST
-#from twister_mkgeom import makeGeometry
+from AeroelasticSE.mkgeom import makeGeometry
 
-
-#from design_load_case import DesignLoadCase, DLCResult,  FASTRunCase, FASTDLCResult, NREL13_88_329Input, FASTRunCaseBuilder
-from runCase import RunCase, FASTRunCaseBuilder, RunResult, FASTRunResult
+from runCase import RunCase, FASTRunCaseBuilder, FASTRunCase, RunResult, FASTRunResult
 
 ########### aerocode #####################
 ## generic aeroelastic analysis code (e.g. FAST, HAWC2,)
@@ -38,15 +30,16 @@ class openAeroCode(Assembly):
             print "failed to make base dir all_runs; or it exists"
 
     def getRunCaseBuilder(self):
-        raise unimplementedError, "this is a \"virtual\" function!"
+        raise unimplementedError, "this is a \"virtual\" class!"
 
     def getResults(self, keys, results_dir):
-        raise unimplementedError, "this is a \"virtual\" function!"
+        raise unimplementedError, "this is a \"virtual\" class!"
 
+    def setOutput(self, output_params):
+        raise unimplementedError, "this is a \"virtual\" class!"        
     
 
 class openFAST(openAeroCode):
-
     def __init__(self, geom, atm):
         self.runfast = runFASText(geom, atm)
         super(openFAST, self).__init__()
@@ -79,9 +72,8 @@ class openFAST(openAeroCode):
             vals.append(val)
         return vals
 
-#        vals = myfast.getMaxOutputValues(keys, directory=results_dir, operation)
-#        stdvals = myfast.getMaxOutputValueStdDevs(fields, directory=results_dir)
-#        return vals
+    def setOutput(self, output_params):
+        self.runfast.set_fast_outputs(output_params['output_keys'])
 
 class designFAST(openFAST):        
     """ base class for cases where we have parametric design (e.g. dakota),
@@ -100,7 +92,7 @@ class designFAST(openFAST):
 
     def dlc_from_params(self,x):
         print x, self.param_names, self.dlc.name
-        case = ParamDesignLoadCaseBuilder.buildRunCase_x(x, self.param_names, self.dlc)
+        case = FASTRunCaseBuilder.buildRunCase_x(x, self.param_names, self.dlc)
         print case.fst_params
         return case
 
@@ -120,11 +112,8 @@ class runFASText(ExternalCode):
     input = Slot(RunCase, iotype='in')
     output = Slot(RunResult, iotype='out')  ## never used, never even set
 
-#    fast_outputs = ['WindVxi', 'Azimuth', 'RotSpeed',  'BldPitch1',  'RotTorq', 'RotPwr',  'RotThrust', 'GenPwr' , 'GenTq' , 'OoPDefl1',
-#                    'IPDefl1', 'TwstDefl1', 'RootMxc1']
     fast_outputs = ['WindVxi','RotSpeed', 'RotPwr', 'GenPwr', 'RootMxc1', 'RootMyc1', 'LSSGagMya', 'LSSGagMza', 'YawBrMxp', 'YawBrMyp','TwrBsMxt',
-                    'TwrBsMyt',
-                    'Fair1Ten', 'Fair2Ten', 'Fair3Ten', 'Anch1Ten', 'Anch2Ten', 'Anch3Ten']
+                    'TwrBsMyt', 'Fair1Ten', 'Fair2Ten', 'Fair3Ten', 'Anch1Ten', 'Anch2Ten', 'Anch3Ten'] # meant to be overridden by caller
     def __init__(self, geom, atm):
         super(runFASText,self).__init__()
         self.rawfast = runFAST(geom, atm)
@@ -138,9 +127,6 @@ class runFASText(ExternalCode):
 #        self.rawfast.setFastFile("NREL5MW_Monopile_Floating.v7.01.fst")  # still needs to live in "InputFilesToWrite/"
 
         self.rawfast.setOutputs(self.fast_outputs)
-
-#        self.stderr = "error.out"
-#        self.stdout = "mystdout"
 
         self.basedir = os.path.join(os.getcwd(),"all_runs")
         try:
@@ -180,7 +166,10 @@ class runFASText(ExternalCode):
             FileMetadata(path=fastt, binary=False)]
         for nm in self.rawfast.getafNames():  
             self.external_files.append(FileMetadata(path="%s" % nm, binary=False))
-        
+
+    def set_fast_outputs(self,fst_out):
+        self.fast_outputs = fst_out
+        self.rawfast.setOutputs(self.fast_outputs)
                 
     def execute(self):
         # call runFast to just write the inputs
@@ -201,23 +190,24 @@ class runFASText(ExternalCode):
         # overrides given wind speed; but this is what is in RunIEC.pl
         ### end of key moment!
 
-        # run TurbSim to generate the wind:
-        
         tmax = 2  ## should not be hard default ##
         if ('TMax' in case.fst_params):  ## Note, this gets set via "AnalTime" in input files--FAST peculiarity ? ##
             tmax = case.fst_params['TMax']
 
-        ### this should be higher up the chain in the "assembly" TODO
+        # run TurbSim to generate the wind:        
+        ### Turbsim: this should be higher up the chain in the "assembly": TODO
         ts = runTurbSim()
         ts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
         ts.execute() ## cheating to not use assembly ##
         self.rawfast.set_wind_file("turbsim_test.wnd")
+        ### but look how easy it is just to stick it here ?!
 
         # let the FAST object write its inputs
         self.rawfast.write_inputs(case.fst_params)
         
-        # execute fast via superclass' system call, command we already set up
+        ### actually execute FAST (!!) via superclass' system call, command we already set up
         super(runFASText,self).execute()
+        ###
 
         # gather output directly
         self.output = FASTRunResult(self)
@@ -261,12 +251,9 @@ def run_test():
     for x in range(10,16,2):
         w.x = [x]
         w.execute()
-        res.append([ w.dlc.name, w.x, w.f])
+        res.append([ w.dlc.name, w.param_names, w.x, w.f])
     for r in res:
         print r
-
-    # (case.ws, case.fst_params['WaveHs'], case.fst_params['WaveTp'],case.fst_params['WaveDir'], myfast.getMaxOutputValue('TwrBsMxt', directory=results_dir))
-
 
 if __name__=="__main__":
     run_test()
