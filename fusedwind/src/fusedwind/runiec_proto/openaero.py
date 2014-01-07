@@ -6,8 +6,10 @@ from openmdao.main.datatypes.slot import Slot
 from openmdao.main.datatypes.api import Array, Float
 
 ### For NREL insiders
-from twister.models.FAST.runFAST import runFAST
-from twister.models.FAST.runTurbSim import runTurbSim
+#from twister.models.FAST.runFAST import runFAST
+#from twister.models.FAST.runTurbSim import runTurbSim
+from AeroelasticSE.runFAST import runFAST
+from AeroelasticSE.runTurbSim import runTurbSim
 from twister.models.FAST.mkgeom import makeGeometry
 ### for others
 #from twister_runFAST import runFAST
@@ -144,7 +146,7 @@ class runFASText(ExternalCode):
         sparhst = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.hst"))
 #        fastt = os.path.join("InputFilesToWrite", "NREL5MW_Monopile_Rigid.v7.02.fst")
         fastt = os.path.join("InputFilesToWrite",  self.rawfast.fast_file)
-        tst = "turbsim_template.inp"
+        tst = os.path.join("InputFilesToWrite","turbsim_template.inp")
         self.command = [self.appname, "test.fst"]
                 
         self.external_files = [
