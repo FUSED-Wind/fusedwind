@@ -560,7 +560,7 @@ def get_options():
                                     help="main input file describing distribution, ie cases to run")
     parser.add_option("-n", "--nsamples", dest="nsamples", help="how many samples to generate", type="int", default=5)
     parser.add_option("-o", "--output", dest="main_output",  type="string", default="runcases.txt",
-                                    help="output file to contain run cases")
+                                    help="output file (where to write the run cases)")
             
     (options, args) = parser.parse_args()
     return options, args

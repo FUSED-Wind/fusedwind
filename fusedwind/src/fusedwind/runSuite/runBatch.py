@@ -156,7 +156,7 @@ class CaseAnalyzer(Assembly):
             fout.write("   ")
             results_dir = os.path.join(self.aerocode.basedir, case.name)
             for opstr in output_ops:                
-                op = eval(opstr)
+                op = eval(opstr)  ## this gives us the "python function object" described by opstr (e.g. string "np.std" becomes something we can call to calc stdev)
                 result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
                 for val in result:
                     if (val == None):
@@ -166,7 +166,8 @@ class CaseAnalyzer(Assembly):
             fout.write("\n")
         fout.close()
 
-
+########### 
+## rest of code
 
 def get_options():
     from optparse import OptionParser
@@ -184,7 +185,6 @@ def get_options():
     return options, args
 
 def read_file_string(tag, fname):
-    print os.getcwd()
     lns = file(fname).readlines()
     for ln in lns:
         ln = ln.strip()
@@ -203,9 +203,40 @@ def read_file_string_list(tag, fname):
         raise ValueError, "key %s not found in %s" % (tag, fname)
     ln = ln.strip()
     val = ln.split()
-    return val
+    if (len(val) == 1):
+        return val[0]  # it's not a list, so just return the value
+    else:
+        return val  # otherwise we want the list
 
-##### dealing with input, suggestive code, playing with ideas
+def parse_key_val_file_all(fname):
+    """ parse key/value file, some entries might be _lists_ of strings """
+
+    output = {}
+
+    lns = file(fname).readlines()
+    for ln in lns:
+        ln = ln.strip()
+        if ln != "" and ln[0] != "#":
+            ln = ln.split("=")
+            if (len(ln) > 1):
+                tag = ln[0].strip()
+                val = ln[1].strip()
+                val = val.split("#")[0]
+                val = val.strip().strip("\"").strip("\'")
+                val2 = val.split()
+                if (len(val2) > 1):
+                    output[tag] = [v.strip().strip("\"").strip("\'") for v in val2]
+                else:
+                    output[tag] = val
+
+#    output['main_output_file'] = read_file_string("main_output_file", fname)
+#    output['output_keys'] = read_file_string_list("output_keys", fname)
+#    output['output_operations'] = read_file_string_list("output_operations", fname)
+
+    return output
+
+
+##### dealing with input(?)
 class RunControlInput(object):
     """ class to modularize the input"""
     def __init__(self):
@@ -239,9 +270,7 @@ def parse_input(options):
     ## input is raw cases
 
     # read file locations
-    ctrl.output['main_output_file'] = read_file_string("main_output_file", options.file_locs)
-    ctrl.output['output_keys'] = read_file_string_list("output_keys", options.file_locs)
-    ctrl.output['output_operations'] = read_file_string_list("output_operations", options.file_locs)
+    ctrl.output = parse_key_val_file_all(options.file_locs)
 
     return ctrl
 
@@ -268,7 +297,8 @@ def create_aerocode_wrapper(aerocode_params, output_params, options):
     if solver=='FAST':
         ## TODO, changed when we have a real turbine
         geometry, atm = makeGeometry()
-        w = openFAST(geometry, atm)
+        w = openFAST(geometry, atm, output_params)  ## need better name than output_params
+#        w = openFAST(None, atm, output_params)  ## need better name than output_params
         w.setOutput(output_params)
     elif solver == 'HAWC2':
         w = openHAWC2(None)
@@ -276,8 +306,9 @@ def create_aerocode_wrapper(aerocode_params, output_params, options):
     else:
         raise ValueError, "unknown aerocode: %s" % solver
     return w
-##########
 
+# dispatcher is a little more generic, for far only one of them. will _use_ different true
+# dispatchers, i.e. parallel interfaces to different systems.
 def create_dlc_dispatcher(dispatch_params):
     """ create dispatcher
     dispatcher originally meant to signify role as handling _how_ the computations are done
@@ -310,6 +341,7 @@ def rundlcs():
     # ctrl will be just the input, but broken up into separate categories, e.g.
     # ctrl.cases, ctrl.app, ctrl.dispatch, ...
 
+    # work in progress; running efficiently at NREL.
     if (options.cluster_allocator):
         cluster=ClusterAllocator()
         RAM.insert_allocator(0,cluster)
@@ -324,12 +356,14 @@ def rundlcs():
     # and the appropriate dispatcher...
     dispatcher = create_dlc_dispatcher(ctrl.dispatcher)
     ### After this point everything should be generic, all appropriate subclass object created
-    
+    # # # # # # # # # # #
+
     dispatcher.presetup_workflow(aerocode, turbine, cases)  # just makes sure parts are there when configure() is called
     dispatcher.configure()
     # Now tell the dispatcher to (setup and ) run the cases using the aerocode on the turbine.
-    # calling configure() is done inside run().
+    # calling configure() is done inside run(). but now it is done already (above), too.
     
+    # norun does not write directories, but it does set us up to process them if they already exist
     if (not options.norun):
         dispatcher.run()
 

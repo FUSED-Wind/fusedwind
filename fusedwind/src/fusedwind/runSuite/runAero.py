@@ -40,8 +40,8 @@ class openAeroCode(Assembly):
     
 
 class openFAST(openAeroCode):
-    def __init__(self, geom, atm):
-        self.runfast = runFASText(geom, atm)
+    def __init__(self, geom, atm, filedict):
+        self.runfast = runFASText(geom, atm, filedict)
         super(openFAST, self).__init__()
         print "openFAST __init__"
 
@@ -62,6 +62,7 @@ class openFAST(openAeroCode):
     def getResults(self, keys, results_dir, operation=max):
         myfast = self.runfast.rawfast        
         col = myfast.getOutputValues(keys, results_dir)
+#        print "getting output for keys=", keys
         vals = []
         for i in range(len(col)):
             c = col[i]
@@ -74,6 +75,7 @@ class openFAST(openAeroCode):
 
     def setOutput(self, output_params):
         self.runfast.set_fast_outputs(output_params['output_keys'])
+        print "set FAST output:", output_params['output_keys']
 
 class designFAST(openFAST):        
     """ base class for cases where we have parametric design (e.g. dakota),
@@ -83,8 +85,8 @@ class designFAST(openFAST):
     # need some mapping back and forth
     param_names = []
 
-    def __init__(self,geom,atm):
-        super(designFAST, self).__init__(geom,atm)
+    def __init__(self,geom,atm,filedict):
+        super(designFAST, self).__init__(geom,atm,filedict)
 
     def create_x(self, size):
         """ just needs to exist and be right size to use has_parameters stuff """
@@ -112,20 +114,18 @@ class runFASText(ExternalCode):
     input = Slot(RunCase, iotype='in')
     output = Slot(RunResult, iotype='out')  ## never used, never even set
 
+    ## just a template, meant to be reset by caller
     fast_outputs = ['WindVxi','RotSpeed', 'RotPwr', 'GenPwr', 'RootMxc1', 'RootMyc1', 'LSSGagMya', 'LSSGagMza', 'YawBrMxp', 'YawBrMyp','TwrBsMxt',
-                    'TwrBsMyt', 'Fair1Ten', 'Fair2Ten', 'Fair3Ten', 'Anch1Ten', 'Anch2Ten', 'Anch3Ten'] # meant to be overridden by caller
-    def __init__(self, geom, atm):
+                    'TwrBsMyt', 'Fair1Ten', 'Fair2Ten', 'Fair3Ten', 'Anch1Ten', 'Anch2Ten', 'Anch3Ten'] 
+
+    def __init__(self, geom, atm, filedict):
         super(runFASText,self).__init__()
         self.rawfast = runFAST(geom, atm)
-#        self.rawfast.setFastFile("MyFastInputTemplate.fst")  # still needs to live in "InputFilesToWrite/"
-        self.rawfast.model_path = 'ModelFiles/'
-        self.rawfast.template_path = "InputFilesToWrite/"
-        self.rawfast.ptfm_file = "NREL5MW_Platform.ptfm"
-        self.rawfast.wamit_path = "ModelFiles/WAMIT/spar"
+#        self.rawfast.write_blade_af = True
 
-        self.rawfast.setFastFile("NREL5MW_Monopile_Floating.fst")  # still needs to live in "InputFilesToWrite/"
-#        self.rawfast.setFastFile("NREL5MW_Monopile_Floating.v7.01.fst")  # still needs to live in "InputFilesToWrite/"
+        print "runFASText init(), filedict = ", filedict
 
+        # probably overridden by caller
         self.rawfast.setOutputs(self.fast_outputs)
 
         self.basedir = os.path.join(os.getcwd(),"all_runs")
@@ -136,23 +136,90 @@ class runFASText(ExternalCode):
         
         self.copyback_files = True
         
+        if ("FAST_exe" in filedict):
+            FAST_exe = filedict["FAST_exe"]
+            ## hack straight in to set app
+            self.rawfast.fastexe = FAST_exe
+
+        FAST_model_path= 'ModelFiles'
+        if ("FAST_model_path" in filedict):
+            FAST_model_path = filedict["FAST_model_path"]
+        self.rawfast.model_path = FAST_model_path
+
+        FAST_template_path = "InputFilesToWrite"
+        if ("FAST_template_path" in filedict):
+            FAST_template_path = filedict["FAST_template_path"]
+        self.rawfast.template_path = FAST_template_path
+
+        TurbSim_template_path = "InputFilesToWrite"
+        if ("TurbSim_template_path" in filedict):
+            TurbSim_template_path = filedict["TurbSim_template_path"]
+
+        self.rawfast.ptfm_file = "NREL5MW_Platform.ptfm"
+        if ("FAST_ptfm_file" in filedict):
+            FAST_ptfm_file = filedict["FAST_ptfm_file"]
+            self.rawfast.ptfm_file = FAST_ptfm_file
+
+        FAST_WAMIT_path = os.path.join("ModelFiles","WAMIT")
+        if ("FAST_WAMIT_path" in filedict):
+            FAST_WAMIT_path = filedict["FAST_WAMIT_path"]
+        self.rawfast.wamit_path = os.path.join(FAST_WAMIT_path, "spar")
+
+        FAST_fast_file = "NREL5MW_Monopile_Floating.fst"
+        if ("FAST_fast_file" in filedict):
+            FAST_fast_file = filedict["FAST_fast_file"]
+        self.rawfast.setFastFile(FAST_fast_file)  # still needs to live in FAST_template_path
+
+        FAST_noise_file = "Noise.v7.02.ipt"
+        if ("FAST_noise_file" in filedict):
+            FAST_noise_file = filedict["FAST_noise_file"]
+        self.rawfast.noise_file = FAST_noise_file
+
+        FAST_foundation_file = "NREL5MW_Monopile_Tower_RigFnd.dat"
+        if ("FAST_foundation_file" in filedict):
+            FAST_foundation_file = filedict["FAST_foundation_file"]
+        self.rawfast.foundation_file = FAST_foundation_file
+
+        TurbSim_template_file = "turbsim_template.inp"
+        if ("TurbSim_template_file" in filedict):
+            TurbSim_template_file = filedict["TurbSim_template_file"]
+
+        FAST_ad_file = "NREL5MW.ad"
+        if ("FAST_ad_file" in filedict):
+            FAST_ad_file = filedict["FAST_ad_file"]
+        self.rawfast.ad_file = FAST_ad_file
+
+        FAST_blade_file = "NREL5MW_Blade.dat"
+        if ("FAST_blade_file" in filedict):
+            FAST_blade_file = filedict["FAST_blade_file"]
+        self.rawfast.blade_file = FAST_blade_file
+
+        FAST_ptfm_file = "NREL5MW_Platform.ptfm"
+        if ("FAST_ptfm_file" in filedict):
+            FAST_ptfm_file = filedict["FAST_ptfm_file"]
+        self.rawfast.ptfm_file = FAST_ptfm_file
+
         self.appname = self.rawfast.getBin()
 #        template_dir = self.rawfast.getTemplateDir()
 #        noiset = os.path.join(template_dir, self.rawfast.noise_template)
 #        fastt = os.path.join(template_dir, self.rawfast.template_file)
-        noiset = os.path.join("InputFilesToWrite", "Noise.v7.02.ipt")
-        adt = os.path.join("InputFilesToWrite", "NREL5MW.ad")
-        bladet = os.path.join("InputFilesToWrite", "NREL5MW_Blade.dat")
-        ptfmt = os.path.join("InputFilesToWrite", "NREL5MW_Platform.ptfm")
-        foundationt = os.path.join("ModelFiles", "NREL5MW_Monopile_Tower_RigFnd.dat")
-        spar1 = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.1"))
-        spar3 = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.3"))
-        sparhst = os.path.join("ModelFiles", os.path.join("WAMIT", "spar.hst"))
+        noiset = os.path.join(FAST_template_path, FAST_noise_file)
+        adt = os.path.join(FAST_template_path, FAST_ad_file)
+        bladet = os.path.join(FAST_template_path, FAST_blade_file)
+        ptfmt = os.path.join(FAST_template_path, FAST_ptfm_file)
+        foundationt = os.path.join(FAST_model_path, FAST_foundation_file)
+        spar1 = os.path.join(FAST_WAMIT_path,"spar.1")
+        spar3 = os.path.join(FAST_WAMIT_path,"spar.3")
+        sparhst = os.path.join(FAST_WAMIT_path,"spar.hst")
+
 #        fastt = os.path.join("InputFilesToWrite", "NREL5MW_Monopile_Rigid.v7.02.fst")
-        fastt = os.path.join("InputFilesToWrite",  self.rawfast.fast_file)
-        tst = os.path.join("InputFilesToWrite","turbsim_template.inp")
+        fastt = os.path.join(FAST_template_path,  self.rawfast.fast_file)
+        tst = os.path.join(TurbSim_template_path, TurbSim_template_file)
+        self.full_turbsim_template_path = tst
         self.command = [self.appname, "test.fst"]
                 
+        self.rawfast.readAD()
+
         self.external_files = [
             FileMetadata(path=noiset, binary=False),
             FileMetadata(path=adt, binary=False),
@@ -165,6 +232,7 @@ class runFASText(ExternalCode):
             FileMetadata(path=tst, binary=False),
             FileMetadata(path=fastt, binary=False)]
         for nm in self.rawfast.getafNames():  
+            print "adding af name:", nm
             self.external_files.append(FileMetadata(path="%s" % nm, binary=False))
 
     def set_fast_outputs(self,fst_out):
@@ -184,7 +252,8 @@ class runFASText(ExternalCode):
             rpm = 12.03
         self.rawfast.set_ws(ws)
         self.rawfast.set_rpm(rpm)
-        # rest of input delivered by line-by-line dictionary case.fst_params in write_inputs()
+        ##### rest of input delivered by line-by-line dictionary case.fst_params in write_inputs() ####
+        ### SHOULD ALL BE DONE THIS WAY, no special cases  TODO ###
         
 #        self.rawfast.set_wind_file(case.windfile)  ## slows us down a lot, delete for testing; also,
         # overrides given wind speed; but this is what is in RunIEC.pl
@@ -197,6 +266,7 @@ class runFASText(ExternalCode):
         # run TurbSim to generate the wind:        
         ### Turbsim: this should be higher up the chain in the "assembly": TODO
         ts = runTurbSim()
+        ts.template_file = self.full_turbsim_template_path
         ts.set_dict({"URef": ws, "AnalysisTime":tmax, "UsableTime":tmax})
         ts.execute() ## cheating to not use assembly ##
         self.rawfast.set_wind_file("turbsim_test.wnd")
@@ -211,7 +281,7 @@ class runFASText(ExternalCode):
 
         # gather output directly
         self.output = FASTRunResult(self)
-        self.rawfast.computeMaxPower()
+#        self.rawfast.computeMaxPower()
         
         # also, copy all the output and input back "home"
         if (self.copyback_files):
