@@ -24,6 +24,9 @@ def myfixangle(theta):
     return v
 
 def sample2FASTparams(sample):
+    """ the key FAST-specific function that converts purported univsersal input 
+    variables into a python dictionary that maps 1-to-1 with actual FAST input
+    parameters """
     params = {}
     if ('Vhub' in sample):
         w = sample['Vhub']
@@ -66,7 +69,8 @@ class FASTRunCaseBuilder(RunCaseBuilder):
     WSPitch    =   np.array([0.0, 11.0, 12.0, 25.0])
     Pitch      =   np.array([0.0,  0.0,  4.0, 22.0])
     WSRpm      =   np.array([0.0, 10.2, 11.4])
-    Rpm        =   np.array([6.0, 10.0, 12.1])
+    Rpm        =   np.array([6.0, 9.0, 12.1])
+#    Rpm        =   np.array([6.0, 10.0, 12.1])
 
     ignoreInName =['RotSpeed','BlPitch1','BlPitch2','BlPitch3','BlPitch(1)','BlPitch(2)','BlPitch(3)']
 
@@ -98,13 +102,13 @@ class FASTRunCaseBuilder(RunCaseBuilder):
 #///////////////////////////////////////////
 
 class RunCase(object):
-    """ base class for specific run case (one run) """
+    """ base class for specific run case (one run) of a specific aero code"""
     def __init__(self, case, generic_sample):
         self.name = case
         self.sample = generic_sample
 
 class FASTRunCase(RunCase):
-    """ FAST specific single run of the aerocode.
+    """ FAST specific single run of FAST.
     """
     def __init__(self, basename, fst_params, generic_sample):
         super(FASTRunCase,self).__init__(basename, generic_sample)
@@ -119,7 +123,8 @@ class FASTRunCase(RunCase):
 #//////////////////////////////////////////////////
 
 class GenericRunCase(object):
-    """ Like Run case, but only base key value info"""
+    """ Like Run case, but only base key value info
+    still one run of aero code, just w.r.t. "universal" variables """
     def __init__(self,casename, param_names, ln):
         self.x = np.array(ln)
         self.param_names = param_names
@@ -127,6 +132,7 @@ class GenericRunCase(object):
 
 
 class GenericRunCaseTable(object):
+    """ basically a list of GenericRunCase's', including header"""
     def initFromFile(self, filename, start_at = 0, verbose =True):
         ## special "table"-like file: one line header of variable names then data only
         print "reading raw cases from ", filename
@@ -151,6 +157,8 @@ class RunResult(object):
     """ class to modularize collecting the results of all the runs, may have to use the
     Dispatcher and AeroCode to find and parse them, resp."""
     ## Have yet to do anything useful with this class
+    # so far I am just copying back my results and directly parsing them (see collect_output)
+    ##
     def __init__(self, aerocode):
         self.aerocode = aerocode
     

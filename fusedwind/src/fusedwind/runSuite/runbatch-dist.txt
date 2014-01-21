@@ -17,7 +17,7 @@ WaveDir = VM(0.0941022 * Vhub + 0.296888, 0.0224738 -0.477876)
 Hs = G(0.003888 * WaveDir + 0.328602 * Vhub + 4.229440, -0.000108 * WaveDir + 0.007561 * Vhub + 0.145621)
 Tp = G( 19.6779 + Hs *  6.6179  -0.5330* Vhub,  0.689582 - 0.095860 *Hs -0.003460*Vhub)
 #G(shape,scale)
-AnalTime = 1.5
+AnalTime = 180
 
 #Tpshape
 #(Intercept)  19.6779     4.9504   3.975 0.000115 ***
