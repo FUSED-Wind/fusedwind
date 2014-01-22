@@ -99,25 +99,6 @@ class FASTRunCaseBuilder(RunCaseBuilder):
         return subcase
 
 
-#///////////////////////////////////////////
-
-class RunCase(object):
-    """ base class for specific run case (one run) of a specific aero code"""
-    def __init__(self, case, generic_sample):
-        self.name = case
-        self.sample = generic_sample
-
-class FASTRunCase(RunCase):
-    """ FAST specific single run of FAST.
-    """
-    def __init__(self, basename, fst_params, generic_sample):
-        super(FASTRunCase,self).__init__(basename, generic_sample)
-        self.fst_params = copy.deepcopy(fst_params) # dict of FAST keywords/values to override
-        # override name for uniqueness
-        for p in fst_params:
-            if (p not in FASTRunCaseBuilder.ignoreInName):
-                self.name += "%s.%.1f" % (p[0:3],fst_params[p])
-
 
 
 #//////////////////////////////////////////////////
@@ -128,7 +109,10 @@ class GenericRunCase(object):
     def __init__(self,casename, param_names, ln):
         self.x = np.array(ln)
         self.param_names = param_names
+        self.sample = {param_names[i]:self.x[i] for i in range(len(param_names))}
         self.name = casename
+        for p in self.sample:
+            self.name += "%s.%.1f" % (p[0:3],self.sample[p])
 
 
 class GenericRunCaseTable(object):
@@ -149,6 +133,26 @@ class GenericRunCaseTable(object):
                 ln = [float(f) for f in ln]
                 self.cases.append(GenericRunCase(casename, param_names, ln))
             
+
+#///////////////////////////////////////////
+
+class RunCase(GenericRunCase):
+    """ base class for specific run case (one run) of a specific aero code"""
+    def __init__(self, case, generic_sample):
+        self.name = case
+        self.sample = generic_sample
+
+class FASTRunCase(RunCase):
+    """ FAST specific single run of FAST.
+    """
+    def __init__(self, basename, fst_params, generic_sample):
+        super(FASTRunCase,self).__init__(basename, generic_sample)
+        self.fst_params = copy.deepcopy(fst_params) # dict of FAST keywords/values to override
+        # override name for uniqueness
+#        for p in fst_params:
+#            if (p not in FASTRunCaseBuilder.ignoreInName):
+#                self.name += "%s.%.1f" % (p[0:3],fst_params[p])
+
 
 
 #///////////////////////////////////////////////////

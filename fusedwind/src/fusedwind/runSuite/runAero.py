@@ -9,7 +9,7 @@ from AeroelasticSE.runFAST import runFAST
 from AeroelasticSE.runTurbSim import runTurbSim
 from AeroelasticSE.mkgeom import makeGeometry
 
-from runCase import RunCase, FASTRunCaseBuilder, FASTRunCase, RunResult, FASTRunResult
+from runCase import GenericRunCase, RunCase, FASTRunCaseBuilder, FASTRunCase, RunResult, FASTRunResult
 
 ########### aerocode #####################
 ## generic aeroelastic analysis code (e.g. FAST, HAWC2,)
@@ -18,7 +18,7 @@ class openAeroCode(Assembly):
     """ base class for application that can run a DesignLoadCase """
 
     ## inputs and outputs are very generic:
-    input = Slot(RunCase, iotype='in')
+    input = Slot(GenericRunCase, iotype='in')
     output = Slot(RunResult, iotype='out')  ## never used, never even set
 
     def __init__(self):
@@ -57,6 +57,9 @@ class openFAST(openAeroCode):
 
     def execute(self):
         print "openFAST.execute(), case = ", self.input
+        run_case_builder = self.getRunCaseBuilder()
+        dlc = self.input 
+        self.input = run_case_builder.buildRunCase_x(dlc.x, dlc.param_names, dlc)
         super(openFAST, self).execute()
 
     def getResults(self, keys, results_dir, operation=max):

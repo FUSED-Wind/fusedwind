@@ -121,11 +121,12 @@ class CaseAnalyzer(Assembly):
     def setup_cases(self):
         """ setup the cases """
         self.runcases = []
-        run_case_builder = self.aerocode.getRunCaseBuilder()
+#        run_case_builder = self.aerocode.getRunCaseBuilder()
         for dlc in self.studycases:
+            self.runcases.append(Case(inputs= [('runner.input', dlc)]))
             print "building dlc for: ", dlc.x
-            runcase = run_case_builder.buildRunCase_x(dlc.x, dlc.param_names, dlc)
-            self.runcases.append(Case(inputs= [('runner.input', runcase)]))
+#            runcase = run_case_builder.buildRunCase_x(dlc.x, dlc.param_names, dlc)
+#            self.runcases.append(Case(inputs= [('runner.input', runcase)]))
 
         self.ws_driver.iterator = ListCaseIterator(self.runcases)
         # note NO output; collecting it by hand from file system
@@ -135,6 +136,7 @@ class CaseAnalyzer(Assembly):
         print "collecting output from copied-back files (not from case recorder), see %s" % output_params['main_output_file']
         fout = file(output_params['main_output_file'], "w")
         acase = self.runcases[0]._inputs['runner.input'] ## any easier way to get this back?
+        print "processing case", acase
         parms = acase.sample.keys()
         for p in parms:
             fout.write("%s " % p)
@@ -156,7 +158,7 @@ class CaseAnalyzer(Assembly):
             fout.write("   ")
             results_dir = os.path.join(self.aerocode.basedir, case.name)
             for opstr in output_ops:                
-                op = eval(opstr)  ## this gives us the "python function object" described by opstr (e.g. string "np.std" becomes something we can call to calc stdev)
+                op = eval(opstr)  ## this gives us the "python function object" described by opstr (e.g. string "np.std"  something we can call)
                 result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
                 for val in result:
                     if (val == None):
