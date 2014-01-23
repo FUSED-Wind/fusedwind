@@ -5,6 +5,30 @@ import numpy as np
 from openmdao.main.api import VariableTree, Component
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot
 
+class AeroElasticSimulationSetup(VariableTree):
+
+    time_start = Float(0., desc='Starting time of sampled output')
+    time_stop = Float(0., desc='Ending time of sampled output')
+    timestep = Float(0.001, desc='Sampling time step for simulation')
+
+
+class TurbineEnvironmentVT(VariableTree):
+
+    vhub = Float(desc='Hub-height velocity')
+    density = Float(1.225, desc='air density')
+    viscosity = Float(1.78405e-5, desc='air viscosity')
+
+    inflow_type = Enum('constant',('constant','log','powerlaw','linear','user'), desc='shear type')
+    shear_exp = Float(0.,iotype='in',desc='Shear exponent (when applicaple)') 
+    kappa = Float(0.4,iotype='in',desc='Von Karman constant')
+    z0 = Float(0.111,iotype='in',desc='Roughness length')
+
+
+class OffshoreTurbineEnvironmentVT(TurbineEnvironment):
+
+    Hs = Float(units='m', desc='Significant wave height')
+    Tp = Float(units='s', desc='Peak wave period')
+    WaveDir = Float(units='deg', desc='Direction of waves relative to turbine')
 
 # I think it could be quite convenient to normalize all dimensions relative to e.g. blade length.
 # The RotorAeroVT vartree then knows the radius and can be used in a code to dimensionalize the blade.
@@ -312,11 +336,6 @@ class ControlsVT(VariableTree):
 #####################
 # Overall turbine definition in multi-body formulation
 
-class TurbineInflowVT(VariableTree):
-
-    pass
-
-
 
 class TurbineVT(VariableTree):
 
@@ -348,7 +367,6 @@ class TurbineVT(VariableTree):
     controller = VarTree(ControlsVT(), desc='controller settings')
 
     main_bodies = Slot(MainBodies(), desc='List of main bodies')
-
 
     nacelle_cd = Float(desc='nacelle drag coefficient')
     tower_cd = Float(desc='tower drag coeffficient')
