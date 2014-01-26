@@ -14,7 +14,8 @@ from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.case import Case
 from openmdao.main.datatypes.slot import Slot 
 #from openmdao.lib.drivers.api import CaseIteratorDriver  ## brings in cobyla driver, which has bug on Peter's intel mac
-from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
+from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver, ConnectableCaseIteratorDriver
+
 from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator, CSVCaseRecorder
 from openmdao.lib.datatypes.api import Str, Int
 
@@ -27,13 +28,17 @@ from PeregrineClusterAllocator import ClusterAllocator
 # this is temporary:
 from AeroelasticSE.mkgeom import makeGeometry
 
-# aero code stuff
-from runAero import openFAST, designFAST
-# run case stuff
-from runCase import GenericRunCaseTable
+# aero code stuff: for constructors
+from AeroelasticSE.FusedFAST import openFAST, designFAST  
 
-#import logging
-#logging.getLogger().setLevel(logging.DEBUG)
+# run case stuff
+from fusedwind.runSuite.runCase import GenericRunCaseTable
+#from runCase import GenericRunCaseTable
+### bug in openmdao somewhere: using "from runCase import GenericRunCaseTable" (instead of "full dotted path") gives error in ~"instance.validate" (within
+### openmdao) concerning GenericRunCase vs runcase.GenericRunCase (not the same).  no idea really why.
+
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
 #from openmdao.main.api import enable_console
 #enable_console()
 
@@ -101,7 +106,8 @@ class CaseAnalyzer(Assembly):
         print "configuring dispatcher:"
         super(CaseAnalyzer, self).configure()
 
-        driver = CaseIteratorDriver()
+#        driver = CaseIteratorDriver()
+        driver = ConnectableCaseIteratorDriver()
         self.add('ws_driver', driver)
         self.driver.workflow.add(['ws_driver'])
 
