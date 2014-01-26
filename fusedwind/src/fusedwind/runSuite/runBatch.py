@@ -1,8 +1,6 @@
 """ Here we will construct a cleaner version of openruniec.py.  It will simply read a table of run cases and run them. """
 
 # main python driver to run wind load cases in a variety of ways, uses openMDAO
-# Copyright NREL, 2013
-# George Scott, Peter Graf, Katherine Dykes, Andrew Ning, NWTC SE team
 
 import os
 from math import pi
@@ -11,14 +9,14 @@ import numpy as np
 from openmdao.main.api import Assembly, Component, FileMetadata
 from openmdao.main.resource import ResourceAllocationManager as RAM
 from openmdao.lib.components.external_code import ExternalCode
-from openmdao.main.case import Case
-from openmdao.main.datatypes.slot import Slot 
+from openmdao.main.api import Case, Component
+#from openmdao.lib.drivers.api import ConnectableCaseIteratorDriver
 #from openmdao.lib.drivers.api import CaseIteratorDriver  ## brings in cobyla driver, which has bug on Peter's intel mac
-from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver, ConnectableCaseIteratorDriver
+from openmdao.lib.drivers.caseiterdriver import ConnectableCaseIteratorDriver
 
 from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator, CSVCaseRecorder
-from openmdao.lib.datatypes.api import Str, Int
-
+from openmdao.lib.datatypes.api import Str, Int, List, Bool, Slot, Instance
+from openmdao.main.interfaces import ICaseIterator
 from openmdao.main.pbs import PBS_Allocator as PBS
 from openmdao.main.resource import ResourceAllocationManager as RAM
 from openmdao.util.testutil import find_python
@@ -31,17 +29,112 @@ from AeroelasticSE.mkgeom import makeGeometry
 # aero code stuff: for constructors
 from AeroelasticSE.FusedFAST import openFAST, designFAST  
 
-# run case stuff
-from fusedwind.runSuite.runCase import GenericRunCaseTable
-#from runCase import GenericRunCaseTable
-### bug in openmdao somewhere: using "from runCase import GenericRunCaseTable" (instead of "full dotted path") gives error in ~"instance.validate" (within
-### openmdao) concerning GenericRunCase vs runcase.GenericRunCase (not the same).  no idea really why.
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
 #from openmdao.main.api import enable_console
 #enable_console()
 
+# run case stuff
+# run case stuff
+from fusedwind.runSuite.runCase import GenericRunCaseTable
+#from runCase import GenericRunCaseTable
+### bug in openmdao somewhere: using "from runCase import GenericRunCaseTable" (instead of "full dotted path") gives error in ~"instance.validate" (within
+### openmdao) concerning GenericRunCase vs runcase.GenericRunCase (not the same).  no idea really why.
+from fusedwind.lib.base import FUSEDAssembly
+from fusedwind.runSuite.runCase import IECRunCaseBaseVT, IECOutputsBaseVT
+
+
+class PostprocessIECCasesBase(Component):
+    """
+    Postprocess list of cases returned by a case recorder
+    """
+
+    cases = Instance(ICaseIterator, iotype='in')
+    keep_dirs = Bool(False, desc='Flag to keep ObjServer directories for debugging purposes')
+
+    def execute(self):
+
+        for case in self.cases:
+            inputs = case.get_input('runner.inputs')
+            print 'processing case %s' % inputs.case_name
+
+# frza: can't get the inheritance from FUSEDCaseIterator to work, so commented for now
+# class FUSEDIECCaseIterator(FUSEDCaseIterator):
+
+#     def configure(self):
+
+#         super(FUSEDIECCaseIterator, self).configure()
+#         # self.replace('inputs', IECRunCaseBaseVT())
+#         # self.replace('outputs', IECOutputsBaseVT())
+#         self.replace('runner', FUSEDIECBase())
+
+        # self.replace()
+
+
+class FUSEDIECCaseIterator(FUSEDAssembly):
+    """ main driver of whole show, after input is read  wraps an openmdao CaseIteratorDriver,
+    which has an openAeroCode assembly in its workflow, and whose cases are perhaps
+    aero-code specific Case() objects that are sent into the aerocode via a slot variable
+    """
+
+    cases = List(iotype='in', desc='List of cases to run')
+
+    def configure(self):
+        """Configures an assembly for running with the CaseIteratorDriver"""
+
+        self._logger.info("configuring dispatcher")
+
+        self.add('case_driver', ConnectableCaseIteratorDriver())
+        self.driver.workflow.add(['case_driver'])
+
+        self.add('runner', FUSEDIECBase())
+#       self.add('runner', FUSEDAssembly())
+        self.case_driver.workflow.add('runner')
+
+        # Boolean for running sequentially or in parallel
+        self.create_passthrough('case_driver.sequential')
+        self.case_driver.recorders.append(ListCaseRecorder())
+
+        # component for postprocessing results
+        self.add('post', PostprocessIECCasesBase())
+        self.driver.workflow.add('post')
+        self.connect('case_driver.evaluated', 'post.cases')
+
+        self._logger.info("dispatcher configured")
+
+    def setup_cases(self):
+        """
+        setup the cases to run
+        
+        This method has to be called after instantiation of the class, once the ``cases``
+        list has been set.
+        """
+
+        self.runcases = []
+        for case in self.cases:
+            self._logger.info('Adding case %s'% case.case_name)
+            self.runcases.append(Case(inputs= [('runner.inputs', case)], outputs=['runner.outputs']))
+
+        self.case_driver.iterator = ListCaseIterator(self.runcases)
+
+
+##################################
+
+class MyCode(ExternalCode):  ### for testing
+    input = Int(iotype = 'in')
+    def __init__(self):
+        super(MyCode,self).__init__()
+	self.appname = os.path.join(os.path.dirname(os.path.realpath(__file__)),'genoutfile.py')
+        self.external_files = [
+            FileMetadata(path="myfile.txt" , input=True, binary=False, desc='a test file')]
+        self.command = ["%s" % self.appname]
+        
+    def execute(self):
+        print "I am working on case %d" % self.input
+        super(MyCode,self).execute()
+        print "case %d is done\n" % self.input
+################################################
 """
 The ingredients
 
@@ -59,32 +152,7 @@ Dispatcher/CaseAnalyzer -- sets up DLC/App sets to run in different ways (serial
 ## will have vartree, etc., parsable from various input files
 ## and different aerodcode wrappers know how to produce correct input, given
 ## this object
-class Turbine(object):
-    """ base class for turbine
-    will use generic turbine variable tree under development
-    For simplest, first, FAST case, we will read from a template input file"""
-    def __init__(self):
-        pass
 
-#-----------------------------------------------
-
-##############################################
-class MyCode(ExternalCode):  ### for testing
-    input = Int(iotype = 'in')
-    def __init__(self):
-        super(MyCode,self).__init__()
-	self.appname = os.path.join(os.path.dirname(os.path.realpath(__file__)),'genoutfile.py')
-        self.external_files = [
-            FileMetadata(path="myfile.txt" , input=True, binary=False, desc='a test file')]
-        self.command = ["%s" % self.appname]
-        
-    def execute(self):
-        print "I am working on case %d" % self.input
-        super(MyCode,self).execute()
-        print "case %d is done\n" % self.input
-################################################
-
-###############################################
 ## orchestrate process with CaseIteratorDriver
 class CaseAnalyzer(Assembly):
     """ main driver of whole show, after input is read  wraps an openmdao CaseIteratorDriver,
@@ -293,7 +361,7 @@ def create_run_cases(case_params, options):
 
 def create_turbine(turbine_params):
     """ create turbine object """
-    t = Turbine()
+    t = None
     return t
 
 def create_aerocode_wrapper(aerocode_params, output_params, options):

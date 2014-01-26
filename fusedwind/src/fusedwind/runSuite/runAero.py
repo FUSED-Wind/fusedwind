@@ -3,16 +3,39 @@ import os,glob,shutil
 from openmdao.main.api import Component, Assembly, FileMetadata
 from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.datatypes.slot import Slot
+
 from openmdao.main.datatypes.instance import Instance
 from openmdao.main.datatypes.api import Array, Float
 
 from runCase import GenericRunCase, RunCase,  RunResult
 #from fusedwind.runSuite.runCase import GenericRunCase, RunCase, RunResult
 
+from openmdao.main.datatypes.api import Array, Float, VarTree, Str
 
-########### aerocode #####################
-## generic aeroelastic analysis code (e.g. FAST, HAWC2,)
-#class openAeroCode(Component):
+from fusedwind.runSuite.runCase import IECRunCaseBaseVT, IECOutputsBaseVT
+# from fusedwind.lib.base import FUSEDAssembly
+
+
+
+class FUSEDIECBase(Assembly):
+    """base class for simulation codes running an IEC load basis"""
+
+    inputs = VarTree(IECRunCaseBaseVT(), iotype='in', desc='')
+    outputs = VarTree(IECOutputsBaseVT(), iotype='out', desc='')
+    results_dir = Str('all_runs', iotype='in', desc='Directory for simulation results files')
+
+    def __init__(self):
+        super(FUSEDIECBase, self).__init__()
+
+        self.results_dir = os.path.join(os.getcwd(), self.results_dir)
+        try:
+            os.mkdir(self.basedir)
+        except:
+            self._logger.warning('failed to make results dir all_runs; or it exists')
+
+
+
+# Peter's code 
 class openAeroCode(Assembly):
     """ base class for application that can run a DesignLoadCase """
 
