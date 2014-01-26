@@ -1,7 +1,23 @@
 import numpy as np
 from math import pi
 import copy
+from openmdao.main.api import VariableTree
+from openmdao.lib.datatypes.api import Str, VarTree, Float
+from fusedwind.turbine.turbine_vt import AeroElasticSimulationSetup, TurbineEnvironmentVT, OffshoreTurbineEnvironmentVT
+from fusedwind.lib.base import CaseInputsBase, CaseOutputsBase
 
+class IECRunCaseBaseVT(VariableTree):
+
+    case_name = Str('IEC_case', desc='Name of the specific case passed to the aeroelastic code')
+    simulation = VarTree(AeroElasticSimulationSetup(), desc='Basic simulation input settings')
+    environment = VarTree(TurbineEnvironmentVT(), desc='Inflow conditions to the turbine simulation')
+
+class IECOutputsBaseVT(VariableTree):
+
+    pmek = Float()
+    thrust = Float()
+
+###### Peter's stuff #######################
 
 class RunCaseBuilder(object):
     """ base class for run case builders.  only one we have is FAST 

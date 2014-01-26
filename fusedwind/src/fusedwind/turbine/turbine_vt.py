@@ -9,7 +9,7 @@ class AeroElasticSimulationSetup(VariableTree):
 
     time_start = Float(0., desc='Starting time of sampled output')
     time_stop = Float(0., desc='Ending time of sampled output')
-    timestep = Float(0.001, desc='Sampling time step for simulation')
+    time_step = Float(0.001, desc='Sampling time step for simulation')
 
 
 class TurbineEnvironmentVT(VariableTree):
@@ -17,14 +17,14 @@ class TurbineEnvironmentVT(VariableTree):
     vhub = Float(desc='Hub-height velocity')
     density = Float(1.225, desc='air density')
     viscosity = Float(1.78405e-5, desc='air viscosity')
-
+    ti = Float(0., desc='Turbulence intensity in percent')
     inflow_type = Enum('constant',('constant','log','powerlaw','linear','user'), desc='shear type')
     shear_exp = Float(0.,iotype='in',desc='Shear exponent (when applicaple)') 
     kappa = Float(0.4,iotype='in',desc='Von Karman constant')
     z0 = Float(0.111,iotype='in',desc='Roughness length')
 
 
-class OffshoreTurbineEnvironmentVT(TurbineEnvironment):
+class OffshoreTurbineEnvironmentVT(TurbineEnvironmentVT):
 
     Hs = Float(units='m', desc='Significant wave height')
     Tp = Float(units='s', desc='Peak wave period')
@@ -360,7 +360,7 @@ class TurbineVT(VariableTree):
     blade_geom = VarTree(BladeGeometryVT(), desc='Blade geometry')
     tower_geom = VarTree(TowerGeometryVT(), desc='Tower geometry')
 
-    inflow = VarTree(TurbineInflowVT(), desc='Inflow conditions')
+    inflow = VarTree(TurbineEnvironmentVT(), desc='Inflow conditions')
 
     airfoildata = VarTree(AirfoilDataset(), desc='Airfoil Aerodynamic characteristics')
     rotor_aero = VarTree(RotorAeroVT(), desc='rotor aero properties VT')
