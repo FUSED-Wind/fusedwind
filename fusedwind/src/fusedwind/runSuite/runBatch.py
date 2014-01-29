@@ -24,10 +24,10 @@ from openmdao.util.testutil import find_python
 from PeregrineClusterAllocator import ClusterAllocator
 
 # this is temporary:
-from AeroelasticSE.mkgeom import makeGeometry
+#from AeroelasticSE.mkgeom import makeGeometry #KLD removing for new simulation
 
 # aero code stuff: for constructors
-from AeroelasticSE.FusedFAST import openFAST, designFAST  
+#from AeroelasticSE.FusedFAST import openFAST, designFAST  #KLD removing temporarily
 
 
 import logging
@@ -43,6 +43,7 @@ from fusedwind.runSuite.runCase import GenericRunCaseTable
 ### openmdao) concerning GenericRunCase vs runcase.GenericRunCase (not the same).  no idea really why.
 from fusedwind.lib.base import FUSEDAssembly
 from fusedwind.runSuite.runCase import IECRunCaseBaseVT, IECOutputsBaseVT
+from fusedwind.runSuite.runAero import FUSEDIECBase
 
 
 class PostprocessIECCasesBase(Component):

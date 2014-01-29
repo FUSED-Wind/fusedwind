@@ -27,11 +27,12 @@ class FUSEDIECBase(Assembly):
     def __init__(self):
         super(FUSEDIECBase, self).__init__()
 
-        self.results_dir = os.path.join(os.getcwd(), self.results_dir)
+        # TODO KLD not using for now
+        '''self.results_dir = os.path.join(os.getcwd(), self.results_dir)
         try:
             os.mkdir(self.basedir)
         except:
-            self._logger.warning('failed to make results dir all_runs; or it exists')
+            self._logger.warning('failed to make results dir all_runs; or it exists')'''
 
 
 

@@ -15,6 +15,7 @@ class AeroElasticSimulationSetup(VariableTree):
 class TurbineEnvironmentVT(VariableTree):
 
     vhub = Float(desc='Hub-height velocity')
+    direction = Float(desc='Incident wind direction')
     density = Float(1.225, desc='air density')
     viscosity = Float(1.78405e-5, desc='air viscosity')
     ti = Float(0., desc='Turbulence intensity in percent')
