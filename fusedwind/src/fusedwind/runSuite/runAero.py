@@ -48,11 +48,6 @@ class openAeroCode(Assembly):
 
     def __init__(self):
         super(openAeroCode, self).__init__()
-        self.basedir = os.path.join(os.getcwd(),"all_runs")
-        try:
-            os.mkdir(self.basedir)
-        except:
-            print "failed to make base dir all_runs; or it exists"
 
     def getRunCaseBuilder(self):
         raise unimplementedError, "this is a \"virtual\" class!"
