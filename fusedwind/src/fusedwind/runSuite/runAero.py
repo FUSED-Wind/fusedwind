@@ -43,8 +43,9 @@ class openAeroCode(Assembly):
     ## inputs and outputs are very generic:
 #    input = Slot(GenericRunCase, iotype='in')
 #    output = Slot(RunResult, iotype='out')  ## never used, never even set
-    input = Instance(GenericRunCase, iotype='in')
-    output = Instance(RunResult, iotype='out')  ## never used, never even set
+#    inputs = Instance(GenericRunCase, iotype='in')
+    inputs = Instance(IECRunCaseBaseVT, iotype='in')
+    outputs = Instance(RunResult, iotype='out')  ## never used, never even set
 
     def __init__(self):
         super(openAeroCode, self).__init__()

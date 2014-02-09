@@ -2,7 +2,7 @@
 
 # main python driver to run wind load cases in a variety of ways, uses openMDAO
 
-import os
+import os, types
 from math import pi
 import numpy as np
 
@@ -23,12 +23,6 @@ from openmdao.util.testutil import find_python
 
 from PeregrineClusterAllocator import ClusterAllocator
 
-# this is temporary:
-#from AeroelasticSE.mkgeom import makeGeometry #KLD removing for new simulation
-
-# aero code stuff: for constructors
-from AeroelasticSE.FusedFAST import openFAST 
-
 
 import logging
 logging.getLogger().setLevel(logging.DEBUG)
@@ -43,7 +37,7 @@ from fusedwind.runSuite.runCase import GenericRunCaseTable
 ### openmdao) concerning GenericRunCase vs runcase.GenericRunCase (not the same).  no idea really why.
 from fusedwind.lib.base import FUSEDAssembly
 from fusedwind.runSuite.runCase import IECRunCaseBaseVT, IECOutputsBaseVT
-from fusedwind.runSuite.runAero import FUSEDIECBase
+from fusedwind.runSuite.runAero import FUSEDIECBase, openAeroCode
 
 
 class PostprocessIECCasesBase(Component):
@@ -90,6 +84,7 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
         self.driver.workflow.add(['case_driver'])
 
         self.add('runner', FUSEDIECBase())
+#        self.add('runner', openAeroCode())
 #       self.add('runner', FUSEDAssembly())
         self.case_driver.workflow.add('runner')
 
@@ -120,39 +115,6 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
         self.case_driver.iterator = ListCaseIterator(self.runcases)
 
 
-##################################
-
-class MyCode(ExternalCode):  ### for testing
-    input = Int(iotype = 'in')
-    def __init__(self):
-        super(MyCode,self).__init__()
-	self.appname = os.path.join(os.path.dirname(os.path.realpath(__file__)),'genoutfile.py')
-        self.external_files = [
-            FileMetadata(path="myfile.txt" , input=True, binary=False, desc='a test file')]
-        self.command = ["%s" % self.appname]
-        
-    def execute(self):
-        print "I am working on case %d" % self.input
-        super(MyCode,self).execute()
-        print "case %d is done\n" % self.input
-################################################
-"""
-The ingredients
-
-RunCase-- description for single run of unerlying aerocode assembly (RunCases come from LoadCases in a separate step)
-FASTRunCase
-GenericRunCase
-RunResult -- results for a single case -- so far no need for openMDAO
-Turbine -- the turbine to run against -- will use "world object", generic turbine variable tree; unimplemented
-AeroCode -- application that will run a RunCase--subclass of Assembly, represents generic aerocode, including any input building
-Dispatcher/CaseAnalyzer -- sets up DLC/App sets to run in different ways (serial, parallel-cluster, parallel-grid, etc.)--wraps openMDAO CaseIterDriver
-"""
-
-#----------------------------------------------
-############ Turbine -- to be fleshed out #############
-## will have vartree, etc., parsable from various input files
-## and different aerodcode wrappers know how to produce correct input, given
-## this object
 
 ## orchestrate process with CaseIteratorDriver
 class CaseAnalyzer(Assembly):
@@ -166,9 +128,8 @@ class CaseAnalyzer(Assembly):
         if ('parallel' in params):
             self.run_parallel = params['parallel']
 
-    def presetup_workflow(self, aerocode, turbine, cases):
+    def presetup_workflow(self, aerocode, cases):
         self.aerocode = aerocode
-        self.turbine = turbine
         self.studycases = cases
 
     def configure(self):
@@ -189,7 +150,7 @@ class CaseAnalyzer(Assembly):
         # comment this line out to run sequentially
         self.ws_driver.sequential = not self.run_parallel
         # uncomment to keep simulation directories for debugging purposes
-        os.environ['OPENMDAO_KEEPDIRS'] = '1'
+#        os.environ['OPENMDAO_KEEPDIRS'] = '1'
 
         print "dispatcher configured\n-------------------------------------------\n"
     
@@ -198,7 +159,7 @@ class CaseAnalyzer(Assembly):
         self.runcases = []
 #        run_case_builder = self.aerocode.getRunCaseBuilder()
         for dlc in self.studycases:
-            self.runcases.append(Case(inputs= [('runner.input', dlc)]))
+            self.runcases.append(Case(inputs= [('runner.inputs', dlc)]))
             print "building dlc for: ", dlc.x
 #            runcase = run_case_builder.buildRunCase_x(dlc.x, dlc.param_names, dlc)
 #            self.runcases.append(Case(inputs= [('runner.input', runcase)]))
@@ -210,7 +171,7 @@ class CaseAnalyzer(Assembly):
         print "RUNS ARE DONE:"
         print "collecting output from copied-back files (not from case recorder), see %s" % output_params['main_output_file']
         fout = file(output_params['main_output_file'], "w")
-        acase = self.runcases[0]._inputs['runner.input'] ## any easier way to get this back?
+        acase = self.runcases[0]._inputs['runner.inputs'] ## any easier way to get this back?
         print "processing case", acase
         parms = acase.sample.keys()
         for p in parms:
@@ -220,20 +181,23 @@ class CaseAnalyzer(Assembly):
             output_ops = ["max"]
         else:
             output_ops = output_params['output_operations']
+            if isinstance(output_ops, types.StringTypes):  ## hack to adjust if we actually did not get a list
+                output_ops = [output_ops]
         outnames = output_params['output_keys']
         for op in output_ops:
             for p in outnames:
                 fout.write("%s_%s " % (op,p))
         fout.write("\n")
         for fullcase in self.runcases:
-            case = fullcase._inputs['runner.input']
+            case = fullcase._inputs['runner.inputs']
             for p in parms:
                 val = case.sample[p]
                 fout.write("%.16e " % val)
             fout.write("   ")
-            results_dir = os.path.join(self.aerocode.basedir, case.name)
+            results_dir = os.path.join(self.aerocode.basedir, case.case_name)
             for opstr in output_ops:                
                 op = eval(opstr)  ## this gives us the "python function object" described by opstr (e.g. string "np.std"  something we can call)
+                   # op is called  as op(col):R^n -> R. i.e. gets passed an array (output vs time) and produces a scalar.
                 result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
                 for val in result:
                     if (val == None):
@@ -244,7 +208,7 @@ class CaseAnalyzer(Assembly):
         fout.close()
 
 ########### 
-## rest of code
+## rest of code is options handling, input file handling.  Maybe generic enough for fusedwind.
 
 def get_options():
     from optparse import OptionParser
@@ -313,12 +277,11 @@ def parse_key_val_file_all(fname):
     return output
 
 
-##### dealing with input(?)
+##### dealing with input(?) --- probably overkill
 class RunControlInput(object):
     """ class to modularize the input"""
     def __init__(self):
     ## For now assume these are all just dictionaries
-        self.turbine = {}
         self.cases = {}
         self.aerocode = {}
         self.dispatcher = {}
@@ -352,6 +315,11 @@ def parse_input(options):
     return ctrl
 
 
+
+#### below here can all be considered "testing code" now.  Driver app we really use is assembled in custom way from above parts (and others).
+# See AeroelasticSE/iecApp.py
+####
+
 ###########################################################################
 ### "Factories" for making the appropriate objects, given the input. This is inevitable and
 ### separated out here.
@@ -373,6 +341,8 @@ def create_aerocode_wrapper(aerocode_params, output_params, options):
 
     if solver=='FAST':
         ## TODO, changed when we have a real turbine
+        # aero code stuff: for constructors
+        from AeroelasticSE.FusedFAST import openFAST 
         w = openFAST(output_params)  ## need better name than output_params
 #        w = openFAST(None, atm, output_params)  ## need better name than output_params
         w.setOutput(output_params)
@@ -396,6 +366,12 @@ def create_dlc_dispatcher(dispatch_params):
 ##
 ###########################################
 
+def rf(col):
+    ## mv this and
+    from rainflow import rain_one
+    # wrapper for rainflow algorithm
+    val = rain_one(col, 5)
+    return val
 
 ## main function that opens input, runs cases, writes output, ie. whole thing.
 def rundlcs():
@@ -425,8 +401,8 @@ def rundlcs():
     ###  using "factory" functions to create specific subclasses (e.g. distinguish between FAST and HAWC2)
     # Then we use these to create the cases...
     cases = create_run_cases(ctrl.cases, options)
-    # and a turbine
-    turbine = create_turbine(ctrl.turbine)
+    # and a turbine---never used this "stub"
+#    turbine = create_turbine(ctrl.turbine)
     # and the appropriate wind code wrapper...
     aerocode = create_aerocode_wrapper(ctrl.aerocode, ctrl.output, options)
     # and the appropriate dispatcher...
@@ -434,7 +410,7 @@ def rundlcs():
     ### After this point everything should be generic, all appropriate subclass object created
     # # # # # # # # # # #
 
-    dispatcher.presetup_workflow(aerocode, turbine, cases)  # just makes sure parts are there when configure() is called
+    dispatcher.presetup_workflow(aerocode, cases)  # just makes sure parts are there when configure() is called
     dispatcher.configure()
     # Now tell the dispatcher to (setup and ) run the cases using the aerocode on the turbine.
     # calling configure() is done inside run(). but now it is done already (above), too.
