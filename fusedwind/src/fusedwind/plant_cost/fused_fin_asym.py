@@ -81,7 +81,6 @@ class BaseFinancialAnalysis(Assembly):
 
         self.create_passthrough('aep_a.net_aep')
         self.create_passthrough('aep_a.gross_aep')
-        self.create_passthrough('aep_a.capacity_factor')
         self.create_passthrough('opex_a.avg_annual_opex')
         self.create_passthrough('bos_a.bos_costs')
         self.create_passthrough('tcc_a.turbine_cost')

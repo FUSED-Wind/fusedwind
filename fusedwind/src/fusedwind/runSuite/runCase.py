@@ -29,17 +29,18 @@ class RunCaseBuilder(object):
 
 #//////////////////////////////////////////////////
 
-class GenericRunCase(object):
+class GenericRunCase(IECRunCaseBaseVT):
     """ Like Run case, but only base key value info
     still one run of aero code, just w.r.t. "universal" variables """
     def __init__(self,casename, param_names, ln):
+        super(GenericRunCase,self).__init__()
         self.x = np.array(ln)
         self.param_names = param_names
         self.sample = {param_names[i]:self.x[i] for i in range(len(param_names))}
-        self.name = casename
+        self.thename = casename
         for p in self.sample:
-            self.name += "%s.%.1f" % (p[0:3],self.sample[p])
-
+            self.thename += "%s.%.1f" % (p[0:3],self.sample[p])
+        self.case_name = self.thename
 
 class GenericRunCaseTable(object):
     """ basically a list of GenericRunCase's', including header"""
@@ -64,8 +65,9 @@ class GenericRunCaseTable(object):
 
 class RunCase(GenericRunCase):
     """ base class for specific run case (one run) of a specific aero code"""
-    def __init__(self, case, generic_sample):
-        self.name = case
+    def __init__(self, case, generic_sample):        
+        super(RunCase,self).__init__(case, generic_sample.keys(), generic_sample.values())
+        self.case_name = case
         self.sample = generic_sample
 
 

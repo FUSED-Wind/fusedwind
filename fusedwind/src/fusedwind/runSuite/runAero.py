@@ -27,11 +27,12 @@ class FUSEDIECBase(Assembly):
     def __init__(self):
         super(FUSEDIECBase, self).__init__()
 
-        self.results_dir = os.path.join(os.getcwd(), self.results_dir)
+        # TODO KLD not using for now
+        '''self.results_dir = os.path.join(os.getcwd(), self.results_dir)
         try:
             os.mkdir(self.basedir)
         except:
-            self._logger.warning('failed to make results dir all_runs; or it exists')
+            self._logger.warning('failed to make results dir all_runs; or it exists')'''
 
 
 
@@ -42,16 +43,12 @@ class openAeroCode(Assembly):
     ## inputs and outputs are very generic:
 #    input = Slot(GenericRunCase, iotype='in')
 #    output = Slot(RunResult, iotype='out')  ## never used, never even set
-    input = Instance(GenericRunCase, iotype='in')
-    output = Instance(RunResult, iotype='out')  ## never used, never even set
+#    inputs = Instance(GenericRunCase, iotype='in')
+    inputs = Instance(IECRunCaseBaseVT, iotype='in')
+    outputs = Instance(RunResult, iotype='out')  ## never used, never even set
 
     def __init__(self):
         super(openAeroCode, self).__init__()
-        self.basedir = os.path.join(os.getcwd(),"all_runs")
-        try:
-            os.mkdir(self.basedir)
-        except:
-            print "failed to make base dir all_runs; or it exists"
 
     def getRunCaseBuilder(self):
         raise unimplementedError, "this is a \"virtual\" class!"
