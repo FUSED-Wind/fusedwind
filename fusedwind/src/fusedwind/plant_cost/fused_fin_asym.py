@@ -28,15 +28,15 @@ class BaseFinancialModel(Assembly):
     """
     Framework for a general financial model with upfront capital cost inputs and long-term averages for OPEX and net annual energy production
     """
-    
+
     def configure(self):
-    
+
         super(BaseFinancialModel, self).configure()
-        
+
         self.add('fin', BaseFinancialAggregator())
-        
+
         self.driver.workflow.add(['fin'])
-        
+
         self.create_passthrough('fin.turbine_cost')
         self.create_passthrough('fin.turbine_number')
         self.create_passthrough('fin.bos_costs')
@@ -81,7 +81,6 @@ class BaseFinancialAnalysis(Assembly):
 
         self.create_passthrough('aep_a.net_aep')
         self.create_passthrough('aep_a.gross_aep')
-        self.create_passthrough('aep_a.capacity_factor')
         self.create_passthrough('opex_a.avg_annual_opex')
         self.create_passthrough('bos_a.bos_costs')
         self.create_passthrough('tcc_a.turbine_cost')
@@ -101,3 +100,34 @@ class ExtendedFinancialAnalysis(BaseFinancialAnalysis):
         self.connect('tcc_a.turbine_cost',['bos_a.turbine_cost'])
         self.create_passthrough('opex_a.OPEX_breakdown')
         self.create_passthrough('bos_a.BOS_breakdown')
+
+
+
+# An alternative approach:
+
+def configure_base_financial_analysis(assembly):
+
+    # To be replaced by actual models
+    assembly.add('tcc_a', BaseTurbineCapitalCostModel())
+    assembly.add('bos_a', BaseBOSCostModel())
+    assembly.add('opex_a', BaseOPEXModel())
+    assembly.add('aep_a', GenericAEPModel())
+    assembly.add('fin_a', BaseFinancialModel())
+
+    assembly.driver.workflow.add(['tcc_a', 'bos_a', 'opex_a', 'aep_a', 'fin_a'])
+
+    assembly.connect('tcc_a.turbine_cost', 'fin_a.turbine_cost')
+    assembly.connect('bos_a.bos_costs', 'fin_a.bos_costs')
+    assembly.connect('opex_a.avg_annual_opex', 'fin_a.avg_annual_opex')
+    assembly.connect('aep_a.net_aep', 'fin_a.net_aep')
+
+
+def configure_extended_financial_analysis(assembly):
+
+    configure_base_financial_analysis(assembly)
+
+    assembly.replace('bos_a', ExtendedBOSCostModel())
+    assembly.replace('opex_a', ExtendedOPEXModel())
+
+    assembly.connect('tcc_a.turbine_cost', 'bos_a.turbine_cost')
+

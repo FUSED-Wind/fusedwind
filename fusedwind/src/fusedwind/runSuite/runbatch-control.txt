@@ -10,35 +10,12 @@ output_keys =  RootMxc1  RootMyc1 LSSGagMya LSSGagMza YawBrMxp  YawBrMyp   TwrBs
 output_operations = max np.std
 
 
-# FAST files:
-## templates that will be rewritten are in template path; fixed model files are in model path.
-# will be re-written: fast, noist, turbsim, ad, blade, ptfm
-# fixed: foundation
-#FAST_model_path = 'ModelFiles/'
-#FAST_template_path = "InputFilesToWrite/"
-#FAST_wamit_path = "ModelFiles/WAMIT/"
-#FAST_fast_file = "NREL5MW_Monopile_Floating.fst"  # still needs to live in "InputFilesToWrite/"
-#FAST_noise_file = "Noise.v7.02.ipt"
-#FAST_foundation_file = "NREL5MW_Monopile_Tower_RigFnd.dat"  # in ModelFiles
-#TurbSim_template_file = "turbsim_template.inp"
-#FAST_ad_file = "NREL5MW.ad"
-#FAST_blade_file = "NREL5MW_Blade.dat"
-#FAST_ptfm_file = "NREL5MW_Platform.ptfm"
+ts_exe = "/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64"
+ts_dir = "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim"
+ts_file = "TurbSim.inp"
+fst_exe = "/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64"
+fst_dir = "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig"
+fst_file = "NRELOffshrBsline5MW_Floating_OC3Hywind.fst"
 
-FAST_model_path = 'OC3-Umass'
-FAST_template_path = "OC3-Umass"
-FAST_wamit_path = "HydroData"
-FAST_fast_file = "NRELOffshrBsline5MW_Floating_OC3Hywind.v7.02.linux.no_cm.fst"  
-FAST_noise_file = "Noise.v7.02.ipt"
-FAST_foundation_file = "NRELOffshrBsline5MW_Tower_OC3Hywind.dat"  
-FAST_ad_file = "NRELOffshrBsline5MW_AeroDyn.linux.no_cm.ipt"
-FAST_blade_file = "NRELOffshrBsline5MW_Blade.dat"
-FAST_ptfm_file = "NRELOffshrBsline5MW_Platform_OC3Hywind.linux.dat"
-
-TurbSim_template_path = 'OC3-Umass'
-TurbSim_template_file = "TurbSim.inp"
-
-
-FAST_exe = "FAST-OC3_glin64"
-
+run_dir = "all_runs"
 
