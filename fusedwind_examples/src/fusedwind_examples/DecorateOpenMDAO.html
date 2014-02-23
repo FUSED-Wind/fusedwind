@@ -1718,7 +1718,7 @@ pre {
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[20]:
+In&nbsp;[1]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="kn">from</span> <span class="nn">openmdao.lib.drivers.api</span> <span class="kn">import</span> <span class="n">CaseIteratorDriver</span>
@@ -1726,7 +1726,7 @@ In&nbsp;[20]:
 <span class="kn">from</span> <span class="nn">openmdao.lib.datatypes.api</span> <span class="kn">import</span> <span class="n">VarTree</span><span class="p">,</span> <span class="n">Float</span><span class="p">,</span> <span class="n">Slot</span><span class="p">,</span> <span class="n">Array</span><span class="p">,</span> <span class="n">Int</span><span class="p">,</span> <span class="n">List</span>
 <span class="kn">from</span> <span class="nn">openmdao.lib.casehandlers.api</span> <span class="kn">import</span> <span class="n">ListCaseIterator</span><span class="p">,</span> <span class="n">ListCaseRecorder</span>
 <span class="kn">from</span> <span class="nn">openmdao.main.case</span> <span class="kn">import</span> <span class="n">Case</span>
-<span class="kn">from</span> <span class="nn">numpy</span> <span class="kn">import</span> <span class="n">arange</span>
+<span class="kn">from</span> <span class="nn">pylab</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">openmdao.main.api</span> <span class="kn">import</span> <span class="n">set_as_top</span>
 <span class="kn">import</span> <span class="nn">re</span>
 
@@ -1830,10 +1830,10 @@ In&nbsp;[20]:
         <span class="n">getio</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;iotype=&#39;&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;&#39;&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">getvarname</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">getio</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">==</span><span class="s">&#39;in&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">getvarname</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">getio</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">==</span><span class="s">&#39;out&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_openmdao_io</span> <span class="o">=</span> <span class="n">args</span>
     
     <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">func</span><span class="p">):</span>
-        <span class="n">func</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span>
+        <span class="n">func</span><span class="o">.</span><span class="n">_openmdao_io</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_openmdao_io</span>
         <span class="n">func</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inputs</span>
         <span class="n">func</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">outputs</span>        
         <span class="k">return</span> <span class="n">func</span>
@@ -1879,7 +1879,7 @@ In&nbsp;[20]:
     <span class="n">getio</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;iotype=&#39;&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;&#39;&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">cls</span><span class="o">.</span><span class="n">inputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">getvarname</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">getio</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">==</span><span class="s">&#39;in&#39;</span><span class="p">]</span>
     <span class="n">cls</span><span class="o">.</span><span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="n">getvarname</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">args</span> <span class="k">if</span> <span class="n">getio</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">==</span><span class="s">&#39;out&#39;</span><span class="p">]</span>
-    <span class="n">cls</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+    <span class="n">cls</span><span class="o">.</span><span class="n">_openmdao_io</span> <span class="o">=</span> <span class="n">args</span>
     <span class="k">return</span> <span class="n">cls</span>
         
         
@@ -1896,7 +1896,11 @@ In&nbsp;[20]:
 <span class="sd">    - name=None [str] The name of the newly created class. If None, it will invent one.</span>
 <span class="sd">    - base=Component [str] The base class name the openMDAO component should inherit from        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ios</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">_openmdao_io</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">ios</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">_openmdao_io</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">_openmdao_io</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">ios</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="s">&quot; = &quot;</span><span class="o">+</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">_openmdao_io</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+        
     <span class="n">inputs</span> <span class="o">=</span> <span class="s">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">k</span><span class="o">+</span><span class="s">&quot; = self.&quot;</span><span class="o">+</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">inputs</span><span class="p">])</span>
     <span class="n">outputs</span> <span class="o">=</span> <span class="s">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&quot;self.&quot;</span><span class="o">+</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">func</span><span class="o">.</span><span class="n">outputs</span><span class="p">])</span>    
     <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="p">:</span>
@@ -1928,7 +1932,11 @@ In&nbsp;[20]:
 <span class="sd">    - name=None [str] The name of the newly created class. If None, it will invent one.</span>
 <span class="sd">    - base=Component [str] The base class name the openMDAO component should inherit from    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">ios</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">eng</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eng</span><span class="o">.</span><span class="n">_openmdao_io</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">ios</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">eng</span><span class="o">.</span><span class="n">_openmdao_io</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">eng</span><span class="o">.</span><span class="n">_openmdao_io</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">ios</span> <span class="o">=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">    &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">k</span><span class="o">+</span><span class="s">&quot; = &quot;</span><span class="o">+</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">eng</span><span class="o">.</span><span class="n">_openmdao_io</span><span class="o">.</span><span class="n">iteritems</span><span class="p">())</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="p">:</span>
         <span class="n">cls_name</span> <span class="o">=</span> <span class="n">eng</span><span class="o">.</span><span class="n">__name__</span><span class="o">+</span><span class="s">&#39;_OMDAO&#39;</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1991,9 +1999,9 @@ In&nbsp;[2]:
 <div class="highlight"><pre><span class="c">#from pprint import pprint</span>
 
 <span class="n">test_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">([(</span><span class="s">&#39;var3&#39;</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">),</span>
-                 <span class="p">(</span><span class="s">&#39;var4&#39;</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span>
-                 <span class="p">(</span><span class="s">&#39;var1&#39;</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span>
-                 <span class="p">(</span><span class="s">&#39;var2&#39;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)])</span>
+                  <span class="p">(</span><span class="s">&#39;var4&#39;</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span>
+                  <span class="p">(</span><span class="s">&#39;var1&#39;</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span>
+                  <span class="p">(</span><span class="s">&#39;var2&#39;</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)])</span>
 
 <span class="k">def</span> <span class="nf">testclass</span><span class="p">(</span><span class="n">Ao</span><span class="p">):</span>
     <span class="k">print</span> <span class="s">&#39;--begin test--&#39;</span>
@@ -2137,7 +2145,7 @@ var2 2.0 == 2.0
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[19]:
+In&nbsp;[5]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="k">class</span> <span class="nc">A</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -2257,7 +2265,7 @@ var2 2.0 == 2.0
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[8]:
+In&nbsp;[7]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="k">def</span> <span class="nf">Af</span><span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">):</span>
@@ -2319,7 +2327,7 @@ var2 2.0 == 2.0
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[9]:
+In&nbsp;[8]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="k">def</span> <span class="nf">Af</span><span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">):</span>
@@ -2368,7 +2376,7 @@ var2 2.0 == 2.0
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[10]:
+In&nbsp;[9]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="nd">@openMDAO_docs</span>
@@ -2446,7 +2454,7 @@ var2 2.0 == 2.0
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[11]:
+In&nbsp;[10]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="k">def</span> <span class="nf">Af</span><span class="p">(</span><span class="n">var1</span><span class="p">,</span> <span class="n">var2</span><span class="p">):</span>
@@ -2524,7 +2532,7 @@ var2 2.0 == 2.0
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[12]:
+In&nbsp;[11]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="nd">@openMDAO_io</span><span class="p">(</span><span class="s">&quot;&quot;&quot;</span>
@@ -2589,7 +2597,7 @@ var2 2.0 == 2.0
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[13]:
+In&nbsp;[12]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="nd">@openMDAO_docs</span>
@@ -2609,7 +2617,7 @@ In&nbsp;[13]:
         <span class="bp">self</span><span class="o">.</span><span class="n">var3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">var1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">var2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">var4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">var1</span>
         
-<span class="n">A</span><span class="o">.</span><span class="n">args</span>
+<span class="n">A</span><span class="o">.</span><span class="n">_openmdao_io</span>
 
 <span class="c">## ...import OpenMDAO here...     </span>
 <span class="n">Afo</span> <span class="o">=</span> <span class="n">OpenMDAO_class</span><span class="p">(</span><span class="n">A</span><span class="p">)</span>
@@ -2665,13 +2673,46 @@ var2 2.0 == 2.0
 
 </div>
 <div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="Application-to-a-FUSED-example">Application to a FUSED example<a class="anchor-link" href="#Application-to-a-FUSED-example">&#182;</a></h3>
+</div>
+
+<div class="cell border-box-sizing code_cell">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[13]:
+</div>
+<div class="input_area box-flex1">
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">GenericWindTurbineVT</span><span class="p">(</span><span class="n">VariableTree</span><span class="p">):</span>
+    <span class="n">hub_height</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s">&#39;Machine hub height&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
+    <span class="n">rotor_diameter</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s">&#39;Machine rotor diameter&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
+    <span class="n">power_rating</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s">&#39;Machine power rating&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;W&#39;</span><span class="p">)</span> <span class="c"># KLD: </span>
+    
+<span class="k">class</span> <span class="nc">GenericWSPosition</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculate the positions where we should calculate the wind speed on the rotor&quot;&quot;&quot;</span>
+    <span class="n">wt_desc</span> <span class="o">=</span> <span class="n">VarTree</span><span class="p">(</span><span class="n">GenericWindTurbineVT</span><span class="p">(),</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">)</span>
+    <span class="n">ws_positions</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;the position [n,3] of the ws_array&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
+    <span class="n">wt_xy</span> <span class="o">=</span> <span class="n">List</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;The x,y position of the wind turbine&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
+
+<span class="k">class</span> <span class="nc">HubCenterWSPosition</span><span class="p">(</span><span class="n">GenericWSPosition</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate the positions at the center of the wind turbine rotor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ws_positions</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_desc</span><span class="o">.</span><span class="n">hub_height</span><span class="p">]])</span>
+</pre></div>
+
+</div>
+</div>
+
+</div>
+<div class="text_cell_render border-box-sizing rendered_html">
 <h3 id="A-simple-vartree-class-created-from-dict">A simple vartree class created from <code>dict</code><a class="anchor-link" href="#A-simple-vartree-class-created-from-dict">&#182;</a></h3>
 </div>
 
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[72]:
+In&nbsp;[14]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="k">class</span> <span class="nc">dictree</span><span class="p">(</span><span class="nb">dict</span><span class="p">):</span>
@@ -2733,36 +2774,7 @@ In&nbsp;[72]:
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[70]:
-</div>
-<div class="input_area box-flex1">
-<div class="highlight"><pre><span class="k">class</span> <span class="nc">GenericWindTurbineVT</span><span class="p">(</span><span class="n">VariableTree</span><span class="p">):</span>
-    <span class="n">hub_height</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s">&#39;Machine hub height&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
-    <span class="n">rotor_diameter</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s">&#39;Machine rotor diameter&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
-    <span class="n">power_rating</span> <span class="o">=</span> <span class="n">Float</span><span class="p">(</span><span class="n">desc</span><span class="o">=</span><span class="s">&#39;Machine power rating&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;W&#39;</span><span class="p">)</span> <span class="c"># KLD: </span>
-    
-<span class="k">class</span> <span class="nc">GenericWSPosition</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Calculate the positions where we should calculate the wind speed on the rotor&quot;&quot;&quot;</span>
-    <span class="n">wt_desc</span> <span class="o">=</span> <span class="n">VarTree</span><span class="p">(</span><span class="n">GenericWindTurbineVT</span><span class="p">(),</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">)</span>
-    <span class="n">ws_positions</span> <span class="o">=</span> <span class="n">Array</span><span class="p">([],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;out&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;the position [n,3] of the ws_array&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
-    <span class="n">wt_xy</span> <span class="o">=</span> <span class="n">List</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">iotype</span><span class="o">=</span><span class="s">&#39;in&#39;</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s">&#39;The x,y position of the wind turbine&#39;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s">&#39;m&#39;</span><span class="p">)</span>
-
-<span class="k">class</span> <span class="nc">HubCenterWSPosition</span><span class="p">(</span><span class="n">GenericWSPosition</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Generate the positions at the center of the wind turbine rotor</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ws_positions</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_desc</span><span class="o">.</span><span class="n">hub_height</span><span class="p">]])</span>
-</pre></div>
-
-</div>
-</div>
-
-</div>
-<div class="cell border-box-sizing code_cell">
-<div class="input">
-<div class="prompt input_prompt">
-In&nbsp;[73]:
+In&nbsp;[15]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="nd">@openMDAO_docs</span>
@@ -2826,7 +2838,7 @@ class HubCenterWSPosition2(GenericWSPosition):
 </div>
 
 <div class="output_area"><div class="prompt output_prompt">
-    Out[73]:</div>
+    Out[15]:</div>
 <div class="box-flex1 output_subarea output_pyout">
 
 
@@ -2839,7 +2851,7 @@ class HubCenterWSPosition2(GenericWSPosition):
  &apos;itername&apos;: &apos;&apos;,
  &apos;missing_deriv_policy&apos;: &apos;error&apos;,
  &apos;ws_positions&apos;: array([[  20.,  300.,  100.]]),
- &apos;wt_desc&apos;: &lt;__main__.GenericWindTurbineVT at 0x111d57050&gt;,
+ &apos;wt_desc&apos;: &lt;__main__.GenericWindTurbineVT at 0x1092580b0&gt;,
  &apos;wt_xy&apos;: [20, 300]}
 </pre>
 
@@ -2853,7 +2865,7 @@ class HubCenterWSPosition2(GenericWSPosition):
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[80]:
+In&nbsp;[16]:
 </div>
 <div class="input_area box-flex1">
 <div class="highlight"><pre><span class="nd">@openMDAO_docs</span>
@@ -2931,7 +2943,99 @@ class HubCenterWSPosition3(GenericWSPosition):
  &apos;itername&apos;: &apos;&apos;,
  &apos;missing_deriv_policy&apos;: &apos;error&apos;,
  &apos;ws_positions&apos;: array([[  20.,  300.,  100.]]),
- &apos;wt_desc&apos;: &lt;__main__.GenericWindTurbineVT object at 0x111d57c50&gt;,
+ &apos;wt_desc&apos;: &lt;__main__.GenericWindTurbineVT object at 0x1092584d0&gt;,
+ &apos;wt_xy&apos;: [20, 300]}
+
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Same thing, but having the openMDAO parameters defined as a list of strings within the class</p>
+</div>
+<div class="cell border-box-sizing code_cell">
+<div class="input">
+<div class="prompt input_prompt">
+In&nbsp;[17]:
+</div>
+<div class="input_area box-flex1">
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">HubCenterWSPosition1</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate the positions at the center of the wind turbine rotor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#     OpenMDAO I/O:</span>
+    <span class="n">_openmdao_io</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;wt_desc = VarTree(GenericWindTurbineVT(), iotype=&#39;in&#39;)&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;wt_xy = List([0.0, 0.0], iotype=&#39;in&#39;, desc=&#39;The x,y position of the wind turbine&#39;, unit=&#39;m&#39;)&quot;</span><span class="p">,</span>
+                    <span class="s">&quot;ws_positions = Array([], iotype=&#39;out&#39;, desc=&#39;the position [n,3] of the ws_array&#39;, unit=&#39;m&#39;)&quot;</span><span class="p">]</span>
+    
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ws_positions</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_desc</span><span class="o">.</span><span class="n">hub_height</span><span class="p">]])</span>
+
+<span class="n">wt_xy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">300</span><span class="p">]</span>
+<span class="n">wt</span> <span class="o">=</span> <span class="n">dictree</span><span class="p">(</span><span class="n">hub_height</span><span class="o">=</span><span class="mf">100.</span><span class="p">,</span> <span class="n">rotor_diameter</span><span class="o">=</span><span class="mf">80.</span><span class="p">,</span> <span class="n">power_rating</span><span class="o">=</span><span class="mf">2000000.</span><span class="p">)</span>        
+        
+<span class="n">HPos1</span> <span class="o">=</span> <span class="n">HubCenterWSPosition1</span><span class="p">()</span>
+<span class="n">HPos1</span><span class="o">.</span><span class="n">wt_desc</span> <span class="o">=</span> <span class="n">wt</span>
+<span class="n">HPos1</span><span class="o">.</span><span class="n">wt_xy</span> <span class="o">=</span> <span class="n">wt_xy</span>
+<span class="n">HPos1</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>        
+        
+<span class="c">### ... Import OpenMDAO here...</span>
+<span class="n">HubCenterWSPosition3</span> <span class="o">=</span> <span class="n">OpenMDAO_class</span><span class="p">(</span><span class="n">HubCenterWSPosition1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;HubCenterWSPosition3&#39;</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="s">&#39;GenericWSPosition&#39;</span><span class="p">)</span>
+
+<span class="n">HPos3</span> <span class="o">=</span> <span class="n">HubCenterWSPosition3</span><span class="p">()</span>
+<span class="n">HPos3</span><span class="o">.</span><span class="n">wt_desc</span> <span class="o">=</span> <span class="n">wt</span><span class="o">.</span><span class="n">VariableTree</span><span class="p">(</span><span class="n">GenericWindTurbineVT</span><span class="p">)</span> <span class="c"># Notice how the VariableTree is created from the dictree</span>
+<span class="n">HPos3</span><span class="o">.</span><span class="n">wt_xy</span> <span class="o">=</span> <span class="n">wt_xy</span>
+<span class="n">HPos3</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+
+<span class="k">print</span> <span class="n">HPos1</span><span class="o">.</span><span class="n">ws_positions</span><span class="p">,</span> <span class="s">&#39;==&#39;</span><span class="p">,</span> <span class="n">HPos3</span><span class="o">.</span><span class="n">ws_positions</span>
+<span class="k">assert</span> <span class="n">norm</span><span class="p">(</span><span class="n">HPos1</span><span class="o">.</span><span class="n">ws_positions</span> <span class="o">-</span> <span class="n">HPos3</span><span class="o">.</span><span class="n">ws_positions</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span>
+
+
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">HPos1</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">dictree</span><span class="p">(</span><span class="n">HPos3</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="box-flex1 output_subarea output_stream output_stdout">
+<pre>
+-------- New Class -------------
+
+@openMDAOify(HubCenterWSPosition1)    
+class HubCenterWSPosition3(GenericWSPosition):
+    wt_desc = VarTree(GenericWindTurbineVT(), iotype=&apos;in&apos;)
+    wt_xy = List([0.0, 0.0], iotype=&apos;in&apos;, desc=&apos;The x,y position of the wind turbine&apos;, unit=&apos;m&apos;)
+    ws_positions = Array([], iotype=&apos;out&apos;, desc=&apos;the position [n,3] of the ws_array&apos;, unit=&apos;m&apos;)
+    
+    
+--------------------------------
+[[  20.  300.  100.]] == [[  20.  300.  100.]]
+{&apos;ws_positions&apos;: array([[  20.,  300.,  100.]]),
+ &apos;wt_desc&apos;: {&apos;hub_height&apos;: 100.0,
+             &apos;power_rating&apos;: 2000000.0,
+             &apos;rotor_diameter&apos;: 80.0},
+ &apos;wt_xy&apos;: [20, 300]}
+{&apos;derivative_exec_count&apos;: 0,
+ &apos;directory&apos;: &apos;&apos;,
+ &apos;exec_count&apos;: 1,
+ &apos;force_execute&apos;: False,
+ &apos;force_fd&apos;: False,
+ &apos;itername&apos;: &apos;&apos;,
+ &apos;missing_deriv_policy&apos;: &apos;error&apos;,
+ &apos;ws_positions&apos;: array([[  20.,  300.,  100.]]),
+ &apos;wt_desc&apos;: &lt;__main__.GenericWindTurbineVT object at 0x1092585f0&gt;,
  &apos;wt_xy&apos;: [20, 300]}
 
 </pre>
@@ -2945,11 +3049,89 @@ class HubCenterWSPosition3(GenericWSPosition):
 <div class="cell border-box-sizing code_cell">
 <div class="input">
 <div class="prompt input_prompt">
-In&nbsp;[]:
+In&nbsp;[18]:
 </div>
 <div class="input_area box-flex1">
-<div class="highlight"><pre>
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">HubCenterWSPosition1</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate the positions at the center of the wind turbine rotor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#     OpenMDAO I/O:</span>
+    <span class="n">_openmdao_io</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&quot;wt_desc&quot;</span> <span class="p">:</span> <span class="s">&quot;VarTree(GenericWindTurbineVT(), iotype=&#39;in&#39;)&quot;</span><span class="p">,</span>   
+        <span class="s">&quot;wt_xy&quot;</span> <span class="p">:</span> <span class="s">&quot;List([0.0, 0.0], iotype=&#39;in&#39;, desc=&#39;The x,y position of the wind turbine&#39;, unit=&#39;m&#39;)&quot;</span><span class="p">,</span>
+        <span class="s">&quot;ws_positions&quot;</span> <span class="p">:</span> <span class="s">&quot;Array([], iotype=&#39;out&#39;, desc=&#39;the position [n,3] of the ws_array&#39;, unit=&#39;m&#39;)&quot;</span>
+    <span class="p">}</span>
+    
+    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ws_positions</span> <span class="o">=</span> <span class="n">array</span><span class="p">([[</span><span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_xy</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">wt_desc</span><span class="o">.</span><span class="n">hub_height</span><span class="p">]])</span>
+
+<span class="n">wt_xy</span> <span class="o">=</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">300</span><span class="p">]</span>
+<span class="n">wt</span> <span class="o">=</span> <span class="n">dictree</span><span class="p">(</span><span class="n">hub_height</span><span class="o">=</span><span class="mf">100.</span><span class="p">,</span> <span class="n">rotor_diameter</span><span class="o">=</span><span class="mf">80.</span><span class="p">,</span> <span class="n">power_rating</span><span class="o">=</span><span class="mf">2000000.</span><span class="p">)</span>        
+        
+<span class="n">HPos1</span> <span class="o">=</span> <span class="n">HubCenterWSPosition1</span><span class="p">()</span>
+<span class="n">HPos1</span><span class="o">.</span><span class="n">wt_desc</span> <span class="o">=</span> <span class="n">wt</span>
+<span class="n">HPos1</span><span class="o">.</span><span class="n">wt_xy</span> <span class="o">=</span> <span class="n">wt_xy</span>
+<span class="n">HPos1</span><span class="o">.</span><span class="n">execute</span><span class="p">()</span>        
+        
+<span class="c">### ... Import OpenMDAO here...</span>
+<span class="n">HubCenterWSPosition3</span> <span class="o">=</span> <span class="n">OpenMDAO_class</span><span class="p">(</span><span class="n">HubCenterWSPosition1</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;HubCenterWSPosition3&#39;</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="s">&#39;GenericWSPosition&#39;</span><span class="p">)</span>
+
+<span class="n">HPos3</span> <span class="o">=</span> <span class="n">HubCenterWSPosition3</span><span class="p">()</span>
+<span class="n">HPos3</span><span class="o">.</span><span class="n">wt_desc</span> <span class="o">=</span> <span class="n">wt</span><span class="o">.</span><span class="n">VariableTree</span><span class="p">(</span><span class="n">GenericWindTurbineVT</span><span class="p">)</span> <span class="c"># Notice how the VariableTree is created from the dictree</span>
+<span class="n">HPos3</span><span class="o">.</span><span class="n">wt_xy</span> <span class="o">=</span> <span class="n">wt_xy</span>
+<span class="n">HPos3</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+
+<span class="k">print</span> <span class="n">HPos1</span><span class="o">.</span><span class="n">ws_positions</span><span class="p">,</span> <span class="s">&#39;==&#39;</span><span class="p">,</span> <span class="n">HPos3</span><span class="o">.</span><span class="n">ws_positions</span>
+<span class="k">assert</span> <span class="n">norm</span><span class="p">(</span><span class="n">HPos1</span><span class="o">.</span><span class="n">ws_positions</span> <span class="o">-</span> <span class="n">HPos3</span><span class="o">.</span><span class="n">ws_positions</span><span class="p">)</span> <span class="o">==</span> <span class="mf">0.0</span>
+
+
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">HPos1</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">dictree</span><span class="p">(</span><span class="n">HPos3</span><span class="p">))</span>
 </pre></div>
+
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="box-flex1 output_subarea output_stream output_stdout">
+<pre>
+-------- New Class -------------
+
+@openMDAOify(HubCenterWSPosition1)    
+class HubCenterWSPosition3(GenericWSPosition):
+    wt_desc = VarTree(GenericWindTurbineVT(), iotype=&apos;in&apos;)
+    wt_xy = List([0.0, 0.0], iotype=&apos;in&apos;, desc=&apos;The x,y position of the wind turbine&apos;, unit=&apos;m&apos;)
+    ws_positions = Array([], iotype=&apos;out&apos;, desc=&apos;the position [n,3] of the ws_array&apos;, unit=&apos;m&apos;)
+    
+    
+--------------------------------
+[[  20.  300.  100.]] == [[  20.  300.  100.]]
+{&apos;ws_positions&apos;: array([[  20.,  300.,  100.]]),
+ &apos;wt_desc&apos;: {&apos;hub_height&apos;: 100.0,
+             &apos;power_rating&apos;: 2000000.0,
+             &apos;rotor_diameter&apos;: 80.0},
+ &apos;wt_xy&apos;: [20, 300]}
+{&apos;derivative_exec_count&apos;: 0,
+ &apos;directory&apos;: &apos;&apos;,
+ &apos;exec_count&apos;: 1,
+ &apos;force_execute&apos;: False,
+ &apos;force_fd&apos;: False,
+ &apos;itername&apos;: &apos;&apos;,
+ &apos;missing_deriv_policy&apos;: &apos;error&apos;,
+ &apos;ws_positions&apos;: array([[  20.,  300.,  100.]]),
+ &apos;wt_desc&apos;: &lt;__main__.GenericWindTurbineVT object at 0x109258770&gt;,
+ &apos;wt_xy&apos;: [20, 300]}
+
+</pre>
+</div>
+</div>
 
 </div>
 </div>

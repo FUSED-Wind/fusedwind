@@ -5,7 +5,7 @@
     from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, Int, List
     from openmdao.lib.casehandlers.api import ListCaseIterator, ListCaseRecorder
     from openmdao.main.case import Case
-    from numpy import arange
+    from pylab import *
     from openmdao.main.api import set_as_top
     import re
     
@@ -109,10 +109,10 @@
             getio = lambda x: x.split("iotype='")[1].split("'")[0]
             self.inputs = [getvarname(v) for v in args if getio(v)=='in']
             self.outputs = [getvarname(v) for v in args if getio(v)=='out']
-            self.args = args
+            self._openmdao_io = args
         
         def __call__(self, func):
-            func.args = self.args
+            func._openmdao_io = self._openmdao_io
             func.inputs = self.inputs
             func.outputs = self.outputs        
             return func
@@ -158,7 +158,7 @@
         getio = lambda x: x.split("iotype='")[1].split("'")[0]
         cls.inputs = [getvarname(v) for v in args if getio(v)=='in']
         cls.outputs = [getvarname(v) for v in args if getio(v)=='out']
-        cls.args = args
+        cls._openmdao_io = args
         return cls
             
             
@@ -175,7 +175,11 @@
         - name=None [str] The name of the newly created class. If None, it will invent one.
         - base=Component [str] The base class name the openMDAO component should inherit from        
         """
-        ios = "\n    ".join(func.args)
+        if isinstance(func._openmdao_io, list):
+            ios = "\n    ".join(func._openmdao_io)
+        elif isinstance(func._openmdao_io, dict):
+            ios = "\n    ".join(k+" = "+v for k,v in func._openmdao_io.iteritems())
+            
         inputs = ", ".join([k+" = self."+k for k in func.inputs])
         outputs = ", ".join(["self."+k for k in func.outputs])    
         if not name:
@@ -207,7 +211,11 @@
         - name=None [str] The name of the newly created class. If None, it will invent one.
         - base=Component [str] The base class name the openMDAO component should inherit from    
         """
-        ios = "\n    ".join(eng.args)
+        if isinstance(eng._openmdao_io, list):
+            ios = "\n    ".join(eng._openmdao_io)
+        elif isinstance(eng._openmdao_io, dict):
+            ios = "\n    ".join(k+" = "+v for k,v in eng._openmdao_io.iteritems())
+    
         if not name:
             cls_name = eng.__name__+'_OMDAO'
         else:
@@ -259,9 +267,9 @@ Creating some standard test
     #from pprint import pprint
     
     test_dict = dict([('var3', 5.0),
-                     ('var4', 3.0),
-                     ('var1', 3.0),
-                     ('var2', 2.0)])
+                      ('var4', 3.0),
+                      ('var1', 3.0),
+                      ('var2', 2.0)])
     
     def testclass(Ao):
         print '--begin test--'
@@ -652,7 +660,7 @@ function when building the openMDAO class.
             self.var3 = self.var1 + self.var2
             self.var4 = self.var1
             
-    A.args
+    A._openmdao_io
     
     ## ...import OpenMDAO here...     
     Afo = OpenMDAO_class(A)
@@ -687,6 +695,28 @@ function when building the openMDAO class.
     var3 5.0 == 5.0
     var2 2.0 == 2.0
      -- OK -- 
+
+
+### Application to a FUSED example
+
+
+    class GenericWindTurbineVT(VariableTree):
+        hub_height = Float(desc='Machine hub height', unit='m')
+        rotor_diameter = Float(desc='Machine rotor diameter', unit='m')
+        power_rating = Float(desc='Machine power rating', unit='W') # KLD: 
+        
+    class GenericWSPosition(Component):
+        """Calculate the positions where we should calculate the wind speed on the rotor"""
+        wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+        ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
+        wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
+    
+    class HubCenterWSPosition(GenericWSPosition):
+        """
+        Generate the positions at the center of the wind turbine rotor
+        """
+        def execute(self):
+            self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
 
 
 ### A simple vartree class created from `dict`
@@ -728,26 +758,6 @@ function when building the openMDAO class.
 
     [('power_rating', 2000000.0), ('rotor_diameter', 80.0), ('hub_height', 100.0)]
     {'hub_height': 100.0, 'rotor_diameter': 80.0, 'power_rating': 2000000.0}
-
-
-
-    class GenericWindTurbineVT(VariableTree):
-        hub_height = Float(desc='Machine hub height', unit='m')
-        rotor_diameter = Float(desc='Machine rotor diameter', unit='m')
-        power_rating = Float(desc='Machine power rating', unit='W') # KLD: 
-        
-    class GenericWSPosition(Component):
-        """Calculate the positions where we should calculate the wind speed on the rotor"""
-        wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
-        ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
-        wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
-    
-    class HubCenterWSPosition(GenericWSPosition):
-        """
-        Generate the positions at the center of the wind turbine rotor
-        """
-        def execute(self):
-            self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
 
 
 
@@ -809,7 +819,7 @@ function when building the openMDAO class.
      'itername': '',
      'missing_deriv_policy': 'error',
      'ws_positions': array([[  20.,  300.,  100.]]),
-     'wt_desc': <__main__.GenericWindTurbineVT at 0x111d57050>,
+     'wt_desc': <__main__.GenericWindTurbineVT at 0x1092580b0>,
      'wt_xy': [20, 300]}
 
 
@@ -879,9 +889,143 @@ function when building the openMDAO class.
      'itername': '',
      'missing_deriv_policy': 'error',
      'ws_positions': array([[  20.,  300.,  100.]]),
-     'wt_desc': <__main__.GenericWindTurbineVT object at 0x111d57c50>,
+     'wt_desc': <__main__.GenericWindTurbineVT object at 0x1092584d0>,
+     'wt_xy': [20, 300]}
+
+
+Same thing, but having the openMDAO parameters defined as a list of strings
+within the class
+
+
+    class HubCenterWSPosition1(object):
+        """
+        Generate the positions at the center of the wind turbine rotor
+        """
+        #     OpenMDAO I/O:
+        _openmdao_io = ["wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')",
+                        "wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')",
+                        "ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')"]
+        
+        def execute(self):
+            self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
+    
+    wt_xy = [20, 300]
+    wt = dictree(hub_height=100., rotor_diameter=80., power_rating=2000000.)        
+            
+    HPos1 = HubCenterWSPosition1()
+    HPos1.wt_desc = wt
+    HPos1.wt_xy = wt_xy
+    HPos1.execute()        
+            
+    ### ... Import OpenMDAO here...
+    HubCenterWSPosition3 = OpenMDAO_class(HubCenterWSPosition1, name='HubCenterWSPosition3', base='GenericWSPosition')
+    
+    HPos3 = HubCenterWSPosition3()
+    HPos3.wt_desc = wt.VariableTree(GenericWindTurbineVT) # Notice how the VariableTree is created from the dictree
+    HPos3.wt_xy = wt_xy
+    HPos3.run()
+    
+    
+    print HPos1.ws_positions, '==', HPos3.ws_positions
+    assert norm(HPos1.ws_positions - HPos3.ws_positions) == 0.0
+    
+    
+    from pprint import pprint
+    pprint(HPos1.__dict__)
+    pprint(dictree(HPos3))
+
+    -------- New Class -------------
+    
+    @openMDAOify(HubCenterWSPosition1)    
+    class HubCenterWSPosition3(GenericWSPosition):
+        wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+        wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
+        ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
+        
+        
+    --------------------------------
+    [[  20.  300.  100.]] == [[  20.  300.  100.]]
+    {'ws_positions': array([[  20.,  300.,  100.]]),
+     'wt_desc': {'hub_height': 100.0,
+                 'power_rating': 2000000.0,
+                 'rotor_diameter': 80.0},
+     'wt_xy': [20, 300]}
+    {'derivative_exec_count': 0,
+     'directory': '',
+     'exec_count': 1,
+     'force_execute': False,
+     'force_fd': False,
+     'itername': '',
+     'missing_deriv_policy': 'error',
+     'ws_positions': array([[  20.,  300.,  100.]]),
+     'wt_desc': <__main__.GenericWindTurbineVT object at 0x1092585f0>,
      'wt_xy': [20, 300]}
 
 
 
+    class HubCenterWSPosition1(object):
+        """
+        Generate the positions at the center of the wind turbine rotor
+        """
+        #     OpenMDAO I/O:
+        _openmdao_io = {
+            "wt_desc" : "VarTree(GenericWindTurbineVT(), iotype='in')",   
+            "wt_xy" : "List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')",
+            "ws_positions" : "Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')"
+        }
+        
+        def execute(self):
+            self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
     
+    wt_xy = [20, 300]
+    wt = dictree(hub_height=100., rotor_diameter=80., power_rating=2000000.)        
+            
+    HPos1 = HubCenterWSPosition1()
+    HPos1.wt_desc = wt
+    HPos1.wt_xy = wt_xy
+    HPos1.execute()        
+            
+    ### ... Import OpenMDAO here...
+    HubCenterWSPosition3 = OpenMDAO_class(HubCenterWSPosition1, name='HubCenterWSPosition3', base='GenericWSPosition')
+    
+    HPos3 = HubCenterWSPosition3()
+    HPos3.wt_desc = wt.VariableTree(GenericWindTurbineVT) # Notice how the VariableTree is created from the dictree
+    HPos3.wt_xy = wt_xy
+    HPos3.run()
+    
+    
+    print HPos1.ws_positions, '==', HPos3.ws_positions
+    assert norm(HPos1.ws_positions - HPos3.ws_positions) == 0.0
+    
+    
+    from pprint import pprint
+    pprint(HPos1.__dict__)
+    pprint(dictree(HPos3))
+
+    -------- New Class -------------
+    
+    @openMDAOify(HubCenterWSPosition1)    
+    class HubCenterWSPosition3(GenericWSPosition):
+        wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+        wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
+        ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
+        
+        
+    --------------------------------
+    [[  20.  300.  100.]] == [[  20.  300.  100.]]
+    {'ws_positions': array([[  20.,  300.,  100.]]),
+     'wt_desc': {'hub_height': 100.0,
+                 'power_rating': 2000000.0,
+                 'rotor_diameter': 80.0},
+     'wt_xy': [20, 300]}
+    {'derivative_exec_count': 0,
+     'directory': '',
+     'exec_count': 1,
+     'force_execute': False,
+     'force_fd': False,
+     'itername': '',
+     'missing_deriv_policy': 'error',
+     'ws_positions': array([[  20.,  300.,  100.]]),
+     'wt_desc': <__main__.GenericWindTurbineVT object at 0x109258770>,
+     'wt_xy': [20, 300]}
+

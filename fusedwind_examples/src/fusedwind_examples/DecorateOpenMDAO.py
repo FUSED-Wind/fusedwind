@@ -1,5 +1,5 @@
 
-# In[20]:
+# In[1]:
 
 from openmdao.lib.drivers.api import CaseIteratorDriver
 from openmdao.main.api import Component, Assembly, VariableTree
@@ -110,10 +110,10 @@ class openMDAO_io(object):
         getio = lambda x: x.split("iotype='")[1].split("'")[0]
         self.inputs = [getvarname(v) for v in args if getio(v)=='in']
         self.outputs = [getvarname(v) for v in args if getio(v)=='out']
-        self.args = args
+        self._openmdao_io = args
     
     def __call__(self, func):
-        func.args = self.args
+        func._openmdao_io = self._openmdao_io
         func.inputs = self.inputs
         func.outputs = self.outputs        
         return func
@@ -159,7 +159,7 @@ def openMDAO_docs(cls):
     getio = lambda x: x.split("iotype='")[1].split("'")[0]
     cls.inputs = [getvarname(v) for v in args if getio(v)=='in']
     cls.outputs = [getvarname(v) for v in args if getio(v)=='out']
-    cls.args = args
+    cls._openmdao_io = args
     return cls
         
         
@@ -176,7 +176,11 @@ def OpenMDAO_func(func, name=None, base='Component'):
     - name=None [str] The name of the newly created class. If None, it will invent one.
     - base=Component [str] The base class name the openMDAO component should inherit from        
     """
-    ios = "\n    ".join(func.args)
+    if isinstance(func._openmdao_io, list):
+        ios = "\n    ".join(func._openmdao_io)
+    elif isinstance(func._openmdao_io, dict):
+        ios = "\n    ".join(k+" = "+v for k,v in func._openmdao_io.iteritems())
+        
     inputs = ", ".join([k+" = self."+k for k in func.inputs])
     outputs = ", ".join(["self."+k for k in func.outputs])    
     if not name:
@@ -208,7 +212,11 @@ def OpenMDAO_class(eng, name=None, base='Component'):
     - name=None [str] The name of the newly created class. If None, it will invent one.
     - base=Component [str] The base class name the openMDAO component should inherit from    
     """
-    ios = "\n    ".join(eng.args)
+    if isinstance(eng._openmdao_io, list):
+        ios = "\n    ".join(eng._openmdao_io)
+    elif isinstance(eng._openmdao_io, dict):
+        ios = "\n    ".join(k+" = "+v for k,v in eng._openmdao_io.iteritems())
+
     if not name:
         cls_name = eng.__name__+'_OMDAO'
     else:
@@ -262,9 +270,9 @@ def OpenMDAO_func2(func, outputs, attrib, name=None, base=Component):
 #from pprint import pprint
 
 test_dict = dict([('var3', 5.0),
-                 ('var4', 3.0),
-                 ('var1', 3.0),
-                 ('var2', 2.0)])
+                  ('var4', 3.0),
+                  ('var1', 3.0),
+                  ('var2', 2.0)])
 
 def testclass(Ao):
     print '--begin test--'
@@ -357,7 +365,7 @@ testclass(Ao)
 
 #### Same thing using meta class generation
 
-# In[19]:
+# In[5]:
 
 class A(object):
     """doc of A"""
@@ -379,7 +387,7 @@ Ao.__doc__ = A.__doc__
 testclass(Ao)
 
 
-# Out[19]:
+# Out[5]:
 
 #     --begin test--
 #     Ao1
@@ -436,7 +444,7 @@ testclass(Afo)
 
 # Or....
 
-# In[8]:
+# In[7]:
 
 def Af(var1, var2):
     """doc of Af"""
@@ -452,7 +460,7 @@ var4 = Float(0., iotype='out')
 testclass(Afo)
 
 
-# Out[8]:
+# Out[7]:
 
 #     -------- New Class -------------
 #     
@@ -478,7 +486,7 @@ testclass(Afo)
 
 # unfortunately the order of the variables in a dict is not respected, so the output order is not defined directly.
 
-# In[9]:
+# In[8]:
 
 
 def Af(var1, var2):
@@ -497,7 +505,7 @@ Afo = OpenMDAO_func2(Af, outputs=['var3','var4'], attrib=attribs)
 testclass(Afo)
 
 
-# Out[9]:
+# Out[8]:
 
 #     --begin test--
 #     Af_OMDAO
@@ -509,7 +517,7 @@ testclass(Afo)
 #      -- OK -- 
 # 
 
-# In[10]:
+# In[9]:
 
 @openMDAO_docs
 def Af(var1, var2):
@@ -528,6 +536,63 @@ def Af(var1, var2):
 
 ## ...import OpenMDAO here...     
 Afo = OpenMDAO_func(Af)
+testclass(Afo)
+
+
+# Out[9]:
+
+#     -------- New Class -------------
+#     
+#     class Af_OMDAO(Component):
+#         var1 = Float(0., iotype='in')   # <- it only keeps the lines that have "iotype" in it
+#         var2 = Float(0., iotype='in')
+#         var3 = Float(0., iotype='out')  # <- First output
+#         var4 = Float(0., iotype='out')  # <- Second output
+#         
+#         def execute(self):
+#             self.var3, self.var4 = Af(var1 = self.var1, var2 = self.var2)
+#         
+#     --------------------------------
+#     --begin test--
+#     Af_OMDAO
+#     doc of Af
+#         
+#         OpenMDAO I/O
+#         ------------
+#         # Inputs
+#         var1 = Float(0., iotype='in')   # <- it only keeps the lines that have "iotype" in it
+#         var2 = Float(0., iotype='in')
+#         # Outputs
+#         var3 = Float(0., iotype='out')  # <- First output
+#         var4 = Float(0., iotype='out')  # <- Second output
+#         
+#     var4 3.0 == 3.0
+#     var1 3.0 == 3.0
+#     var3 5.0 == 5.0
+#     var2 2.0 == 2.0
+#      -- OK -- 
+# 
+
+# We don't even have to put a decorator. We can just call the decorator as a function when building the openMDAO class.
+
+# In[10]:
+
+def Af(var1, var2):
+    """doc of Af
+    
+    OpenMDAO I/O
+    ------------
+    # Inputs
+    var1 = Float(0., iotype='in')   # <- it only keeps the lines that have "iotype" in it
+    var2 = Float(0., iotype='in')
+    # Outputs
+    var3 = Float(0., iotype='out')  # <- First output
+    var4 = Float(0., iotype='out')  # <- Second output
+    """    
+    return var1 + var2, var1
+
+## ...import OpenMDAO here...     
+Afo = OpenMDAO_func(openMDAO_docs(Af))
 testclass(Afo)
 
 
@@ -565,66 +630,9 @@ testclass(Afo)
 #      -- OK -- 
 # 
 
-# We don't even have to put a decorator. We can just call the decorator as a function when building the openMDAO class.
-
-# In[11]:
-
-def Af(var1, var2):
-    """doc of Af
-    
-    OpenMDAO I/O
-    ------------
-    # Inputs
-    var1 = Float(0., iotype='in')   # <- it only keeps the lines that have "iotype" in it
-    var2 = Float(0., iotype='in')
-    # Outputs
-    var3 = Float(0., iotype='out')  # <- First output
-    var4 = Float(0., iotype='out')  # <- Second output
-    """    
-    return var1 + var2, var1
-
-## ...import OpenMDAO here...     
-Afo = OpenMDAO_func(openMDAO_docs(Af))
-testclass(Afo)
-
-
-# Out[11]:
-
-#     -------- New Class -------------
-#     
-#     class Af_OMDAO(Component):
-#         var1 = Float(0., iotype='in')   # <- it only keeps the lines that have "iotype" in it
-#         var2 = Float(0., iotype='in')
-#         var3 = Float(0., iotype='out')  # <- First output
-#         var4 = Float(0., iotype='out')  # <- Second output
-#         
-#         def execute(self):
-#             self.var3, self.var4 = Af(var1 = self.var1, var2 = self.var2)
-#         
-#     --------------------------------
-#     --begin test--
-#     Af_OMDAO
-#     doc of Af
-#         
-#         OpenMDAO I/O
-#         ------------
-#         # Inputs
-#         var1 = Float(0., iotype='in')   # <- it only keeps the lines that have "iotype" in it
-#         var2 = Float(0., iotype='in')
-#         # Outputs
-#         var3 = Float(0., iotype='out')  # <- First output
-#         var4 = Float(0., iotype='out')  # <- Second output
-#         
-#     var4 3.0 == 3.0
-#     var1 3.0 == 3.0
-#     var3 5.0 == 5.0
-#     var2 2.0 == 2.0
-#      -- OK -- 
-# 
-
 #### Creating an OpenMDAO object from a normal *class* (with a `openMDAO_io` decorator)
 
-# In[12]:
+# In[11]:
 
 @openMDAO_io("""
 var1 = Float(0., iotype='in')
@@ -643,7 +651,7 @@ Ao2 = OpenMDAO_class(A)
 testclass(Ao2)
 
 
-# Out[12]:
+# Out[11]:
 
 #     -------- New Class -------------
 #     
@@ -668,7 +676,7 @@ testclass(Ao2)
 
 #### Normal class using an `@openMDAO_docs` decorator
 
-# In[13]:
+# In[12]:
 
 @openMDAO_docs
 class A(object):
@@ -687,14 +695,14 @@ class A(object):
         self.var3 = self.var1 + self.var2
         self.var4 = self.var1
         
-A.args
+A._openmdao_io
 
 ## ...import OpenMDAO here...     
 Afo = OpenMDAO_class(A)
 testclass(Afo)
 
 
-# Out[13]:
+# Out[12]:
 
 #     -------- New Class -------------
 #     
@@ -727,9 +735,32 @@ testclass(Afo)
 #      -- OK -- 
 # 
 
+#### Application to a FUSED example
+
+# In[13]:
+
+class GenericWindTurbineVT(VariableTree):
+    hub_height = Float(desc='Machine hub height', unit='m')
+    rotor_diameter = Float(desc='Machine rotor diameter', unit='m')
+    power_rating = Float(desc='Machine power rating', unit='W') # KLD: 
+    
+class GenericWSPosition(Component):
+    """Calculate the positions where we should calculate the wind speed on the rotor"""
+    wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+    ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
+    wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
+
+class HubCenterWSPosition(GenericWSPosition):
+    """
+    Generate the positions at the center of the wind turbine rotor
+    """
+    def execute(self):
+        self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
+
+
 #### A simple vartree class created from `dict`
 
-# In[72]:
+# In[14]:
 
 class dictree(dict):
     """Transform a dictionary into a tree"""
@@ -756,26 +787,6 @@ class dictree(dict):
                 setattr(obj, k, v)
         return obj
 
-
-class GenericWindTurbineVT(VariableTree):
-    hub_height = Float(desc='Machine hub height', unit='m')
-    rotor_diameter = Float(desc='Machine rotor diameter', unit='m')
-    power_rating = Float(desc='Machine power rating', unit='W') # KLD: 
-    
-class GenericWSPosition(Component):
-    """Calculate the positions where we should calculate the wind speed on the rotor"""
-    wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
-    ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
-    wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
-
-class HubCenterWSPosition(GenericWSPosition):
-    """
-    Generate the positions at the center of the wind turbine rotor
-    """
-    def execute(self):
-        self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
-
-## Testing the dictree
 wt = dictree(hub_height=100., rotor_diameter=80., power_rating=2000000.)
 
 assert wt['rotor_diameter'] == wt.rotor_diameter
@@ -786,15 +797,13 @@ wt2 = dictree(wt_omdao) # <- creating a dictree from a VariableTree
 print wt2
 
 
-# Out[72]:
+# Out[14]:
 
 #     [('power_rating', 2000000.0), ('rotor_diameter', 80.0), ('hub_height', 100.0)]
 #     {'hub_height': 100.0, 'rotor_diameter': 80.0, 'power_rating': 2000000.0}
 # 
 
-# In[70]:
-
-# In[73]:
+# In[15]:
 
 @openMDAO_docs
 def hub_center_ws_position(wt_desc, wt_xy):
@@ -829,7 +838,7 @@ assert norm(ws_positions - HPos.ws_positions) == 0.0
 dictree(HPos)
 
 
-# Out[73]:
+# Out[15]:
 
 #     -------- New Class -------------
 #     
@@ -853,10 +862,10 @@ dictree(HPos)
 # 'itername': '',
 # 'missing_deriv_policy': 'error',
 # 'ws_positions': array([[  20.,  300.,  100.]]),
-# 'wt_desc': <__main__.GenericWindTurbineVT at 0x111d57050>,
+# 'wt_desc': <__main__.GenericWindTurbineVT at 0x1092580b0>,
 # 'wt_xy': [20, 300]}
 
-# In[80]:
+# In[16]:
 
 @openMDAO_docs
 class HubCenterWSPosition1(object):
@@ -899,7 +908,7 @@ pprint(dictree(HPos3))
         
 
 
-# Out[80]:
+# Out[16]:
 
 #     -------- New Class -------------
 #     
@@ -925,11 +934,150 @@ pprint(dictree(HPos3))
 #      'itername': '',
 #      'missing_deriv_policy': 'error',
 #      'ws_positions': array([[  20.,  300.,  100.]]),
-#      'wt_desc': <__main__.GenericWindTurbineVT object at 0x111d57c50>,
+#      'wt_desc': <__main__.GenericWindTurbineVT object at 0x1092584d0>,
 #      'wt_xy': [20, 300]}
 # 
 
-# In[ ]:
+# Same thing, but having the openMDAO parameters defined as a list of strings within the class
+
+# In[17]:
+
+class HubCenterWSPosition1(object):
+    """
+    Generate the positions at the center of the wind turbine rotor
+    """
+    #     OpenMDAO I/O:
+    _openmdao_io = ["wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')",
+                    "wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')",
+                    "ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')"]
+    
+    def execute(self):
+        self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
+
+wt_xy = [20, 300]
+wt = dictree(hub_height=100., rotor_diameter=80., power_rating=2000000.)        
+        
+HPos1 = HubCenterWSPosition1()
+HPos1.wt_desc = wt
+HPos1.wt_xy = wt_xy
+HPos1.execute()        
+        
+### ... Import OpenMDAO here...
+HubCenterWSPosition3 = OpenMDAO_class(HubCenterWSPosition1, name='HubCenterWSPosition3', base='GenericWSPosition')
+
+HPos3 = HubCenterWSPosition3()
+HPos3.wt_desc = wt.VariableTree(GenericWindTurbineVT) # Notice how the VariableTree is created from the dictree
+HPos3.wt_xy = wt_xy
+HPos3.run()
 
 
+print HPos1.ws_positions, '==', HPos3.ws_positions
+assert norm(HPos1.ws_positions - HPos3.ws_positions) == 0.0
 
+
+from pprint import pprint
+pprint(HPos1.__dict__)
+pprint(dictree(HPos3))
+
+
+# Out[17]:
+
+#     -------- New Class -------------
+#     
+#     @openMDAOify(HubCenterWSPosition1)    
+#     class HubCenterWSPosition3(GenericWSPosition):
+#         wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+#         wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
+#         ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
+#         
+#         
+#     --------------------------------
+#     [[  20.  300.  100.]] == [[  20.  300.  100.]]
+#     {'ws_positions': array([[  20.,  300.,  100.]]),
+#      'wt_desc': {'hub_height': 100.0,
+#                  'power_rating': 2000000.0,
+#                  'rotor_diameter': 80.0},
+#      'wt_xy': [20, 300]}
+#     {'derivative_exec_count': 0,
+#      'directory': '',
+#      'exec_count': 1,
+#      'force_execute': False,
+#      'force_fd': False,
+#      'itername': '',
+#      'missing_deriv_policy': 'error',
+#      'ws_positions': array([[  20.,  300.,  100.]]),
+#      'wt_desc': <__main__.GenericWindTurbineVT object at 0x1092585f0>,
+#      'wt_xy': [20, 300]}
+# 
+
+# In[18]:
+
+class HubCenterWSPosition1(object):
+    """
+    Generate the positions at the center of the wind turbine rotor
+    """
+    #     OpenMDAO I/O:
+    _openmdao_io = {
+        "wt_desc" : "VarTree(GenericWindTurbineVT(), iotype='in')",   
+        "wt_xy" : "List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')",
+        "ws_positions" : "Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')"
+    }
+    
+    def execute(self):
+        self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
+
+wt_xy = [20, 300]
+wt = dictree(hub_height=100., rotor_diameter=80., power_rating=2000000.)        
+        
+HPos1 = HubCenterWSPosition1()
+HPos1.wt_desc = wt
+HPos1.wt_xy = wt_xy
+HPos1.execute()        
+        
+### ... Import OpenMDAO here...
+HubCenterWSPosition3 = OpenMDAO_class(HubCenterWSPosition1, name='HubCenterWSPosition3', base='GenericWSPosition')
+
+HPos3 = HubCenterWSPosition3()
+HPos3.wt_desc = wt.VariableTree(GenericWindTurbineVT) # Notice how the VariableTree is created from the dictree
+HPos3.wt_xy = wt_xy
+HPos3.run()
+
+
+print HPos1.ws_positions, '==', HPos3.ws_positions
+assert norm(HPos1.ws_positions - HPos3.ws_positions) == 0.0
+
+
+from pprint import pprint
+pprint(HPos1.__dict__)
+pprint(dictree(HPos3))
+
+
+# Out[18]:
+
+#     -------- New Class -------------
+#     
+#     @openMDAOify(HubCenterWSPosition1)    
+#     class HubCenterWSPosition3(GenericWSPosition):
+#         wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+#         wt_xy = List([0.0, 0.0], iotype='in', desc='The x,y position of the wind turbine', unit='m')
+#         ws_positions = Array([], iotype='out', desc='the position [n,3] of the ws_array', unit='m')
+#         
+#         
+#     --------------------------------
+#     [[  20.  300.  100.]] == [[  20.  300.  100.]]
+#     {'ws_positions': array([[  20.,  300.,  100.]]),
+#      'wt_desc': {'hub_height': 100.0,
+#                  'power_rating': 2000000.0,
+#                  'rotor_diameter': 80.0},
+#      'wt_xy': [20, 300]}
+#     {'derivative_exec_count': 0,
+#      'directory': '',
+#      'exec_count': 1,
+#      'force_execute': False,
+#      'force_fd': False,
+#      'itername': '',
+#      'missing_deriv_policy': 'error',
+#      'ws_positions': array([[  20.,  300.,  100.]]),
+#      'wt_desc': <__main__.GenericWindTurbineVT object at 0x109258770>,
+#      'wt_xy': [20, 300]}
+# 
