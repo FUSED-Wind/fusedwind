@@ -6,7 +6,7 @@ from openmdao.main.api import Component, Assembly, VariableTree
 from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, Int, List
 from openmdao.lib.casehandlers.api import ListCaseIterator, ListCaseRecorder
 from openmdao.main.case import Case
-from numpy import arange
+from pylab import *
 from openmdao.main.api import set_as_top
 import re
 
@@ -756,23 +756,6 @@ class dictree(dict):
                 setattr(obj, k, v)
         return obj
 
-wt = dictree(hub_height=100., rotor_diameter=80., power_rating=2000000.)
-
-assert wt['rotor_diameter'] == wt.rotor_diameter
-
-wt_omdao = wt.VariableTree(GenericWindTurbineVT) # <- creating a VariableTree from a dictree
-print list(wt_omdao.items())
-wt2 = dictree(wt_omdao) # <- creating a dictree from a VariableTree
-print wt2
-
-
-# Out[72]:
-
-#     [('power_rating', 2000000.0), ('rotor_diameter', 80.0), ('hub_height', 100.0)]
-#     {'hub_height': 100.0, 'rotor_diameter': 80.0, 'power_rating': 2000000.0}
-# 
-
-# In[70]:
 
 class GenericWindTurbineVT(VariableTree):
     hub_height = Float(desc='Machine hub height', unit='m')
@@ -792,6 +775,24 @@ class HubCenterWSPosition(GenericWSPosition):
     def execute(self):
         self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
 
+## Testing the dictree
+wt = dictree(hub_height=100., rotor_diameter=80., power_rating=2000000.)
+
+assert wt['rotor_diameter'] == wt.rotor_diameter
+
+wt_omdao = wt.VariableTree(GenericWindTurbineVT) # <- creating a VariableTree from a dictree
+print list(wt_omdao.items())
+wt2 = dictree(wt_omdao) # <- creating a dictree from a VariableTree
+print wt2
+
+
+# Out[72]:
+
+#     [('power_rating', 2000000.0), ('rotor_diameter', 80.0), ('hub_height', 100.0)]
+#     {'hub_height': 100.0, 'rotor_diameter': 80.0, 'power_rating': 2000000.0}
+# 
+
+# In[70]:
 
 # In[73]:
 
@@ -844,16 +845,16 @@ dictree(HPos)
 #     [[  20.  300.  100.]] == [[  20.  300.  100.]]
 # 
 
-{'derivative_exec_count': 0,
- 'directory': '',
- 'exec_count': 1,
- 'force_execute': False,
- 'force_fd': False,
- 'itername': '',
- 'missing_deriv_policy': 'error',
- 'ws_positions': array([[  20.,  300.,  100.]]),
- 'wt_desc': <__main__.GenericWindTurbineVT at 0x111d57050>,
- 'wt_xy': [20, 300]}
+#{'derivative_exec_count': 0,
+# 'directory': '',
+# 'exec_count': 1,
+# 'force_execute': False,
+# 'force_fd': False,
+# 'itername': '',
+# 'missing_deriv_policy': 'error',
+# 'ws_positions': array([[  20.,  300.,  100.]]),
+# 'wt_desc': <__main__.GenericWindTurbineVT at 0x111d57050>,
+# 'wt_xy': [20, 300]}
 
 # In[80]:
 
