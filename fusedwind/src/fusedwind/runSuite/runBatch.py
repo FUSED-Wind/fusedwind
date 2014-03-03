@@ -185,6 +185,8 @@ class CaseAnalyzer(Assembly):
                 output_ops = [output_ops]
         outnames = output_params['output_keys']
         for op in output_ops:
+            if (":" in op):
+                op = op.split(":")[1]
             for p in outnames:
                 fout.write("%s_%s " % (op,p))
         fout.write("\n")
@@ -196,8 +198,17 @@ class CaseAnalyzer(Assembly):
             fout.write("   ")
             results_dir = os.path.join(self.aerocode.basedir, case.case_name)
             for opstr in output_ops:                
-                op = eval(opstr)  ## this gives us the "python function object" described by opstr (e.g. string "np.std"  something we can call)
+                try:
+                    if (":" in opstr):
+                        mod = opstr.split(":")[0]
+                        opstr2 = opstr.split(":")[1]
+                        op =getattr( __import__(mod, globals(), locals(), [opstr2], -1), opstr2)
+                    else:
+                        op = eval(opstr)  ## this gives us the "python function object" described by opstr (e.g. string "np.std"  something we can call)
                    # op is called  as op(col):R^n -> R. i.e. gets passed an array (output vs time) and produces a scalar.
+                except:
+                    print "ERROR: Failed to find use specified postprocessing function ", opstr
+
                 result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
                 for val in result:
                     if (val == None):
