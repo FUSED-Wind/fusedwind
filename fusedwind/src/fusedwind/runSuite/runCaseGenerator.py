@@ -192,7 +192,7 @@ def parse_arg(a):
     obj = shlex(a)
     obj.wordchars += "." # enables parsing decimals
     alist = list(obj)
-#    print "parsed ", a, "to ", alist
+    print "parsed ", a, "to ", alist
 #eg: parsed  10 + Vhub/100 - 0.02*(WaveDir+1) to  ['10', '+', 'Vhub', '/', '100', '-', '0.02', '*', '(', 'WaveDir', '+', '1', ')']
     return alist
 
@@ -340,7 +340,8 @@ class DistnParser(object):
                         vstr = "%s" % v
                     # now parse the distn spec.
                     dspec = tok[1].strip()
-                    q = re.match("([^(]*)(\(.*\))", dspec)
+                    print "look at", dspec
+                    q = re.match("([^(]+)(\(.*\))", dspec)
                     if (q != None):
                         # found a function-like defn
                         dist = q.group(1) 
@@ -484,7 +485,7 @@ class DistnParser(object):
         return a
 
     def resolve_value(self,a):
-#        print "resolving:", a
+        print "resolving:", a
         vals = [self.resolve_one_value(x) for x in a]
         s = ""
         for v in vals:
@@ -571,7 +572,7 @@ def gen_cases():
     dparser = DistnParser()
     dparser.parse_file(options.main_input)
     numsamples = options.nsamples
-    slist = dparser.multi_sample(numsamples, expand_enums = True)
+    slist = dparser.multi_sample(numsamples, expand_enums = False)
     print "%d samples, SAMPLING set/enumeration variables:" % (numsamples)
     fout = file(options.main_output, "w")
     s = slist[0]
