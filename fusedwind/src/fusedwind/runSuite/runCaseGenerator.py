@@ -80,10 +80,12 @@ from scipy.stats import vonmises, gamma
 # so we have to us numpy.multivariate_normal (at least on my mac)
 from numpy.random import weibull
 import scipy.linalg as linalg
+from math import *
 import math
 from numpy import matrix
 from math import pi, isnan, exp
 from numpy import mean
+from scipy.stats import vonmises, gamma
 
 def draw_uniform(x0,x1):
     val = npr.uniform(x0,x1)
@@ -347,7 +349,7 @@ class DistnParser(object):
                         # found a function-like defn
                         dist = q.group(1) 
                         args = q.group(2)
-                        #print "split ", dspec , "into ", dist, args
+#                        print "split ", dspec , "into ", dist, args
                         #eg: split  G(10 + Vhub/100 - 0.02*(WaveDir+1),.25) into  G (10 + Vhub/100 - 0.02*(WaveDir+1),.25)
                         args=args.strip("(").strip(")").split(",")
                         args = [s.strip() for s in args]
@@ -464,9 +466,10 @@ class DistnParser(object):
                     self.clear_values()
 
                     for d in self.dlist:
+ #                       print "scanning ", d.vstr
                         if (hasattr(d,"fn")):
                             s = d.sample()
-                #                print "sampled ", d.vstr, " and got ", s
+                            #print "sampled ", d.vstr, " and got ", s
                             self.set_value(d.vstr,s)
                         
                         if (hasattr(d,"items")):  #### bad programming!
@@ -515,6 +518,7 @@ class DistnParser(object):
     def resolve_value(self,a):
 #        print "resolving:", a
         vals = [self.resolve_one_value(x) for x in a]
+#        print vals
         s = ""
         for v in vals:
             if is_float(v):
@@ -619,8 +623,8 @@ def gen_cases():
         for s in old_samples:
             samp = {old_hdr[i]:s[i] for i in range(len(s))}
             p = dparser.calc_prob(samp)
-            print "sample ", samp
-            print "prob ", p
+#            print "sample ", samp
+#            print "prob ", p
             s[pidx] = p
             new_samples.append(s)
 
