@@ -99,7 +99,8 @@ def draw_weibull(shape, scale, nsamples=1):
 
 def draw_gamma(shape, scale, nsamples=1):
 #    print "gamma params:", shape, scale
-    shape = max(1e-1,shape)
+    shape = max(1e-3,shape)
+    scale = max(1e-3,scale)
     x = gamma.rvs(shape, loc=0, scale=scale, size=nsamples)
     return x
 
@@ -422,7 +423,8 @@ class DistnParser(object):
                 for y in s:
                     item[y] = s[y]
                     self.set_value(y,s[y])
-                item[enum.vstr] = self.resolve_value(x)
+#                item[enum.vstr] = self.resolve_value(x)
+                item[enum.vstr] = x  # not resolved yet!
                 newlist.append(item)                
 #                print "appended item to newlist" , item, newlist
 #        print newlist
@@ -454,15 +456,41 @@ class DistnParser(object):
             enum_list = self.expand_enums()
 #            print "enum_list", enum_list
             for e in enum_list:
-                self.clear_values()
-                self.set_values(e)
+#                self.clear_values()
+#                self.set_values(e)
                 for i in range(numsamples):
                     # now truly sampled vars to each of them                    
                     # combine real samples to enum cases
-                    vals = self.sample_fns()
+                    self.clear_values()
+
+                    for d in self.dlist:
+                        if (hasattr(d,"fn")):
+                            s = d.sample()
+                #                print "sampled ", d.vstr, " and got ", s
+                            self.set_value(d.vstr,s)
+                        
+                        if (hasattr(d,"items")):  #### bad programming!
+                            maxiter = len(e)
+                            tries = 0
+                            while (tries < maxiter):
+                                for it in e:  # find this var and resolve it here
+#                                    print it, e[it]
+                                    # this is some crazy stuff: try (maybe out of order b/c of dict) until we succeed
+                                    # to resolve everything
+                                    try:
+                                        val = self.resolve_value(e[it])
+                                        self.set_value(it,val)
+#                                        print "succes resolving ", e[it]
+                                    except:
+#                                        print "failed resolving ", e[it]
+                                        pass
+                                    tries += 1
+                    slist.append(self.values)
+
+#                    vals = self.sample_fns()
 #                    print vals, e
-                    vals = merge_dicts(vals, e)
-                    slist.append(vals)
+#                    vals = merge_dicts(vals, e)
+#                    slist.append(vals)
         else:            
 #            print "sampling %d times" % numsamples
             for i in range(numsamples):
@@ -572,7 +600,7 @@ def gen_cases():
     dparser = DistnParser()
     dparser.parse_file(options.main_input)
     numsamples = options.nsamples
-    slist = dparser.multi_sample(numsamples, expand_enums = False)
+    slist = dparser.multi_sample(numsamples, expand_enums = True)
     print "%d samples, SAMPLING set/enumeration variables:" % (numsamples)
     fout = file(options.main_output, "w")
     s = slist[0]
