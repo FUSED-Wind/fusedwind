@@ -590,32 +590,67 @@ def get_options():
     parser.add_option("-n", "--nsamples", dest="nsamples", help="how many samples to generate", type="int", default=5)
     parser.add_option("-o", "--output", dest="main_output",  type="string", default="runcases.txt",
                                     help="output file (where to write the run cases)")
+    parser.add_option("-p", "--probfile", dest="old_samples",  type="string", default=None,
+                                    help="an input file of samples whose probabilities we want to calculat w.r.t input distn")
             
     (options, args) = parser.parse_args()
     return options, args
+
+def read_samples(fname):
+    lines = file(fname).readlines()
+    hdr = lines[0].split()
+    dat = []
+    for ln in lines[1:]:
+        dat.append([float(x) for x in ln.split()])
+    return hdr, dat
 
 def gen_cases():
     options, args = get_options()
     
     dparser = DistnParser()
     dparser.parse_file(options.main_input)
-    numsamples = options.nsamples
-    slist = dparser.multi_sample(numsamples, expand_enums = True)
-    print "%d samples, SAMPLING set/enumeration variables:" % (numsamples)
-    fout = file(options.main_output, "w")
-    s = slist[0]
-    for key in s:
-        fout.write("%s " % key)
-    fout.write("Prob\n")
-    for i in range(len(slist)):
-        s = slist[i]
-        p =  dparser.calc_prob(s)
-#        print "sample %d = " % i, s, p
+
+    if (options.old_samples != None):
+        # in this mode, we are given a distribution and, separately, a set of old samples.  Our job is to calculate the
+        # probabilities for the samples w.r.t. the given distribution
+        old_hdr, old_samples = read_samples(options.old_samples)
+        pidx = old_hdr.index("Prob")
+        new_samples = []
+        for s in old_samples:
+            samp = {old_hdr[i]:s[i] for i in range(len(s))}
+            p = dparser.calc_prob(samp)
+            print "sample ", samp
+            print "prob ", p
+            s[pidx] = p
+            new_samples.append(s)
+
+        fout = file(options.main_output, "w")
+        for key in old_hdr:
+            fout.write("%s " % key)
+        fout.write("\n")
+        for s in new_samples:
+            for val in s:
+                fout.write("%.16e " % val)
+            fout.write("\n")
+        fout.close()
+    else:
+        numsamples = options.nsamples
+        slist = dparser.multi_sample(numsamples, expand_enums = True)
+        print "%d samples, SAMPLING set/enumeration variables:" % (numsamples)
+        fout = file(options.main_output, "w")
+        s = slist[0]
         for key in s:
-            fout.write("%.16e " % s[key])
-        fout.write("   %.16e\n" % p)
-    fout.close()
-    print "wrote %d samples (run cases) from distribution in \'%s\' to \'%s\'" % (numsamples, options.main_input, options.main_output)
+            fout.write("%s " % key)
+        fout.write("Prob\n")
+        for i in range(len(slist)):
+            s = slist[i]
+            p =  dparser.calc_prob(s)
+    #        print "sample %d = " % i, s, p
+            for key in s:
+                fout.write("%.16e " % s[key])
+            fout.write("   %.16e\n" % p)
+        fout.close()
+        print "wrote %d samples (run cases) from distribution in \'%s\' to \'%s\'" % (numsamples, options.main_input, options.main_output)
 
 
 if __name__=="__main__":
