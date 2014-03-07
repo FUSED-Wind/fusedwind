@@ -198,6 +198,8 @@ class CaseAnalyzer(Assembly):
             fout.write("   ")
             results_dir = os.path.join(self.aerocode.basedir, case.case_name)
             for opstr in output_ops:                
+                ## we have a system where the function we do the postprocessing with can be specified in the control
+                ## input file via: "output_operations" tag.
                 try:
                     if (":" in opstr):
                         mod = opstr.split(":")[0]
