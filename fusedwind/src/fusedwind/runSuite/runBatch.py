@@ -151,6 +151,8 @@ class CaseAnalyzer(Assembly):
         self.ws_driver.sequential = not self.run_parallel
         # uncomment to keep simulation directories for debugging purposes
 #        os.environ['OPENMDAO_KEEPDIRS'] = '1'
+        # apparently a workaround for an openmdao bug:
+        self.ws_driver.ignore_egg_requirements = True
 
         print "dispatcher configured\n-------------------------------------------\n"
     
