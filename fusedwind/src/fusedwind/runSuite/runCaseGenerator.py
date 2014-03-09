@@ -284,7 +284,7 @@ class FnDistn(Distribution):
 
     def calc_prob(self, x):
 #        print "calc_prob", x
-        x = x[0]
+#        x = x[0]
         argvals = []
         for i in range(len(self.args)):
             a = self.args[i]
