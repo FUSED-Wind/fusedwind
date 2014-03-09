@@ -133,8 +133,6 @@ def prob_weibull(x, shape, scale):
 def prob_gamma(x, shape, scale):
     shape = max(1e-1,shape)
     p = gamma.pdf(x,shape, loc=0, scale=scale)
-    if (p > 1):
-        print "weird gamma:p, x, shape, scale", p, x, shape, scale
     return p
 
 def prob_vonmises(x, kappa, loc):
@@ -278,13 +276,15 @@ class FnDistn(Distribution):
             val = draw_vonmises(argvals[0], argvals[1])
         elif (self.fn == "W"):
 #            print " need to sample Wiebull with args = ", argvals
-            val = draw_vonmises(argvals[0], argvals[1])
+            val = draw_weibull(argvals[0], argvals[1])
         else:
             raise ValueError,  "unknown distribution %s" % self.fn
 
         return val
 
     def calc_prob(self, x):
+#        print "calc_prob", x
+        x = x[0]
         argvals = []
         for i in range(len(self.args)):
             a = self.args[i]
@@ -301,11 +301,11 @@ class FnDistn(Distribution):
         elif (self.fn == "VM"):
             val = prob_vonmises(x,argvals[0], argvals[1])
         elif (self.fn == "W"):
-            val = prob_vonmises(x,argvals[0], argvals[1])
+            val = prob_weibull(x,argvals[0], argvals[1])
         else:
             raise ValueError,  "unknown distribution %s" % self.fn
         
-        if (math.isnan(val) or val > 1):
+        if (math.isnan(val)):
             print "NAN", val, x, self.fn, argvals
         return val
 
