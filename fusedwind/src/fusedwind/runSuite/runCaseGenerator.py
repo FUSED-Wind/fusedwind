@@ -283,7 +283,7 @@ class FnDistn(Distribution):
         return val
 
     def calc_prob(self, x):
-#        print "calc_prob", x
+#        print "calc_prob", self.fn, x
 #        x = x[0]
         argvals = []
         for i in range(len(self.args)):
