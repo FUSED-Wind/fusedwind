@@ -173,12 +173,15 @@ class CaseAnalyzer(Assembly):
         print "RUNS ARE DONE:"
         print "collecting output from copied-back files (not from case recorder), see %s" % output_params['main_output_file']
         fout = file(output_params['main_output_file'], "w")
+        fres = file("failed_cases.txt", "w")
         acase = self.runcases[0]._inputs['runner.inputs'] ## any easier way to get this back?
         print "processing case", acase
         parms = acase.sample.keys()
         for p in parms:
             fout.write("%s " % p)
+            fres.write("%s " % p)
         fout.write("   ")
+        fres.write("   ")
         if "output_operations" not in output_params:
             output_ops = ["max"]
         else:
@@ -199,6 +202,7 @@ class CaseAnalyzer(Assembly):
                 fout.write("%.16e " % val)
             fout.write("   ")
             results_dir = os.path.join(self.aerocode.basedir, case.case_name)
+            print "collecting from ", results_dir
             for opstr in output_ops:                
                 ## we have a system where the function we do the postprocessing with can be specified in the control
                 ## input file via: "output_operations" tag.
@@ -213,14 +217,24 @@ class CaseAnalyzer(Assembly):
                 except:
                     print "ERROR: Failed to find use specified postprocessing function ", opstr
 
-                result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
-                for val in result:
-                    if (val == None):
-                        fout.write("nan ")
-                    else:
-                        fout.write("%.16e " % val)
+                try:
+                    result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
+                    for val in result:
+                        if (val == None):
+                            fout.write("nan ")
+                        else:
+                            fout.write("%.16e " % val)
+                except:
+                    print "DIRECTORY FAILED: ", results_dir
+                    for p in parms:
+                        val = case.sample[p]
+                        fres.write("%.16e " % val)
+                    fres.write( "   %s \n" % ( results_dir))
+                    break   # breaks out of "for opstr ..." so we don't repeat this message
+
             fout.write("\n")
         fout.close()
+        fres.close()
 
 ########### 
 ## rest of code is options handling, input file handling.  Maybe generic enough for fusedwind.
