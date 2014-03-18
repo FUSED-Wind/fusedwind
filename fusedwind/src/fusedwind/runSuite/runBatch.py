@@ -21,7 +21,6 @@ from openmdao.main.pbs import PBS_Allocator as PBS
 from openmdao.main.resource import ResourceAllocationManager as RAM
 from openmdao.util.testutil import find_python
 
-from PeregrineClusterAllocator import ClusterAllocator
 
 
 import logging
@@ -162,7 +161,7 @@ class CaseAnalyzer(Assembly):
 #        run_case_builder = self.aerocode.getRunCaseBuilder()
         for dlc in self.studycases:
             self.runcases.append(Case(inputs= [('runner.inputs', dlc)]))
-            print "building dlc for: ", dlc.x
+            print "building dlc for: ", dlc.x, dlc.name
 #            runcase = run_case_builder.buildRunCase_x(dlc.x, dlc.param_names, dlc)
 #            self.runcases.append(Case(inputs= [('runner.input', runcase)]))
 
@@ -424,6 +423,7 @@ def rundlcs():
 
     # work in progress; running efficiently at NREL.
     if (options.cluster_allocator):
+        from PeregrineClusterAllocator import ClusterAllocator
         cluster=ClusterAllocator()
         RAM.insert_allocator(0,cluster)
             
