@@ -87,6 +87,9 @@ from math import pi, isnan, exp
 from numpy import mean
 from scipy.stats import vonmises, gamma
 
+global gIgnoreJointDistn
+gIgnoreJointDistn = True
+
 def draw_uniform(x0,x1):
     val = npr.uniform(x0,x1)
     return val
@@ -392,13 +395,15 @@ class DistnParser(object):
     def clear_values(self,):
         self.values = {}
     def set_value(self, s,v):
+        global gIgnoreJointDistn
         self.values[s] = v
-        # also deconstruct joint distribution values into their individual variables
-        # e.g. Hs.Tp: [1,3] -> Hs: 1, Tp:3
-        subv = s.split(".")
-        if (len(subv) > 1):
-            for i in range(len(subv)):
-                self.values[subv[i]] = v[i]
+        if (not gIgnoreJointDistn):
+            # also deconstruct joint distribution values into their individual variables
+            # e.g. Hs.Tp: [1,3] -> Hs: 1, Tp:3
+            subv = s.split(".")
+            if (len(subv) > 1):
+                for i in range(len(subv)):
+                    self.values[subv[i]] = v[i]
 
     def set_values(self, e):
         for key in e:
@@ -578,9 +583,11 @@ class DistnParser(object):
         # for each key/value, need to find the distribution it belongs to
         # plan on using a pre-prepared mapping
         ptot = 1
+#        print "calc prob for ", samp
         for var in self.values:
             if (var in self.dlist_map):
                 dist = self.dlist_map[var]
+#                print "for ", var
                 p = dist.calc_prob(self.values[var])
                 ptot *= p
         return ptot
@@ -596,6 +603,7 @@ def get_options():
                                     help="output file (where to write the run cases)")
     parser.add_option("-p", "--probfile", dest="old_samples",  type="string", default=None,
                                     help="an input file of samples whose probabilities we want to calculat w.r.t input distn")
+    parser.add_option("-a", "--augment", dest="augment", help="goes with -p, will include _both_ given and newly calculated probs to the output samples", action="store_true", default=False)
             
     (options, args) = parser.parse_args()
     return options, args
@@ -619,24 +627,39 @@ def gen_cases():
         # probabilities for the samples w.r.t. the given distribution
         old_hdr, old_samples = read_samples(options.old_samples)
         pidx = old_hdr.index("Prob")
+        new_hdr = old_hdr
+        if (options.augment):
+            new_hdr.append("Prob2")
+            pidx = len(new_hdr)-1
         new_samples = []
         for s in old_samples:
             samp = {old_hdr[i]:s[i] for i in range(len(s))}
-            p = dparser.calc_prob(samp)
 #            print "sample ", samp
+            p = dparser.calc_prob(samp)
 #            print "prob ", p
-            s[pidx] = p
+            if (options.augment):
+                s.append(p)
+            else:
+                s[pidx] = p
             new_samples.append(s)
 
         fout = file(options.main_output, "w")
-        for key in old_hdr:
+        for key in new_hdr:
             fout.write("%s " % key)
         fout.write("\n")
+
         for s in new_samples:
             for val in s:
                 fout.write("%.16e " % val)
             fout.write("\n")
         fout.close()
+
+        print "Calculated probabilities of samples in %s w.r.t. distribution in %s" % (options.old_samples, options.main_input)
+        if (options.augment):
+            print "Augmented output with these probs as Prob2 in field (0-based) %d" % (pidx)
+        else:
+            print "Replaced old probs with new probs in output"
+
     else:
         numsamples = options.nsamples
         slist = dparser.multi_sample(numsamples, expand_enums = True)
