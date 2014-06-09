@@ -1,0 +1,14 @@
+Metadata-Version: 1.1
+Name: fusedwind
+Version: 0.1
+Summary: Framework for Unified Systems Engineering and Design of Wind Plants
+Home-page: UNKNOWN
+Author: DTU WInd Energy and NREL NWTC
+Author-email: TBD
+License: Apache v. 2.0
+Download-URL: http://github.com/FUSED-Wind/FUSED-WInd
+Description: UNKNOWN
+Keywords: openmdao
+Platform: UNKNOWN
+Classifier: Intended Audience :: Science/Research
+Classifier: Topic :: Scientific/Engineering
