@@ -1,0 +1,57 @@
+# This is an example of a way to implement the IEC load case from 88_329 using a quite
+# generic probabalistic language.  Syntax is implementing the general idea that each case
+# is simply defining a joint probability distribution on several environment variables like
+# wind speed, wave height, directionality, etc.
+# That is, the general thing that we need is
+#
+# <var> ~ <distribution>(<params>), ie
+#
+# {v_i} = D_k ({p_j}), where
+# v_i are variables like wind speed, D_k are distributions like "normal", "uniform", etc, and
+# where p_j are parameters that define the given distribution, like mean, variance, etc.
+# We also need for the parameters to be functions of the variables (so distribution of wave height
+# can depend on wind speed, for example).
+# We also need to be able to specify _joint_ distributions.
+
+# So the syntax I've implemented so far allows for
+# <val> = number | var_name
+# <expr> = <val> <op> <val>
+# var_name = <expr> | or {<expr1>,...,<exprn>}
+# <var>
+# TODO: more description... see below for examples.
+# Basically:
+# var = value, or
+# var = {set of values}
+# var = Dist(params) 
+# distns so far: N=normal, N2=2d normal, U=uniform
+# a "value" or "param" can always be a reference to a _previously defined_ var
+# and can also always be "val +-*/ val" (but not recursively, so 1+2+3 is an error so far)
+
+
+#--DLC1.1--
+#Vhub = {10, 15, 20}
+#Hs = N(Vhub/10,1)  # Wave height normally distributed, say
+#Hs = Vhub/4  # DLC1.1 says Hs = E[Hs|Vhub], which means it is a function of Vhub
+#TStart = 0
+#AnalTime = 2
+#NumSamples = 1
+
+#--DLC1.2--
+#Vhub = {12, 18}
+#Hs.Tp = N2(Vhub , 10, Vhub / 20, Vhub / 10, 0.5)
+#TStart = 0
+#AnalTime = 2
+#NumSamples = 3
+
+#YawMis = N(0, 1.2)
+
+--DLC.UQproto--
+Vhub = {1,5,20}
+#Tp = {1, 27}
+Tp = {0.1, 1, 5}
+TStart = 0
+AnalTime = 20
+NumSamples = 1
+#WaveDir = {0,10,20,30,40,50,60,70,80,90}
+WaveDir = {0 , 5 , 10 , 15 , 20 , 25 , 30 , 35 , 40 , 45 , 50 , 55 , 60 , 65 , 70 , 75 , 80 , 85 , 90 , 95 , 100 , 105 , 110 , 115 , 120 , 125 , 130 , 135 , 140 , 145 , 150 , 155 , 160 , 165 , 170 , 175 , 180}
+Hs = {1,10}

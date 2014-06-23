@@ -16,5 +16,6 @@ class FUSEDWind(Component):
 
     def execute(self):
         """ do your calculations here """
+        print "I am FUSED-Wind"
         pass
         

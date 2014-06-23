@@ -1,0 +1,21 @@
+# key = value file of locations of various files to read and
+# to write
+# and for output keys.
+#... and evolving to take care of misc. control functionality
+
+main_output_file = "runbatch.out"
+
+output_keys =  RootMxc1  RootMyc1 LSSGagMya LSSGagMza YawBrMxp  YawBrMyp   TwrBsMxt   TwrBsMyt  Fair1Ten  Fair2Ten  Fair3Ten Anch1Ten  Anch2Ten  Anch3Ten
+#output_keys =  RootMxc1  RootMyc1
+output_operations = max np.std
+
+
+ts_exe = "/Users/pgraf/opt/windcode-7.31.13/TurbSim/build/TurbSim_glin64"
+ts_dir = "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig/TurbSim"
+ts_file = "TurbSim.inp"
+fst_exe = "/Users/pgraf/opt/windcode-7.31.13/build/FAST_glin64"
+fst_dir = "/Users/pgraf/work/wese/fatigue12-13/from_gordie/SparFAST3.orig"
+fst_file = "NRELOffshrBsline5MW_Floating_OC3Hywind.fst"
+
+run_dir = "all_runs"
+
