@@ -21,7 +21,7 @@ kwargs = {'author': 'DTU WInd Energy and NREL NWTC',
  'name': 'fusedwind',
  'package_data': {'fusedwind': []},
  'package_dir': {'': 'src'},
- 'packages': ['fusedwind', 'fusedwind.plant_cost', 'fusedwind.plant_flow', 'fusedwind.turbine_aero', 'fusedwind.vartrees'],
+ 'packages': ['fusedwind', 'fusedwind.plant_cost', 'fusedwind.plant_flow', 'fusedwind.turbine', 'fusedwind.lib', 'fusedwind.runSuite'],
  #'url': '',
  'version': '0.1',
  'zip_safe': False}
