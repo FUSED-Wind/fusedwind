@@ -6,23 +6,23 @@
 
 from setuptools import setup, find_packages
 
-kwargs = {'author': 'DTU WInd Energy and NREL NWTC',
- 'author_email': 'TBD',
+kwargs = {'author': '',
+ 'author_email': '',
  'classifiers': ['Intended Audience :: Science/Research',
                  'Topic :: Scientific/Engineering'],
- 'description': 'Framework for Unified Systems Engineering and Design of Wind Plants',
- 'download_url': 'http://github.com/FUSED-Wind/FUSED-WInd',
+ 'description': '',
+ 'download_url': '',
  'include_package_data': True,
  'install_requires': ['openmdao.main'],
  'keywords': ['openmdao'],
- 'license': 'Apache v. 2.0',
- #'maintainer': '',
- #'maintainer_email': '',
+ 'license': '',
+ 'maintainer': '',
+ 'maintainer_email': '',
  'name': 'fusedwind',
  'package_data': {'fusedwind': []},
  'package_dir': {'': 'src'},
- 'packages': ['fusedwind', 'fusedwind.plant_cost', 'fusedwind.plant_flow', 'fusedwind.turbine_aero', 'fusedwind.vartrees'],
- #'url': '',
+ 'packages': ['fusedwind'],
+ 'url': '',
  'version': '0.1',
  'zip_safe': False}
 
