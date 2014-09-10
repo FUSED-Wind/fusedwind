@@ -62,11 +62,11 @@ class _implement_base(object):
             try: 
                 assert set(ob_base.list_inputs()).issubset(set(ob.list_inputs()))
             except:
-                raise Exception('Inputs of the class %s are different from base %s:'%(cls.__name__, self.__base.__name__), ob.list_inputs(), ob_base.list_inputs())
+                raise Exception('Inputs of the class %s are different from base %s.  The missing input(s) of %s are: %s'%(cls.__name__, self.__base.__name__,cls.__name__, (set(ob_base.list_inputs())-set(ob.list_inputs())))) #, ob.list_inputs(), ob_base.list_inputs())
             try:
                 assert set(ob_base.list_outputs()).issubset(ob.list_outputs())
             except:
-                raise Exception('Outputs of the class %s are different from base %s:'%(cls.__name__, self.__base.__name__), ob.list_outputs(), ob_base.list_outputs())
+                raise Exception('Outputs of the class %s are different from base %s.  The missing output(s) of %s are: %s'%(cls.__name__, self.__base.__name__,cls.__name__, (set(ob_base.list_outputs())-set(ob.list_outputs())))) #, ob.list_outputs(), ob_base.list_outputs())
 
 
 class implement_base(object):
