@@ -166,6 +166,31 @@ class FrameworkTest(unittest.TestCase):
         self.assertEqual(myinst.vo2, myinst.vi1 * myinst.vi3) 
 
 
+    def test_implement_with_init(self):
+        """test for implement_base for classes that have an __init__ method"""
+
+        @base
+        class BaseClass1(Component):
+            vi1 = Float(iotype='in')
+            vi2 = Float(iotype='in')
+            vo1 = Float(iotype='out')
+
+        @implement_base(BaseClass1)
+        class MyClass(Component):
+            vi1 = Float(iotype='in')
+            vi2 = Float(iotype='in')
+            vi3 = Float(iotype='in')
+
+            def __init__(self):
+                super(MyClass, self).__init__()
+
+                pass
+
+                def execute(self):
+
+                    pass
+
+        myinst = MyClass()
 
 
 
