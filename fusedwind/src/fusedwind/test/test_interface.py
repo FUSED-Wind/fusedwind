@@ -186,9 +186,9 @@ class FrameworkTest(unittest.TestCase):
 
                 pass
 
-                def execute(self):
+            def execute(self):
 
-                    pass
+                pass
 
         myinst = MyClass()
 
