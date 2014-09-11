@@ -17,6 +17,43 @@ def base(cls):
     return implementer(interface(cls))(cls)
 
 
+def strip_init(cls):
+    """Decorator function that removes the __init__ of 
+    a class to avoid the super(MyClass) bug). 
+
+    Usage
+    -----
+
+    class A(object):
+        def __init__(self):
+            print 'init A'
+        
+    def my_deco(cls):
+        obj = strip_init(cls2)()
+        print obj.__class__.__name__
+        return cls
+            
+    @my_deco        
+    class B(A):
+        def __init__(self):
+            print 'init B'
+            super(B, self).__init__()    # <--- create the bug because 
+                                         #   B does not exist in the context
+                                         # of my_deco
+
+    """
+    try:
+        obj = cls()
+        return cls
+    except NameError as e:
+        print 'Warning:',e
+        print 'The __init__ of this class is going to be removed for checking the interfaces'
+        print 'see the strip_init function in interface.py'
+        mdic = dict(cls.__dict__)
+        mdic['__init__'] = cls.__base__.__init__
+        cls2 = type(cls.__name__, (cls,), mdic)
+        return cls2
+
 class _implement_base(object):
     """
     tag the curent class with the base class interface. 
@@ -38,9 +75,27 @@ class _implement_base(object):
         vo1 = Float(iotype='out')
     """
     def __init__(self, cls):
+        """Store the base calss in the object variable __base
+
+        parameters
+        ----------
+        cls     class
+                the base class to store
+
+        """
         self.__base = cls
         
     def __call__(self, cls):
+        """Check if the new class satisfy the requirements 
+        of the base class and return the implementation of 
+        the new class
+
+        parameters
+        ----------
+        cls     class
+                the new class to process
+
+        """
         self.check(cls)
         return base(implementer(interface(self.__base))(cls))
 
@@ -51,8 +106,11 @@ class _implement_base(object):
         -----
             * Add test on variable type
         """
-        ob = cls()
-        ob_base = self.__base()
+
+        ob = strip_init(cls)()
+        ob_base = strip_init(self.__base)()
+        #ob = cls()
+        #ob_base = self.__base()
         if issubclass(cls, VariableTree) or issubclass(self.__base, VariableTree):
             try: 
                 assert set(ob_base.list_vars()).issubset(set(ob.list_vars()))

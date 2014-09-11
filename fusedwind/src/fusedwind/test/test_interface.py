@@ -180,15 +180,16 @@ class FrameworkTest(unittest.TestCase):
             vi1 = Float(iotype='in')
             vi2 = Float(iotype='in')
             vi3 = Float(iotype='in')
+            vo1 = Float(iotype='out')
 
             def __init__(self):
                 super(MyClass, self).__init__()
 
                 pass
 
-                def execute(self):
+            def execute(self):
 
-                    pass
+                pass
 
         myinst = MyClass()
 

@@ -4,67 +4,99 @@
 
 
 """
-We want generic rep. of rows in Table 1, 88_329
+This module allows for sampling of distributions encountered in wind energy research using a flexible 
+text input file specification.  The distributions currently available are:
 
-What is being represented?
+- Weibull
+- Gamma
+- vonMises
+- uniform
+- normal
+- bivariate normal
+
+In addition, we allow for "enumeration" of sets of variables, and their cartesian product.
+
+The impetus is the desire for a generic representation of rows in Table 1 of IEC document 88_329
+describing design standards for loads analysis, where what is being represented are the
 distributions of wind/wave environment parameters.
+We can assume these all boil down to distributions of _numerical_ (rather than discrete) parameters.
+A twist is that some of the parameters depend on eachother, that is, the distributions are conditional distributions.
 
-Assume these all boil down to distributions of _numerical_ parameters.
+In principle all we need to say is  :math:`\{v_i\} \sim D_k (\{p_j(v)\})`
+where :math:`\{v_i\}` are the random variables we're defining (including multivariate distributions),
+:math:`D_k` are distributions, and :math:`\{p_j\}` are parameters to these distributions.
+Currently :math:`p_j` can only depend on :math:`v_i` for :math:`i<j`, but otherwise
+the dependence can be expressed as an arbitrary python math expression.
 
-A twist is that some of the parameters depend on eachother.  But this is just a certain type of
-joint distribution.
-Simple equality (e.g., assignment x = 7) is also a distribution: unif({y})
+An example of the input this system can handle is::
 
-So in principle all we need to say is
-{v_i} ~ D_k ({p_j})
+    #--WW4Ddist--
+    Vhub = W(2.120, 9.767)
+    WaveDir = VM(0.029265 + 0.119759 * Vhub, -0.620138 + 0.030709 * Vhub)
+    Hs = G(4.229440 + 0.222745 * WaveDir  + 0.328602 * Vhub, 0.145621 + -0.006188 * WaveDir  + 0.007561 * Vhub)
+    Tp = G(19.677865 + 6.617868 * Hs  + -0.532952 * Vhub, 0.202077 + 0.286631 / Hs  + -0.004321 * Vhub)
 
-some cases:
-x = 7
-x ~ unif({7})
+which causes the code to sample the joint distribution of hub height wind speed (Weibull), wave direction (von Mises), 
+wave height (Gamma), and wave period (Gamma) for a recent study.
 
-x ~ N(0,1)
-y = x
-y ~ delta(x)
+Or::
 
-x = 7
-y = E[y|x] = \int{ p(y|x) dy }
-requires
-p(y|x), eg
-y|x ~ N(2x/7, 1)
-
-x,y "jointly distributed"
-x,y ~ N([0,0], [[sigmx, covxy],[covxy,sigy]])
-
-Given these specifications, we can then sample the distn's however we want
-ie we end up with variables like
-d = Distn()
-d.type = "gaussian"
-d.var = "x"
-d.mean = 7
-d.var = 11
-
-d = Distn()
-d.type = "joint_gaussian"
-d.var = ["x","y"]
-d.mean = [mux, muy]
-d.varcovar = [[etc.][]]
-
-or then a whole class hierarchy for distributions
-d = JointGaussian(variables, means, varcovarmatrix)
-d = JointUniform(vars,[[x1,x2][y1,y2])
-d = DiscreteUniform(var, {a,b,c})   (for enumerations)
-
-or special d = Enumeration(var, {a,b,c})
-
-There are enumerations and distributions
-Enumerations have fixed set of values returned by d.sample()
-Distributions have a number of samples returned by d.sample()
-
-Then we take 
-d1.sample() X d2.sample() X ...
-until all the relevant variables are specified
+    #--WW4Ddist--
+    Vhub = {5,15,25}
+    Hs = {1,5}
+    
+which causes the code to generate the cartesian product {(5,1),(5,5),(15,1),(15,1),(25,1),(25,5)}.
 
 """
+
+### This is some more of the thinking that was part of development, so not included in the docstring:
+#Some cases:
+#x = 7
+#x ~ unif({7})
+
+#x ~ N(0,1)
+#y = x
+#y ~ delta(x)
+
+#x = 7
+#y = E[y|x] = \int{ p(y|x) dy }
+#requires
+#p(y|x), eg
+#y|x ~ N(2x/7, 1)
+
+#x,y "jointly distributed"
+#x,y ~ N([0,0], [[sigmx, covxy],[covxy,sigy]])
+
+#Given these specifications, we can then sample the distn's however we want
+#ie we end up with variables like
+#d = Distn()
+#d.type = "gaussian"
+#d.var = "x"
+#d.mean = 7
+#d.var = 11
+
+#d = Distn()
+#d.type = "joint_gaussian"
+#d.var = ["x","y"]
+#d.mean = [mux, muy]
+#d.varcovar = [[etc.][]]
+
+#or then a whole class hierarchy for distributions
+#d = JointGaussian(variables, means, varcovarmatrix)
+#d = JointUniform(vars,[[x1,x2][y1,y2])
+#d = DiscreteUniform(var, {a,b,c})   (for enumerations)
+
+#or special d = Enumeration(var, {a,b,c})
+
+#There are enumerations and distributions
+#Enumerations have fixed set of values returned by d.sample()
+#Distributions have a number of samples returned by d.sample()
+
+#Then we take 
+#d1.sample() X d2.sample() X ...
+#until all the relevant variables are specified
+
+
 teststr = """
 x ~ {7,8}
 sigy = 1
@@ -78,7 +110,6 @@ from scipy.stats import vonmises, gamma
 # this is not available until scipy 0.14:
 #from scipy.stats import  multivariate_normal
 # so we have to us numpy.multivariate_normal (at least on my mac)
-from numpy.random import weibull
 import scipy.linalg as linalg
 from math import *
 import math
@@ -99,6 +130,7 @@ def draw_normal(mu, sigma):
     return val
 
 def draw_weibull(shape, scale, nsamples=1):
+    from numpy.random import weibull
     x = scale * weibull(shape, nsamples)
     return x
 
