@@ -5,7 +5,7 @@ from openmdao.lib.drivers.api import CaseIteratorDriver
 from openmdao.lib.datatypes.api import VarTree, Float, Instance, Slot, Array, List, Int, Str, Dict
 base_keys = Assembly.__base_traits__.keys() + Driver.__base_traits__.keys() + CaseIteratorDriver.__base_traits__.keys()
 
-from pygraphviz import AGraph
+#from pygraphviz import AGraph # kld windows issues
 from IPython.display import SVG
 from collections import defaultdict
 import json
@@ -24,7 +24,7 @@ def _repr_svg_(self):
     self.draw('star.svg',prog="dot")
     return SVG(filename='star.svg')
     
-AGraph.svg = property(lambda self: _repr_svg_(self))
+#AGraph.svg = property(lambda self: _repr_svg_(self)) # kld windows issues
 
 add2key = lambda key, dico: dict([(key+'.'+k, v) for k,v in dico.iteritems()])
 def flatten(t):

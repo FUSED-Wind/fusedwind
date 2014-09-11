@@ -4,8 +4,9 @@ from openmdao.lib.datatypes.api import Float, Int, Array, VarTree
 from openmdao.main.api import Component, Assembly, VariableTree
 
 from fusedwind.plant_flow.fused_plant_asym import GenericAEPModel
-from fusedwind.plant_cost.fused_costs_asym import BaseBOSCostModel, BaseOPEXModel, OPEXVarTree, BOSVarTree, ExtendedBOSCostModel, ExtendedOPEXModel
-from fusedwind.plant_cost.fused_tcc_asym import BaseTurbineCapitalCostModel, FullTurbineCapitalCostModel
+from fusedwind.plant_cost.fused_bos_costs import BaseBOSCostModel, BOSVarTree, ExtendedBOSCostModel
+from fusedwind.plant_cost.fused_opex import BaseOPEXModel, OPEXVarTree, ExtendedOPEXModel
+from fusedwind.plant_cost.fused_tcc import BaseTurbineCostModel, FullTurbineCostModel
 from fusedwind.interface import base, implement_base
 
 #########################################################################
@@ -77,7 +78,7 @@ class BaseFinancialAnalysis(Assembly):
 def configure_base_finanical_analysis(assembly):
 
     # To be replaced by actual models
-    assembly.add('tcc_a',BaseTurbineCapitalCostModel())
+    assembly.add('tcc_a',BaseTurbineCostModel())
     assembly.add('bos_a',BaseBOSCostModel())
     assembly.add('opex_a',BaseOPEXModel())
     assembly.add('aep_a',GenericAEPModel())
@@ -118,7 +119,7 @@ def configure_extended_financial_analysis(assembly):
     configure_base_financial_analysis(assembly)
 
     # To be replaced by actual models
-    #assembly.replace('tcc',FullTurbineCapitalCostModel())
+    #assembly.replace('tcc',FullTurbineCostModel())
     assembly.replace('bos_a',ExtendedBOSCostModel())
     assembly.replace('opex_a',ExtendedOPEXModel())
 

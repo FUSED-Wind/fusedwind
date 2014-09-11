@@ -13,21 +13,28 @@ from openmdao.main.case import Case
 
 from vt import *
 from comp import *
-from fusedwind.interface import base, implement_base, InterfaceSlot
+from fusedwind.interface import base, implement_base, InterfaceInstance
 
 # ------------------------------------------------------------
 # Assembly Base Classes
+@base
+class BaseAEPModel(Assembly):
+
+    # Outputs
+    gross_aep = Float(0.0, iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', units='kW*h')
+    net_aep = Float(0.0, iotype='out', desc='Net Annual Energy Production after availability and loss impacts', units='kW*h')
+    #capacity_factor = Float(0.0, iotype='out', desc='Capacity factor for wind plant') # ??? generic or specific? will be easy to calculate, # P-E: OK
 
 # -------------------------------------------------------------
 # Implementation Assemblies
-@implement_base(GenericAEPModel)
+@implement_base(BaseAEPModel)
 class AEPWindRose(Assembly):
     """Base class to calculate Annual Energy Production (AEP) of a wind farm.
-    Implement the same interface as `GenericAEPModel`
+    Implement the same interface as `BaseAEPModel`
     """
-    wf = InterfaceSlot(GenericWindFarm, desc='A wind farm assembly or component')
-    postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose, desc='The component taking care of postprocessing the wind rose')
-    case_gen = InterfaceSlot(GenericWindRoseCaseGenerator, desc='Generate the cases from the inputs')
+    wf = InterfaceInstance(GenericWindFarm, desc='A wind farm assembly or component')
+    postprocess_wind_rose = InterfaceInstance(GenericPostProcessWindRose, desc='The component taking care of postprocessing the wind rose')
+    case_gen = InterfaceInstance(GenericWindRoseCaseGenerator, desc='Generate the cases from the inputs')
 
     #Inputs
     wind_speeds = List([], iotype='in', desc='The different wind speeds to run [nWS]', units='m/s')
@@ -96,14 +103,14 @@ def configure_AEPWindRose(self):
 
 
 
-@implement_base(GenericAEPModel, AEPWindRose)
+@implement_base(BaseAEPModel, AEPWindRose)
 class AEPSingleWindRose(Assembly):
     """Base class to calculate Annual Energy Production (AEP) of a wind farm.
-    Implement the same interface as `GenericAEPModel`
+    Implement the same interface as `BaseAEPModel`
     """
-    wf = InterfaceSlot(GenericWindFarm, desc='A wind farm assembly or component')
-    postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose, desc='The component taking care of postprocessing the wind rose')
-    case_gen = InterfaceSlot(GenericWindRoseCaseGenerator, desc='Generate the cases from the inputs')
+    wf = InterfaceInstance(GenericWindFarm, desc='A wind farm assembly or component')
+    postprocess_wind_rose = InterfaceInstance(GenericPostProcessWindRose, desc='The component taking care of postprocessing the wind rose')
+    case_gen = InterfaceInstance(GenericWindRoseCaseGenerator, desc='Generate the cases from the inputs')
 
 
     #Inputs
@@ -122,14 +129,14 @@ class AEPSingleWindRose(Assembly):
         self.replace('postprocess_wind_rose', PostProcessSingleWindRose())
         self.connect('wind_rose', 'case_gen.wind_rose')
 
-@implement_base(GenericAEPModel, AEPWindRose)
+@implement_base(BaseAEPModel, AEPWindRose)
 class AEPMultipleWindRoses(Assembly):
     """Base class to calculate Annual Energy Production (AEP) of a wind farm.
-    Implement the same interface as `GenericAEPModel` and `AEPWindRose`
+    Implement the same interface as `BaseAEPModel` and `AEPWindRose`
     """
-    wf = InterfaceSlot(GenericWindFarm, desc='A wind farm assembly or component')
-    postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose, desc='The component taking care of postprocessing the wind rose')
-    case_gen = InterfaceSlot(GenericWindRoseCaseGenerator, desc='Generate the cases from the inputs')
+    wf = InterfaceInstance(GenericWindFarm, desc='A wind farm assembly or component')
+    postprocess_wind_rose = InterfaceInstance(GenericPostProcessWindRose, desc='The component taking care of postprocessing the wind rose')
+    case_gen = InterfaceInstance(GenericWindRoseCaseGenerator, desc='Generate the cases from the inputs')
 
 
     #Inputs
@@ -148,7 +155,7 @@ class AEPMultipleWindRoses(Assembly):
         self.replace('postprocess_wind_rose', PostProcessMultipleWindRoses())
         self.connect('wt_layout', 'case_gen.wt_layout')
 
-@implement_base(GenericAEPModel, AEPWindRose)
+@implement_base(BaseAEPModel, AEPWindRose)
 class WWHAEP(Assembly):
     """Class that loads a wind farm position and wind roses from a .wwh WAsP file
     and perform an AEP calculation.
@@ -161,9 +168,9 @@ class WWHAEP(Assembly):
     wwh = Slot(PlantFromWWH)   
 
     # Interface Slots (using the @implement_base)
-    wf = InterfaceSlot(GenericWindFarm, desc='A wind farm assembly or component')
-    postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose, desc='The component taking care of postprocessing the wind rose')
-    case_gen = InterfaceSlot(GenericWindRoseCaseGenerator, desc='Generate the cases from the inputs')
+    wf = InterfaceInstance(GenericWindFarm, desc='A wind farm assembly or component')
+    postprocess_wind_rose = InterfaceInstance(GenericPostProcessWindRose, desc='The component taking care of postprocessing the wind rose')
+    case_gen = InterfaceInstance(GenericWindRoseCaseGenerator, desc='Generate the cases from the inputs')
 
     #Inputs
     filename = Str(iotype='in', desc='The .wwh file name')

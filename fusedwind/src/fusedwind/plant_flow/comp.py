@@ -16,7 +16,7 @@ from vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, \
      ExtendedWindTurbinePowerCurveVT, GenericWindFarmTurbineLayout, \
      GenericWindRoseVT
 
-from fusedwind.interface import base, implement_base, InterfaceSlot
+from fusedwind.interface import base, implement_base, InterfaceInstance
 from fusedwind.fused_helper import *
 
 # ------------------------------------------------------------
@@ -373,9 +373,7 @@ class GenericWindFarm(Component):
 
 
 @base
-class GenericAEPModel(Component):
-
-    # Inputs
+class BaseAEPAggregator(Component):
 
     # Outputs
     gross_aep = Float(0.0, iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', units='kW*h')

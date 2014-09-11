@@ -10,7 +10,7 @@
 from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
 from numpy import pi, sqrt, dot
 from numpy.linalg.linalg import norm
-from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str, Dict, Enum
+from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str, Dict, Enum, Instance
 #from openmdao.lib.drivers.api import CaseIteratorDriver # KLD: temporary version issues
 from openmdao.main.api import Driver, Run_Once
 from openmdao.main.api import Component, Assembly, VariableTree, Container  # , IOInterface
@@ -77,7 +77,7 @@ class GenericAEPModel(Assembly):
 
 class AEPSingleWindRose(GenericAEPModel): # KLD: modified to inerhit from generic AEP assembly class
 
-    wf = Slot(GenericWindFarm, desc='A wind farm assembly or component')
+    wf = Instance(GenericWindFarm, desc='A wind farm assembly or component')
 
     wind_speeds = Array([], iotype='in', desc='The different wind speeds to run [nWS]', unit='m/s')
     wind_directions = Array([], iotype='in', desc='The different wind directions to run [nWD]', unit='deg')
@@ -117,9 +117,9 @@ class WWHAEP(GenericAEPModel):
     and perform an AEP calculation.
     """
 
-    wf = Slot(GenericWindFarm, desc='A wind farm assembly or component')
-    wwh = Slot(PlantFromWWH)
-    case_generator = Slot(WindRoseCaseGenerator)
+    wf = Instance(GenericWindFarm, desc='A wind farm assembly or component')
+    wwh = Instance(PlantFromWWH)
+    case_generator = Instance(WindRoseCaseGenerator)
 
     filename = Str(iotype='in', desc='The .wwh file name')
     wind_speeds = Array([], iotype='in', desc='The different wind speeds to run [nWS]', unit='m/s')

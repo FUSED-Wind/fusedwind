@@ -2,7 +2,7 @@
 from openmdao.main.interfaces import Interface, implements
 from zope.interface import implementer
 from openmdao.main.api import Component, Assembly, VariableTree
-from openmdao.lib.datatypes.api import Slot
+from openmdao.lib.datatypes.api import Slot, Instance
 
 
 # FUSED Framework ----------------------------------
@@ -109,7 +109,7 @@ class implement_base(object):
         return out
 
     
-def InterfaceSlot(cls, *args, **kwargs):
-    return Slot(interface(cls), *args, **kwargs)
+def InterfaceInstance(cls, *args, **kwargs):
+    return Instance(interface(cls), *args, **kwargs)
 
 

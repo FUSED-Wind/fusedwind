@@ -4,6 +4,8 @@
 from openmdao.lib.datatypes.api import Float, Int
 from openmdao.main.api import Component, Assembly
 
+from fusedwind.interface import base, implement_base
+
 ##############################################################
 # Turbine _cost Models
 
@@ -11,87 +13,88 @@ from openmdao.main.api import Component, Assembly
 # Basic Turbine Captial _costs
 
 # Basic Turbine Cost Model Building Blocks
+@base
 class BaseComponentCostModel(Component):
-    """
-    TODO: docstring
-    """
 
     # Outputs
-    cost = Float(0.0, iotype='out', desc='Overall wind tower capial costs including transportation costs')
+    cost = Float(0.0, iotype='out', desc='Overall wind turbine component capial costs excluding transportation costs')
 
+@base
 class BaseSubAssemblyCostModel(Assembly):
-    """
-    TODO: docstring
-    """
 
     # Outputs
     cost = Float(0.0, iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
 
+@base
+class BaseSubAssemblyCostAggregator(Component):
+
+    # Outputs
+    cost = Float(0.0, iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
+
+@base
 class BaseTCCAggregator(Component):
-    """
-    TODO: docstring
-    """
 
     # Outputs
     turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
 # Basic Turbine _cost Model
-class BaseTurbineCapitalCostModel(Assembly):
+@base
+class BaseTurbineCostModel(Assembly):
     """
     Framework for a turbine capital cost model
     """
 
-    def configure(self):
-       
-       self.add('tcc', BaseTCCAggregator())
-       
-       self.driver.workflow.add(['tcc'])
+    # Outputs
+    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
-       self.create_passthrough('tcc.turbine_cost')
+def configure_base_tcc(assembly):
+   
+   assembly.add('tcc', BaseTCCAggregator())
+   
+   assembly.driver.workflow.add(['tcc'])
+
+   assembly.connect('tcc.turbine_cost','turbine_cost')
 
 # ------------------------------------------------------------
-# Extended Turbine Capital _costs
-
-class FullTCCAggregator(BaseTCCAggregator):
-    """
-    TODO: docstring
-    """
+# Extended Turbine Capital Costs
+@implement_base(BaseTCCAggregator)
+class ExtendedTCCAggregator(Component):
 
     # Variables
     rotor_cost = Float(iotype='in', units='USD', desc='rotor cost')
     nacelle_cost = Float(iotype='in', units='USD', desc='nacelle cost')
     tower_cost = Float(iotype='in', units='USD', desc='tower cost')
 
-    def __init__(self):
-      
-        super(FullTCCAggregator, self).__init__()
+    # Outputs
+    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
 # Extended Turbine Capital _cost Model Includes sub-assembly cost aggregation
-class ExtendedTurbineCapitalCostModel(BaseTurbineCapitalCostModel):
+@implement_base(BaseTurbineCostModel)
+class ExtendedTurbineCostModel(Assembly):
 
-    """
-    TODO: docstring
-    """
+    # Outputs
+    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
-    def configure(self):
-    
-        super(ExtendedTurbineCapitalCostModel, self).configure()
+def configure_extended_tcc(assembly):
 
-        self.add('rotorCC', BaseSubAssemblyCostModel())
-        self.add('nacelleCC', BaseSubAssemblyCostModel())
-        self.add('towerCC', BaseSubAssemblyCostModel())
-        self.replace('tcc', FullTCCAggregator())
+    configure_base_tcc(assembly)
 
-        self.driver.workflow.add(['rotorCC', 'nacelleCC', 'towerCC'])
+    assembly.add('rotorCC', BaseSubAssemblyCostModel())
+    assembly.add('nacelleCC', BaseSubAssemblyCostModel())
+    assembly.add('towerCC', BaseSubAssemblyCostModel())
+    assembly.replace('tcc', ExtendedTCCAggregator())
 
-        self.connect('rotorCC.cost', 'tcc.rotor_cost')
-        self.connect('nacelleCC.cost', 'tcc.nacelle_cost')
-        self.connect('towerCC.cost', 'tcc.tower_cost')
+    assembly.driver.workflow.add(['rotorCC', 'nacelleCC', 'towerCC'])
+
+    assembly.connect('rotorCC.cost', 'tcc.rotor_cost')
+    assembly.connect('nacelleCC.cost', 'tcc.nacelle_cost')
+    assembly.connect('towerCC.cost', 'tcc.tower_cost')
 
 # ------------------------------------------------------------
 # Full Turbine Capital _costs
 
 # Full Sub-Assembly _cost Models
+@implement_base(BaseSubAssemblyCostAggregator)
 class FullRotorCostAggregator(Component):
 
     # variables
@@ -104,6 +107,7 @@ class FullRotorCostAggregator(Component):
     # returns
     cost = Float(iotype='out', units='USD', desc='overall rotor cost')
 
+@implement_base(BaseSubAssemblyCostAggregator)
 class FullHubSystemCostAggregator(Component):
 
     # variables
@@ -114,35 +118,35 @@ class FullHubSystemCostAggregator(Component):
     # returns
     cost = Float(iotype='out', units='USD', desc='overall hub system cost')    
 
+@implement_base(BaseSubAssemblyCostModel)
 class FullRotorCostModel(BaseSubAssemblyCostModel):
-    """
-    TODO: docstring
-    """
 
     # parameters
     blade_number = Int(iotype='in', desc='number of rotor blades')
 
-    def configure(self):
-        
-        super(FullRotorCostModel, self).configure()
-        
-        self.add('bladeCC', BaseComponentCostModel())
-        self.add('hubCC', BaseComponentCostModel())
-        self.add('pitchSysCC', BaseComponentCostModel())
-        self.add('spinnerCC', BaseComponentCostModel())
-        self.add('hubSysCC', FullHubSystemCostAggregator())
-        self.add('rcc', FullRotorCostAggregator())
+    # Outputs
+    cost = Float(0.0, iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
 
-        self.driver.workflow.add(['hubCC', 'pitchSysCC', 'spinnerCC', 'hubSysCC', 'bladeCC', 'rcc'])
-        
-        self.connect('blade_number', 'rcc.blade_number')
-        self.connect('hubCC.cost', 'hubSysCC.hub_cost')
-        self.connect('pitchSysCC.cost', 'hubSysCC.pitch_system_cost')
-        self.connect('spinnerCC.cost', 'hubSysCC.spinner_cost')
-        self.connect('hubSysCC.cost', 'rcc.hub_system_cost')
-        self.connect('bladeCC.cost', 'rcc.blade_cost')
-        self.connect('rcc.cost', 'cost')
+def configure_full_rcc(assembly):
+    
+    assembly.add('bladeCC', BaseComponentCostModel())
+    assembly.add('hubCC', BaseComponentCostModel())
+    assembly.add('pitchSysCC', BaseComponentCostModel())
+    assembly.add('spinnerCC', BaseComponentCostModel())
+    assembly.add('hubSysCC', FullHubSystemCostAggregator())
+    assembly.add('rcc', FullRotorCostAggregator())
 
+    assembly.driver.workflow.add(['hubCC', 'pitchSysCC', 'spinnerCC', 'hubSysCC', 'bladeCC', 'rcc'])
+    
+    assembly.connect('blade_number', 'rcc.blade_number')
+    assembly.connect('hubCC.cost', 'hubSysCC.hub_cost')
+    assembly.connect('pitchSysCC.cost', 'hubSysCC.pitch_system_cost')
+    assembly.connect('spinnerCC.cost', 'hubSysCC.spinner_cost')
+    assembly.connect('hubSysCC.cost', 'rcc.hub_system_cost')
+    assembly.connect('bladeCC.cost', 'rcc.blade_cost')
+    assembly.connect('rcc.cost', 'cost')
+
+@implement_base(BaseSubAssemblyCostAggregator)
 class FullNacelleCostAggregator(Component):
 
     # variables
@@ -157,39 +161,36 @@ class FullNacelleCostAggregator(Component):
     # returns
     cost = Float(iotype='out', units='USD', desc='component cost')
 
-class FullNacelleCostModel(BaseSubAssemblyCostModel):
-    """
-    TODO: docstring
-    """
+@implement_base(BaseSubAssemblyCostModel)
+class FullNacelleCostModel(Assembly):
 
-    def configure(self):
-        
-        super(FullNacelleCostModel, self).configure()
-        
-        self.add('lssCC', BaseComponentCostModel())
-        self.add('bearingsCC', BaseComponentCostModel())
-        self.add('gearboxCC', BaseComponentCostModel())
-        self.add('hssCC', BaseComponentCostModel())
-        self.add('generatorCC', BaseComponentCostModel())
-        self.add('bedplateCC', BaseComponentCostModel())
-        self.add('yawSysCC', BaseComponentCostModel())
-        self.add('ncc', FullNacelleCostAggregator())
+    # returns
+    cost = Float(iotype='out', units='USD', desc='component cost')
 
-        self.driver.workflow.add(['lssCC', 'bearingsCC', 'gearboxCC', 'hssCC', 'generatorCC', 'bedplateCC', 'yawSysCC', 'ncc'])
-        
-        self.connect('lssCC.cost', 'ncc.lss_cost')
-        self.connect('bearingsCC.cost', 'ncc.bearings_cost')
-        self.connect('gearboxCC.cost', 'ncc.gearbox_cost')
-        self.connect('hssCC.cost', 'ncc.hss_cost')
-        self.connect('generatorCC.cost', 'ncc.generator_cost')
-        self.connect('bedplateCC.cost', 'ncc.bedplate_cost')
-        self.connect('yawSysCC.cost', 'ncc.yaw_system_cost')
-        self.connect('ncc.cost', 'cost')
+def configure_full_ncc(assembly):
+    
+    assembly.add('lssCC', BaseComponentCostModel())
+    assembly.add('bearingsCC', BaseComponentCostModel())
+    assembly.add('gearboxCC', BaseComponentCostModel())
+    assembly.add('hssCC', BaseComponentCostModel())
+    assembly.add('generatorCC', BaseComponentCostModel())
+    assembly.add('bedplateCC', BaseComponentCostModel())
+    assembly.add('yawSysCC', BaseComponentCostModel())
+    assembly.add('ncc', FullNacelleCostAggregator())
 
+    assembly.driver.workflow.add(['lssCC', 'bearingsCC', 'gearboxCC', 'hssCC', 'generatorCC', 'bedplateCC', 'yawSysCC', 'ncc'])
+    
+    assembly.connect('lssCC.cost', 'ncc.lss_cost')
+    assembly.connect('bearingsCC.cost', 'ncc.bearings_cost')
+    assembly.connect('gearboxCC.cost', 'ncc.gearbox_cost')
+    assembly.connect('hssCC.cost', 'ncc.hss_cost')
+    assembly.connect('generatorCC.cost', 'ncc.generator_cost')
+    assembly.connect('bedplateCC.cost', 'ncc.bedplate_cost')
+    assembly.connect('yawSysCC.cost', 'ncc.yaw_system_cost')
+    assembly.connect('ncc.cost', 'cost')
+
+@implement_base(BaseSubAssemblyCostAggregator)
 class FullTowerCostAggregator(Component):
-    """
-    TODO: docstring
-    """
 
     # variables
     tower_cost = Float(iotype='in', units='USD', desc='component cost')
@@ -197,37 +198,47 @@ class FullTowerCostAggregator(Component):
     # returns
     cost = Float(iotype='out', units='USD', desc='component cost')    
 
-class FullTowerCostModel(BaseSubAssemblyCostModel):
-    """
-    TODO: docstring
-    """
+@implement_base(BaseSubAssemblyCostModel)
+class FullTowerCostModel(Assembly):
 
-    def configure(self):
-        
-        super(FullTowerCostModel, self).configure()
-        
-        self.add('towerCC', BaseComponentCostModel())
-        self.add('twrcc', FullTowerCostAggregator())
+    # returns
+    cost = Float(iotype='out', units='USD', desc='component cost')    
 
-        self.driver.workflow.add(['towerCC', 'twrcc'])
-        
-        self.connect('towerCC.cost', 'twrcc.tower_cost')
-        self.connect('twrcc.cost', 'cost')
-
-# Full Turbine _cost Model
-class FullTurbineCapitalCostModel(ExtendedTurbineCapitalCostModel):
-
-    """
-    TODO: docstring
-    """
-
-    def configure(self):
+def configure_full_twcc(assembly):
     
-        super(FullTurbineCapitalCostModel, self).configure()
-        
-        self.replace('rotorCC', FullRotorCostModel())
-        self.replace('nacelleCC', FullNacelleCostModel())
-        self.replace('towerCC', FullTowerCostModel())
+    assembly.add('towerCC', BaseComponentCostModel())
+    assembly.add('twrcc', FullTowerCostAggregator())
+
+    assembly.driver.workflow.add(['towerCC', 'twrcc'])
+    
+    assembly.connect('towerCC.cost', 'twrcc.tower_cost')
+    assembly.connect('twrcc.cost', 'cost')
+
+# Full Turbine Cost Model
+@implement_base(BaseTCCAggregator)
+class FullTCCAggregator(Component):
+
+    # Variables
+    rotor_cost = Float(iotype='in', units='USD', desc='rotor cost')
+    nacelle_cost = Float(iotype='in', units='USD', desc='nacelle cost')
+    tower_cost = Float(iotype='in', units='USD', desc='tower cost')
+
+    # Outputs
+    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
+
+@implement_base(ExtendedTurbineCostModel)
+class FullTurbineCostModel(Assembly):
+
+    # Outputs
+    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
+
+def configure_full_tcc(assembly):
+
+    configure_extended_tcc(assembly)
+    
+    assembly.replace('rotorCC', FullRotorCostModel())
+    assembly.replace('nacelleCC', FullNacelleCostModel())
+    assembly.replace('towerCC', FullTowerCostModel())
 
 
 if __name__=="__main__":

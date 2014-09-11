@@ -12,7 +12,7 @@ from numpy.linalg.linalg import norm
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 
-from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str, Dict
+from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str, Dict, Instance
 #from openmdao.lib.drivers.api import CaseIteratorDriver # KLD: temporary version issues
 from openmdao.main.api import Driver, Run_Once
 from openmdao.main.api import Component, Assembly, VariableTree, Container  # , IOInterface
@@ -228,7 +228,7 @@ class GenericInflowGenerator(GenericFlowModel):
     wind_speed = Float(0.0, iotype='in', desc='the reference wind speed')
 
 class GenericWindTurbine(Component):
-    wt_desc = Slot(iotype='in')
+    wt_desc = Instance(iotype='in')
     hub_wind_speed = Float(iotype='in')
     power = Float(0.0, iotype='out', desc='The wind turbine power')
     thrust = Float(0.0, iotype='out', desc='The wind turbine thrust')
@@ -242,7 +242,7 @@ class WindTurbinePowerCurve(GenericWindTurbine):
         - c_t_curve
         - rotor_diameter
     """
-    wt_desc = Slot(iotype='in', desc='The wind turbine description')
+    wt_desc = Instance(iotype='in', desc='The wind turbine description')
     hub_wind_speed = Float(0.0, iotype='in', desc='Wind Speed at hub height')
     density = Float(1.225, iotype='in', desc='Air density')
 
@@ -278,7 +278,7 @@ class WindTurbinePowerCurve(GenericWindTurbine):
 
 
 class PostProcessWindRose(Component):
-    cases = Slot(ICaseIterator, iotype='in')
+    cases = Instance(ICaseIterator, iotype='in')
     aep = Float(0.0, iotype='out', desc='Annual Energy Production', unit='kWh')
     energies = Array([], iotype='out', desc='The energy production per sector', unit='kWh')
 
@@ -320,7 +320,7 @@ class WTDescFromWTG(Component):
     filename = Str(iotype='in', desc='The .wtg file name') 
 
     ### Outputs
-    wt_desc = Slot(GenericWindTurbinePowerCurveVT(), iotype='out', desc='The wind turbine power curve')
+    wt_desc = Instance(GenericWindTurbinePowerCurveVT(), iotype='out', desc='The wind turbine power curve')
 
     def execute(self):
         ### Reading the .wtg file
@@ -337,7 +337,7 @@ class PlantFromWWF(Component):
     """Create a Plant information from a .wwf WAsP file"""
     ### Inputs
     filename = Str(iotype='in', desc='The .wwf file name')
-    wt_desc = Slot(GenericWindTurbinePowerCurveVT(), iotype='in', desc='The wind turbine power curve')
+    wt_desc = Instance(GenericWindTurbinePowerCurveVT(), iotype='in', desc='The wind turbine power curve')
 
     ### Outputs
     wt_layout = VarTree(GenericWindFarmTurbineLayout(), iotype='out', desc='wind turbine properties and layout')
@@ -405,7 +405,7 @@ class WindRoseCaseGenerator(Component):
     speeds = Array(iotype='in', desc='The different wind speeds to run [nWS]', unit='m/s')
     directions = Array(iotype='in', desc='The different wind directions to run [nWD]', unit='deg')
     
-    cases = Slot(ICaseIterator, iotype='out')
+    cases = Instance(ICaseIterator, iotype='out')
     
     ### Change this to reflect the assembly structure
     speeds_str = Str('wf.wind_speed', iotype='in')

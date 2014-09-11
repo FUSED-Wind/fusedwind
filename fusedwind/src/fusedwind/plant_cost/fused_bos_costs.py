@@ -3,7 +3,7 @@
 from openmdao.lib.datatypes.api import Float, Int, Array, VarTree
 from openmdao.main.api import Component, Assembly, VariableTree
 
-from fusedwind.plant_cost.fused_tcc_asym import BaseTurbineCapitalCostModel
+from fusedwind.plant_cost.fused_tcc import BaseTurbineCostModel
 from fusedwind.interface import base, implement_base
 
 ##########################################################
@@ -120,7 +120,7 @@ class BaseCAPEXAggregator(Component):
 def configure_capex(assembly):
 
     # To be replaced by actual models        
-    assembly.add('tcc',BaseTurbineCapitalCostModel())
+    assembly.add('tcc',BaseTurbineCostModel())
     assembly.add('bos',BaseBOSCostModel())
     assembly.add('cap_ex',BaseCAPEXAggregator())
 
