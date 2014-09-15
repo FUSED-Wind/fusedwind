@@ -75,7 +75,7 @@ class BaseFinancialAnalysis(Assembly):
     net_aep = Float(iotype='out', desc='A Wind Plant Annual Energy Production Model', units='kW*h')
     coe = Float(iotype='out', desc='Levelized cost of energy for the wind plant')
 
-def configure_base_finanical_analysis(assembly):
+def configure_base_financial_analysis(assembly):
 
     # To be replaced by actual models
     assembly.add('tcc_a',BaseTurbineCostModel())
@@ -123,6 +123,5 @@ def configure_extended_financial_analysis(assembly):
     assembly.replace('bos_a',ExtendedBOSCostModel())
     assembly.replace('opex_a',ExtendedOPEXModel())
 
-    assembly.connect('tcc_a.turbine_cost',['bos_a.turbine_cost'])
     assembly.connect('opex_a.opex_breakdown', 'opex_breakdown')
     assembly.connect('bos_a.bos_breakdown', 'bos_breakdown')
