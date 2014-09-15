@@ -4,7 +4,7 @@ from numpy import array, log, zeros, cos, sin, nonzero, argsort, ones, arange, p
 from numpy.linalg.linalg import norm
 from openmdao.lib.datatypes.api import VarTree, Float, Slot, Array, List, Int, Str
 from openmdao.lib.drivers.api import CaseIteratorDriver
-from openmdao.main.api import Driver, Run_Once
+from openmdao.main.api import Driver
 from openmdao.main.api import Component, Assembly
 from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator
 from openmdao.main.interfaces import ICaseIterator
@@ -826,7 +826,6 @@ class AEP(GenericAEP):
         super(AEP, self).configure()
         self.add('wf', GenericWindFarm())
         self.wf.configure()
-        self.add('driver', Run_Once())
         self.add('wind_rose_driver', CaseIteratorDriver())
         self.add('postprocess_wind_rose', PostProcessWindRose())
         self.wind_rose_driver.workflow.add('wf')
