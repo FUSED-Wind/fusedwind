@@ -1,0 +1,14 @@
+#!/bin/bash 
+#PBS -l walltime=<hours>:00:00
+#PBS -l nodes=1
+
+module use -a /nopt/nrel/apps/modules/candidate/modulefiles; module purge; module load epel python/2.7.4 openmpi-epel/1.6.4-6.3 py-scitools/2.7.4/openmpi-epel; module load openmdao/0.9.1; export PYTHONPATH=$PYTHONPATH:/home/pgraf/projects/wese/wese-11_16_13/
+
+pwd
+echo  $PBS_O_WORKDIR
+cd $PBS_O_WORKDIR
+echo $PYTHONPATH
+
+
+python openruniec.py -p -c -i <sfile>
+cp dlcproto.out <resname>

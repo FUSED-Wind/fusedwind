@@ -1,3 +1,0 @@
-
-DLC,   @WindSpeeds,   NumSeeds,  NumWavePer, TotProbReq, TStart, AnalTime
-PowerCurve,  10 14 18 22 26 30 34 38  ,  1   ,     1  , 	     N/A, 	 0.0 ,  5.0
