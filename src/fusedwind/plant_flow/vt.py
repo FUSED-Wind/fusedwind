@@ -193,6 +193,8 @@ class GenericWindRoseVT(VariableTree):
         """
         return pd.DataFrame(self.flatten(), columns=['wind_direction', 'wind_speed', 'frequency'])
 
+#TODO: Pierre I think we need to move the configure stuff elsewhere or figure out another approach
+@base
 class GenericWindFarmTurbineLayout(VariableTree):
     wt_list = List(GenericWindTurbinePowerCurveVT(), desc='The wind turbine list of descriptions [n_wt]')
     wt_names = List(desc='The wind turbine list of names [n_wt]')
@@ -284,3 +286,94 @@ class GenericWindFarmTurbineLayout(VariableTree):
         
         return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])
 
+@implement_base(GenericWindFarmTurbineLayout)
+class ExtendedWindFarmTurbineLayout(VariableTree):
+    wt_list = List(ExtendedWindTurbinePowerCurveVT(), desc='The wind turbine list of descriptions [n_wt]')
+    wt_names = List(desc='The wind turbine list of names [n_wt]')
+    wt_positions = Array(units='m', desc='Array of wind turbines attached to particular positions [n_wt, 2]')
+    wt_wind_roses = List(desc='wind rose for each wind turbine position [n_wt]')
+    single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
+    wind_turbine = VarTree(ExtendedWindTurbinePowerCurveVT(), desc='wind turbine power curve') 
+        
+    @property
+    def n_wt(self):
+        return self.wt_positions.shape[0]
+
+    def test_consistency(self):
+        if len(self.wt_list) > 0:
+            assert len(self.wt_list) == self.n_wt
+
+        if len(self.wt_names) > 0:
+            assert len(self.wt_names) == self.n_wt
+
+        if len(self.wt_wind_roses) > 0:
+            assert len(self.wt_wind_roses) == self.n_wt
+
+    def configure_single(self):
+        """ 
+        Modify the class to adapt for single wind turbine codes. 
+        You can directly use self.wind_turbine instead of self.wt_list[0] . 
+        Note that when this function has been run there is a link between
+        self.wind_turbine and self.wt_list[:]. So changing one will change 
+        all the other ones.
+        In your code you can check if single_wind_turbine is set to True.
+        """
+
+        if len(self.wt_list) > 0:
+            self.wind_turbine = self.wt_list[0]
+        self.wt_list = [self.wind_turbine] * self.n_wt    
+        self.single_wind_turbine = True
+
+    def create_dict(self, n):
+        """
+        Returns a dictionary containing the information of the n'th turbine
+
+        Parameters
+        ----------
+        n   int [0, self.n_wt]
+            The index of the n'th turbine
+
+        Returns
+        -------
+        di  dict    
+            name            str, optional
+                            the name of the turbine contained in wt_names
+
+            rotor_diameter  GenericWindTurbinePowerCurveVT keys, optional   
+            hub_height      ...
+            ...
+
+            x               float
+                            x position [m] from wt_positions
+
+            y               float
+                            y position [m] from wt_positions
+
+            wind_rose       GenericWindRoseVT, optional
+                            the wind rose of the turbine at hub height contained in wt_wind_roses
+        """
+        di = {}
+        if len(self.wt_names) > 0:
+            di['name'] = self.wt_names[n]
+        if len(self.wt_list) > 0:
+            for k,v in self.wt_list[n].items():
+                di[k] = v
+        di['x'] = self.wt_positions[n,0]
+        di['y'] = self.wt_positions[n,1]
+        if len(self.wt_wind_roses) > 0:
+            di['wind_rose'] = self.wt_wind_roses[n]
+
+        return di
+
+    def df(self):
+        """
+        create a pandas dataframe containing all the information flatten, using the `create_dict` function
+
+        Example:
+        --------
+        >>> df = generate_random_wt_layout().df()
+        >>> scatter(df.x, df.y, s=df.hub_height, c=df.power_rating)
+        >>> colorbar()
+        """
+        
+        return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])
