@@ -1,3 +1,0 @@
-graft src/fused_wake/sphinx_build/html
-recursive-include src/fused_wake/test *.py
-
