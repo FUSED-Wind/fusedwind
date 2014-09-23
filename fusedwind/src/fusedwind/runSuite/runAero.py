@@ -36,19 +36,29 @@ class FUSEDIECBase(Assembly):
 
 
 
+class PGrafObject(object):
+    def __init__(self, num):
+        print "made a pgrafobject"
+        super(PGrafObject, self).__init__()
+        self.num = num
+
+
 # Peter's code 
 class openAeroCode(Assembly):
     """ base class for application that can run a DesignLoadCase """
 
     ## inputs and outputs are very generic:
-#    input = Slot(GenericRunCase, iotype='in')
+#    inputs = Slot(GenericRunCase, iotype='in')
 #    output = Slot(RunResult, iotype='out')  ## never used, never even set
 #    inputs = Instance(GenericRunCase, iotype='in')
     inputs = Instance(IECRunCaseBaseVT, iotype='in')
+#    inputs = Instance(PGrafObject)
+#    inputs = Instance(GenericRunCase)
     outputs = Instance(RunResult, iotype='out')  ## never used, never even set
 
     def __init__(self):
         super(openAeroCode, self).__init__()
+        print "made an aero code"
 
     def getRunCaseBuilder(self):
         raise unimplementedError, "this is a \"virtual\" class!"
@@ -59,6 +69,8 @@ class openAeroCode(Assembly):
     def setOutput(self, output_params):
         raise unimplementedError, "this is a \"virtual\" class!"        
     
+#    def execute(self):
+#        print "openaero execute"
 
 
 

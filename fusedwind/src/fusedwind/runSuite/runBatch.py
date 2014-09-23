@@ -1,6 +1,12 @@
 """ Here we will construct a cleaner version of openruniec.py.  It will simply read a table of run cases and run them. """
 
+
 # main python driver to run wind load cases in a variety of ways, uses openMDAO
+
+from openmdao.main.api import Assembly, Component
+from openmdao.main.datatypes.slot import Slot
+from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
+from openmdao.main.datatypes.api import Int
 
 import os, types
 from math import pi
@@ -12,7 +18,8 @@ from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.api import Case, Component
 #from openmdao.lib.drivers.api import ConnectableCaseIteratorDriver
 #from openmdao.lib.drivers.api import CaseIteratorDriver  ## brings in cobyla driver, which has bug on Peter's intel mac
-from openmdao.lib.drivers.caseiterdriver import ConnectableCaseIteratorDriver
+#from openmdao.lib.drivers.caseiterdriver import ConnectableCaseIteratorDriver
+from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
 
 from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator, CSVCaseRecorder
 from openmdao.lib.datatypes.api import Str, Int, List, Bool, Slot, Instance
@@ -36,7 +43,12 @@ from fusedwind.runSuite.runCase import GenericRunCaseTable
 ### openmdao) concerning GenericRunCase vs runcase.GenericRunCase (not the same).  no idea really why.
 from fusedwind.lib.base import FUSEDAssembly
 from fusedwind.runSuite.runCase import IECRunCaseBaseVT, IECOutputsBaseVT
-from fusedwind.runSuite.runAero import FUSEDIECBase, openAeroCode
+from fusedwind.runSuite.runAero import FUSEDIECBase, openAeroCode, PGrafObject
+#from fusedwind.runSuite.runAero import FUSEDIECBase
+
+from fusedwind.runSuite.runCase import GenericRunCase
+
+#from runAero import PGrafObject
 
 
 class PostprocessIECCasesBase(Component):
@@ -101,7 +113,7 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
     def setup_cases(self):
         """
         setup the cases to run
-        
+
         This method has to be called after instantiation of the class, once the ``cases``
         list has been set.
         """
@@ -114,6 +126,51 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
         self.case_driver.iterator = ListCaseIterator(self.runcases)
 
 
+################# from openmdao "test" code
+
+
+
+
+
+class PGrafComponent(Assembly):
+    num = Int(iotype='in')
+    inputs = Slot(PGrafObject)
+    result = Int(iotype='out')
+
+    def execute(self):
+        print "comp execute"
+        self.result = self.inputs.num + self.inputs.num
+
+
+class PGrafSubComponent(PGrafComponent):
+
+    def execute(self):
+        print "subcomp execute"
+        self.result = self.inputs.num * self.inputs.num
+
+
+class PGrafAssembly(Assembly):
+
+    def configure(self):
+        cid = self.add('driver', CaseIteratorDriver())
+        self.add('runner', PGrafSubComponent())
+        cid.workflow.add('runner')
+        cid.sequential = True #False
+        # uncomment to keep simulation directories for debugging purposes
+        #import os
+        #os.environ['OPENMDAO_KEEPDIRS'] = '1'
+
+        cid.add_parameter('runner.inputs')
+        cid.add_parameter('runner.num')
+        cid.add_response('runner.result')
+
+        cid.case_inputs.runner.inputs = [PGrafObject(num) for num in range(4)]
+        cid.case_inputs.runner.num = [num for num in range(4)]
+
+
+
+##########################################
+
 
 ## orchestrate process with CaseIteratorDriver
 class CaseAnalyzer(Assembly):
@@ -124,6 +181,7 @@ class CaseAnalyzer(Assembly):
     def __init__(self, params):
         super(CaseAnalyzer, self).__init__()
         self.run_parallel = False
+        self.openmdao_version = 0.1
         if ('parallel' in params):
             self.run_parallel = params['parallel']
 
@@ -131,12 +189,12 @@ class CaseAnalyzer(Assembly):
         self.aerocode = aerocode
         self.studycases = cases
 
-    def configure(self):
+    def configure_old(self):
         print "configuring dispatcher:"
         super(CaseAnalyzer, self).configure()
 
-#        driver = CaseIteratorDriver()
-        driver = ConnectableCaseIteratorDriver()
+        driver = CaseIteratorDriver()
+#        driver = ConnectableCaseIteratorDriver()
         self.add('ws_driver', driver)
         self.driver.workflow.add(['ws_driver'])
 
@@ -154,20 +212,80 @@ class CaseAnalyzer(Assembly):
         self.ws_driver.ignore_egg_requirements = True
 
         print "dispatcher configured\n-------------------------------------------\n"
+
+
+    def configure(self):
+
+        if False:  ## testing
+            cid = self.add('driver', CaseIteratorDriver())
+            self.add('runner', PGrafSubComponent())
+            cid.workflow.add('runner')
+            cid.sequential = True #False
+            # uncomment to keep simulation directories for debugging purposes
+            #import os
+            #os.environ['OPENMDAO_KEEPDIRS'] = '1'
+
+            cid.add_parameter('runner.inputs')
+
+            cid.case_inputs.runner.inputs = [PGrafObject(num) for num in range(4)]
     
+        if True:  ## real thing
+            print "configuring dispatcher:"
+            super(CaseAnalyzer, self).configure()
+
+            cid = self.add('driver', CaseIteratorDriver())
+#            self.add('runner', PGrafSubComponent())
+#            print self.aerocode
+#            self.add('runner', openAeroCode())
+            self.add('runner', self.aerocode )
+            cid.workflow.add('runner')
+#            cid.sequential = True #False
+
+            self.setup_cases()
+
+            # comment this line out to run sequentially
+            cid.sequential = not self.run_parallel
+            # uncomment to keep simulation directories for debugging purposes
+    #        os.environ['OPENMDAO_KEEPDIRS'] = '1'
+
+            # apparently a workaround for an openmdao bug:
+            cid.ignore_egg_requirements = True
+
+            if (self.openmdao_version < 0.1):
+                cid.iterator = ListCaseIterator(self.runcases)
+            else:
+                cid.add_parameter('runner.inputs')
+   #            cid.case_inputs.runner.inputs = [PGrafObject(num) for num in range(4)]
+   #            cid.case_inputs.runner.inputs = [GenericRunCase("acase", ['x','y'], [num, num*2]) for num in range(4)]
+                cid.case_inputs.runner.inputs = self.studycases
+    
+
+        print "dispatcher configured\n-------------------------------------------\n"
+
     def setup_cases(self):
         """ setup the cases """
+# openmdao through v0.9.5 at least, breaks at 0.1.0
         self.runcases = []
-#        run_case_builder = self.aerocode.getRunCaseBuilder()
+        run_case_builder = self.aerocode.getRunCaseBuilder()
         for dlc in self.studycases:
             self.runcases.append(Case(inputs= [('runner.inputs', dlc)]))
             print "building dlc for: ", dlc.x, dlc.name
-#            runcase = run_case_builder.buildRunCase_x(dlc.x, dlc.param_names, dlc)
-#            self.runcases.append(Case(inputs= [('runner.input', runcase)]))
+## even older:
+##            runcase = run_case_builder.buildRunCase_x(dlc.x, dlc.param_names, dlc)
+##            self.runcases.append(Case(inputs= [('runner.input', runcase)]))
+##
 
-        self.ws_driver.iterator = ListCaseIterator(self.runcases)
+# 0.1.0 and beyond
+#        print "study cases"
+#        for dlc in self.studycases:
+#            print dlc
+#        self.ws_driver.case_inputs.runner.inputs = self.studycases
+#        self.ws_driver.case_inputs.runner.inputs = [PGrafObject(num) for num in range(4)]
+#        print "set up the cases, good luck!"
+
+
         # note NO output; collecting it by hand from file system
-        
+
     def collect_output(self, output_params):
         print "RUNS ARE DONE:"
         print "collecting output from copied-back files (not from case recorder), see %s" % output_params['main_output_file']
@@ -249,7 +367,7 @@ def get_options():
     parser.add_option("-c", "--cluster", dest="cluster_allocator", help="run using cluster allocator", action="store_true", default=False)
     parser.add_option("-n", "--norun", dest="norun", help="just process results", action="store_true", default=False)
     parser.add_option("-s", "--start_at", dest="start_at", help="index of sample to start at", type="int", default=0)
-            
+
     (options, args) = parser.parse_args()
     return options, args
 
@@ -363,7 +481,7 @@ def create_turbine(turbine_params):
 
 def create_aerocode_wrapper(aerocode_params, output_params, options):
     """ create  wind code wrapper"""
-    
+
     solver = 'FAST'
 #    solver = 'HAWC2'
 
@@ -414,7 +532,7 @@ def rundlcs():
     run cases
     collect and save output
     """
-    
+
 
     options, arg = get_options()
     ctrl = parse_input(options)
@@ -426,7 +544,7 @@ def rundlcs():
         from PeregrineClusterAllocator import ClusterAllocator
         cluster=ClusterAllocator()
         RAM.insert_allocator(0,cluster)
-            
+
     ###  using "factory" functions to create specific subclasses (e.g. distinguish between FAST and HAWC2)
     # Then we use these to create the cases...
     cases = create_run_cases(ctrl.cases, options)
@@ -443,15 +561,33 @@ def rundlcs():
     dispatcher.configure()
     # Now tell the dispatcher to (setup and ) run the cases using the aerocode on the turbine.
     # calling configure() is done inside run(). but now it is done already (above), too.
-    
+
     # norun does not write directories, but it does set us up to process them if they already exist
     if (not options.norun):
+        print "calling run"
         dispatcher.run()
 
     # TODO:  more complexity will be needed for difference between "run now" and "run later" cases.
     dispatcher.collect_output(ctrl.output)
-    
+
+
+
+def nexttest():
+    options, arg = get_options()
+    ctrl = parse_input(options)
+    cases = create_run_cases(ctrl.cases, options)
+    aerocode = create_aerocode_wrapper(ctrl.aerocode, ctrl.output, options)
+    dispatcher = create_dlc_dispatcher(ctrl.dispatcher)
+    dispatcher.presetup_workflow(aerocode, cases)  # just makes sure parts are there when configu    print "calling run"
+    dispatcher.run()
+
+
+def basetest():
+    top = CaseAnalyzer({})
+#    top = PGrafAssembly()
+    top.run()
 
 if __name__=="__main__":
-    rundlcs()
-
+#    rundlcs()
+#    basetest()
+    nexttest()
