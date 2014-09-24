@@ -50,9 +50,22 @@ def strip_init(cls):
         print 'The __init__ of this class is going to be removed for checking the interfaces'
         print 'see the strip_init function in interface.py'
         mdic = dict(cls.__dict__)
-        mdic['__init__'] = cls.__base__.__init__
+        mdic['__init__'] = cls._base__.__init__
         cls2 = type(cls.__name__, (cls,), mdic)
         return cls2
+
+def cls_list_vars(cls):
+    """Return a list of variables in a VariableTree class"""
+    return [k for k,v in cls.__class_traits__.iteritems() if k not in VariableTree.__class_traits__ and not v.vartypename == None]
+
+def cls_list_outputs(cls):
+    """Return a list of outputs in a Component class"""    
+    return [k for k, v in cls.__class_traits__.iteritems() if v.iotype=='out' and k not in Component.__class_traits__ and not v.vartypename == None]
+    
+def cls_list_inputs(cls):
+    """Return a list of inputs in a Component class"""    
+    return [k for k, v in cls.__class_traits__.iteritems() if v.iotype=='in' and k not in Component.__class_traits__  and not v.vartypename == None]
+    
 
 class _implement_base(object):
     """
@@ -75,7 +88,7 @@ class _implement_base(object):
         vo1 = Float(iotype='out')
     """
     def __init__(self, cls):
-        """Store the base calss in the object variable __base
+        """Store the base calss in the object variable _base
 
         parameters
         ----------
@@ -83,7 +96,7 @@ class _implement_base(object):
                 the base class to store
 
         """
-        self.__base = cls
+        self._base = cls
         
     def __call__(self, cls):
         """Check if the new class satisfy the requirements 
@@ -97,7 +110,7 @@ class _implement_base(object):
 
         """
         self.check(cls)
-        return base(implementer(interface(self.__base))(cls))
+        return base(implementer(interface(self._base))(cls))
 
     def check(self, cls):
         """Do some checks on the I/O compatibility of the class with its base:
@@ -107,24 +120,20 @@ class _implement_base(object):
             * Add test on variable type
         """
 
-        ob = strip_init(cls)()
-        ob_base = strip_init(self.__base)()
-        #ob = cls()
-        #ob_base = self.__base()
-        if issubclass(cls, VariableTree) or issubclass(self.__base, VariableTree):
+        if issubclass(cls, VariableTree) or issubclass(self._base, VariableTree):
             try: 
-                assert set(ob_base.list_vars()).issubset(set(ob.list_vars()))
+                assert set(cls_list_vars(self._base)).issubset(set(cls_list_vars(cls)))
             except:
-                raise Exception('Variables of the class %s are different from base %s:'%(cls.__name__, self.__base.__name__), ob.list_vars(), ob_base.list_vars())
+                raise Exception('Variables of the class %s are different from base %s:'%(cls.__name__, self._base.__name__), set(cls_list_vars(self._base))-set(cls_list_vars(cls)))
         else: ## Assuming it's a Component or Assembly
             try: 
-                assert set(ob_base.list_inputs()).issubset(set(ob.list_inputs()))
+                assert set(cls_list_inputs(self._base)).issubset(set(cls_list_inputs(cls)))
             except:
-                raise Exception('Inputs of the class %s are different from base %s.  The missing input(s) of %s are: %s'%(cls.__name__, self.__base.__name__,cls.__name__, (set(ob_base.list_inputs())-set(ob.list_inputs())))) #, ob.list_inputs(), ob_base.list_inputs())
+                raise Exception('Inputs of the class %s are different from base %s.  The missing input(s) of %s are: %s'%(cls.__name__, self._base.__name__,cls.__name__, (set(cls_list_inputs(self._base))-set(cls_list_inputs(cls))))) #, cls_list_inputs(cls), cls_list_inputs(self._base))
             try:
-                assert set(ob_base.list_outputs()).issubset(ob.list_outputs())
+                assert set(cls_list_outputs(self._base)).issubset(cls_list_outputs(cls))
             except:
-                raise Exception('Outputs of the class %s are different from base %s.  The missing output(s) of %s are: %s'%(cls.__name__, self.__base.__name__,cls.__name__, (set(ob_base.list_outputs())-set(ob.list_outputs())))) #, ob.list_outputs(), ob_base.list_outputs())
+                raise Exception('Outputs of the class %s are different from base %s.  The missing output(s) of %s are: %s'%(cls.__name__, self._base.__name__,cls.__name__, (set(cls_list_outputs(self._base))-set(cls_list_outputs(cls))))) #, cls_list_outputs(ob), cls_list_outputs(self._base))
 
 
 class implement_base(object):
@@ -159,15 +168,16 @@ class implement_base(object):
 
     """
     def __init__(self, *args):
-        self.__bases = args
+        self._bases = args
     def __call__(self, cls):
         out = cls
-        for base in self.__bases:
+        for base in self._bases:
             out = _implement_base(base)(out)
         return out
 
     
 def InterfaceInstance(cls, *args, **kwargs):
     return Instance(interface(cls), *args, **kwargs)
+
 
 
