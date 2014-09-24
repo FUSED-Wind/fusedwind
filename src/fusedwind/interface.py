@@ -144,3 +144,104 @@ def InterfaceInstance(cls, *args, **kwargs):
 
 
 
+class FUSEDAssembly(Assembly):
+    _debug = False
+    def add_default(self, name, obj):
+        obj_name = self._add(name, obj, replace=False)
+        self._fused_components[name]['default'] = obj 
+        ### Check the previously added components compatibility with 
+        ### the default component
+        for k, v in self._fused_components[name].iteritems():
+            if not k == 'default':
+                self.check_compatibility_with_default(name, v)
+        return obj_name
+
+    def add(self, name, obj):
+        obj = self._add(name, obj, replace=True)
+        return obj
+    
+    def _add(self, name, obj, replace=True):
+        """Method to replace components with other compatible components
+
+        Parameters
+        ----------
+
+        self:    Assembly
+                 the assembly where the components are going to be added
+
+        name:     str
+                 The name of the component to add
+
+        obj:     Component instance
+                 The component to add to the self Assembly
+                 
+        replace: bool
+                 A flag to indicate if the object should replace a
+                 previously added component
+
+
+        Example
+        --------
+
+
+
+        """
+        if not hasattr(self, '_fused_components'):
+            ### This is the first time that this method is run
+            self._fused_components = {}
+
+        ### Check the compatibility of the new object with the existing 
+        ### classes
+        self.check_compatibility_with_default(name, obj)
+            
+
+        name_id = obj.__class__.__name__
+        if name not in self._fused_components:
+            self._fused_components[name] = {}
+            self._fused_components[name][name_id] = obj
+            if self._debug:
+                print 'adding', name, '=', name_id
+            ## Call the original add
+            return super(FUSEDAssembly, self).add(name, obj)
+        elif replace:
+            self._fused_components[name][name_id] = obj
+            if self._debug:
+                print 'replacing', name, 'with', name_id
+            return super(FUSEDAssembly, self).add(name, obj)           
+        else:
+            self._fused_components[name][name_id] = obj
+            if self._debug:
+                print 'not replacing', name, 'with', name_id
+            return name
+        
+    def check_compatibility_with_default(self, name, obj):
+        if name in self._fused_components:
+            if 'default' in self._fused_components[name]:
+                default = self._fused_components[name]['default']
+                self.check_compatibility(default, obj)
+
+    def check_compatibility(self, obj1, obj2):
+        """Check if the obj2 is satisfying the same interface as obj1
+        """
+        if self._debug:
+            print 'checking that', obj2.__class__.__name__, 'is compatible with', obj1.__class__.__name__
+        if issubclass(obj2.__class__, VariableTree) or \
+           issubclass(obj1.__class__, VariableTree):
+            try: 
+                assert set(obj1.list_vars()).issubset(set(obj2.list_vars()))
+            except:
+                raise Exception('Variables of the class %s are different from base %s:'%(
+                    obj2.__class__.__name__, obj1.__class__.__name__), obj2.list_vars(), ', '.join(obj1.list_vars()))
+        else: ## Assuming it's a Component or Assembly
+            try: 
+                assert set(obj1.list_inputs()).issubset(set(obj2.list_inputs()))
+            except:
+                raise Exception('Inputs of the class %s are different from base %s.  The missing input(s) of %s are: %s'%(
+                    obj2.__class__.__name__, obj1.__class__.__name__, obj2.__class__.__name__, ', '.join(set(obj1.list_inputs())-set(obj2.list_inputs())))) 
+            try:
+                assert set(obj1.list_outputs()).issubset(obj2.list_outputs())
+            except:
+                raise Exception('Outputs of the class %s are different from base %s.  The missing output(s) of %s are: %s'%(
+                    obj2.__class__.__name__, obj1.__class__.__name__, obj2.__class__.__name__, ', '.join(set(obj1.list_outputs())-set(obj2.list_outputs())))) 
+        if self._debug:
+            print '--> OK'

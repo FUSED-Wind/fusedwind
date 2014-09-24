@@ -1,6 +1,6 @@
 
 import unittest
-from fusedwind.interface import base, _implement_base, implement_base
+from fusedwind.interface import base, _implement_base, implement_base, FUSEDAssembly
 from openmdao.main.datatypes.api import Float, Slot
 from openmdao.main.api import Component, Assembly
 
@@ -193,6 +193,53 @@ class FrameworkTest(unittest.TestCase):
 
         myinst = MyClass()
 
+    def test_replace(self):
+        @base
+        class DummyC0(Component):
+            input = Float(iotype='in')
+            output = Float(iotype='out')
+            #output2 = Float(iotype='out')    
+
+        @implement_base(DummyC0)
+        class DummyC1(Component):
+            
+            input = Float(iotype='in')
+            output = Float(iotype='out')
+
+            def execute(self):
+                self.output = self.input **2.0
+
+        @implement_base(DummyC0)
+        class DummyC2(DummyC1):
+            output2 = Float(iotype='out')    
+            def execute(self):
+                self.output = self.input **4.0
+
+        class DummyC3(DummyC1):
+            def execute(self):
+                self.output = self.input **8.0
+
+        @implement_base(DummyC0)        
+        class DummyA(FUSEDAssembly):
+            
+            input = Float(iotype='in')
+            output = Float(iotype='out')
+            
+            def configure(self):
+                self.add_default('c', DummyC0())
+                self.driver.workflow.add('c')
+                self.connect('input', 'c.input')
+                self.connect('c.output', 'output')            
+
+        DA = DummyA()
+        DA.add('c', DummyC2())
+        DA.input = 2.
+        DA.run()
+        assert DA.input == 2.0 and DA.output == 2.0**4., 'C2 has not been added properly'
+
+        DA.replace('c', DummyC3())
+        DA.run()
+        assert DA.input == 2.0 and DA.output == 2.0**8., 'C3 has not been added properly'
 
 
 if __name__ == "__main__":
