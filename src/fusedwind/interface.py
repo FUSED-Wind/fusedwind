@@ -17,43 +17,6 @@ def base(cls):
     return implementer(interface(cls))(cls)
 
 
-def strip_init(cls):
-    """Decorator function that removes the __init__ of 
-    a class to avoid the super(MyClass) bug). 
-
-    Usage
-    -----
-
-    class A(object):
-        def __init__(self):
-            print 'init A'
-        
-    def my_deco(cls):
-        obj = strip_init(cls2)()
-        print obj.__class__.__name__
-        return cls
-            
-    @my_deco        
-    class B(A):
-        def __init__(self):
-            print 'init B'
-            super(B, self).__init__()    # <--- create the bug because 
-                                         #   B does not exist in the context
-                                         # of my_deco
-
-    """
-    try:
-        obj = cls()
-        return cls
-    except NameError as e:
-        print 'Warning:',e
-        print 'The __init__ of this class is going to be removed for checking the interfaces'
-        print 'see the strip_init function in interface.py'
-        mdic = dict(cls.__dict__)
-        mdic['__init__'] = cls._base__.__init__
-        cls2 = type(cls.__name__, (cls,), mdic)
-        return cls2
-
 def cls_list_vars(cls):
     """Return a list of variables in a VariableTree class"""
     return [k for k,v in cls.__class_traits__.iteritems() if k not in VariableTree.__class_traits__ and not v.vartypename == None]
