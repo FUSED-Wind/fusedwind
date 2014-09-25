@@ -2,7 +2,7 @@ import unittest
 from fusedwind.plant_flow.comp import *
 from fusedwind.fused_helper import *
 from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
-from fusedwind.plant_flow.test.test_vt import generate_random_GenericWindTurbinePowerCurveVT, generate_random_wt_positions, generate_random_GenericWindRoseVT, generate_random_wt_layout
+from fusedwind.plant_flow.generate_fake_vt import generate_random_GenericWindTurbinePowerCurveVT, generate_random_wt_positions, generate_random_GenericWindRoseVT, generate_random_wt_layout
 import numpy as np
 from random import random
 from numpy import array, vstack, linspace
