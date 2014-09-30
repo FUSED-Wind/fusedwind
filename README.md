@@ -28,6 +28,8 @@ FUSED-Wind depends on [OpenMDAO](http://www.openmdao.org) and support python
 First install OpenMDAO development from their [repository](https://github.com/OpenMDAO/OpenMDAO-Framework)
 and activate its virtual environment.
 
+Then run the following commands to download and install FUSED-Wind
+
     $ git clone https://github.com/FUSED-Wind/fusedwind.git
     $ cd fusedwind
     $ plugin install
