@@ -17,6 +17,7 @@ import pandas
 from openmdao.main.interfaces import Interface, implements
 from zope.interface import implementer
 from openmdao.main.api import Component, Assembly
+from pprint import pprint
 # FUSED Framework ----------------------------------
 
 
@@ -154,6 +155,10 @@ def my_tree(self, iotype=None):
 def _repr_tree_(self):
     my_tree(self).json
 
+
+def disp(comp):
+    """Display a Container"""
+    return pprint(dict(comp.items()))
 
 def my_call(self, **kwargs):
     """Partial function of the Component/Assembly
