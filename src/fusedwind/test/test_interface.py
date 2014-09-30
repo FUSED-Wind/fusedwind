@@ -1,8 +1,9 @@
 
 import unittest
-from fusedwind.interface import base, _implement_base, implement_base, FUSEDAssembly
+from fusedwind.interface import base, _implement_base, implement_base, FUSEDAssembly, InterfaceSlot, configure_base
 from openmdao.main.datatypes.api import Float, Slot
 from openmdao.main.api import Component, Assembly
+from nose.tools import raises
 
 class FrameworkTest(unittest.TestCase):
     def testImplements(self):
@@ -14,7 +15,7 @@ class FrameworkTest(unittest.TestCase):
                 vo1 = Float(iotype='out')
 
             @_implement_base(BaseClass1)
-            class MyClass(cls_type):    
+            class MyClass(cls_type):
                 vi1 = Float(iotype='in')
                 vi2 = Float(iotype='in')
                 vo1 = Float(iotype='out')
@@ -38,7 +39,7 @@ class FrameworkTest(unittest.TestCase):
 
             myinst = MyClass()
 
-
+    @raises(Exception)
     def testMixingCompAss(self):
         """Mixing components and assemblies"""
 
@@ -60,7 +61,7 @@ class FrameworkTest(unittest.TestCase):
             vi1 = Float(iotype='in')
             vi2 = Float(iotype='in')
             vi3 = Float(iotype='in')
-            vi4 = Float(iotype='in')
+            #vi4 = Float(iotype='in')
 
             vo1 = Float(iotype='out')
             vo2 = Float(iotype='out')
@@ -141,29 +142,29 @@ class FrameworkTest(unittest.TestCase):
 
         @implement_base(BaseClass1, BaseClass2)
         class MyClass(Assembly):
-            """Assembly that nests a C1 and C2 component 
+            """Assembly that nests a C1 and C2 component
             and complies to both base classes I/Os
             """
             vi1 = Float(iotype='in')
             vi2 = Float(iotype='in')
-            vi3 = Float(iotype='in')            
+            vi3 = Float(iotype='in')
 
             vo1 = Float(iotype='out', desc='vi1+vi2')
             vo2 = Float(iotype='out', desc='vi1*vi3')
 
             def configure(self):
                 configure_C1(self)
-                configure_C2(self)                
+                configure_C2(self)
 
 
         from random import random
         myinst = MyClass()
         myinst.vi1 = random()
         myinst.vi2 = random()
-        myinst.vi3 = random()   
+        myinst.vi3 = random()
         myinst.run()
-        self.assertEqual(myinst.vo1, myinst.vi1 + myinst.vi2) 
-        self.assertEqual(myinst.vo2, myinst.vi1 * myinst.vi3) 
+        self.assertEqual(myinst.vo1, myinst.vi1 + myinst.vi2)
+        self.assertEqual(myinst.vo2, myinst.vi1 * myinst.vi3)
 
 
     def test_implement_with_init(self):
@@ -198,11 +199,11 @@ class FrameworkTest(unittest.TestCase):
         class DummyC0(Component):
             input = Float(iotype='in')
             output = Float(iotype='out')
-            #output2 = Float(iotype='out')    
+            #output2 = Float(iotype='out')
 
         @implement_base(DummyC0)
         class DummyC1(Component):
-            
+
             input = Float(iotype='in')
             output = Float(iotype='out')
 
@@ -211,7 +212,7 @@ class FrameworkTest(unittest.TestCase):
 
         @implement_base(DummyC0)
         class DummyC2(DummyC1):
-            output2 = Float(iotype='out')    
+            output2 = Float(iotype='out')
             def execute(self):
                 self.output = self.input **4.0
 
@@ -219,17 +220,17 @@ class FrameworkTest(unittest.TestCase):
             def execute(self):
                 self.output = self.input **8.0
 
-        @implement_base(DummyC0)        
+        @implement_base(DummyC0)
         class DummyA(FUSEDAssembly):
-            
+
             input = Float(iotype='in')
             output = Float(iotype='out')
-            
+
             def configure(self):
                 self.add_default('c', DummyC0())
                 self.driver.workflow.add('c')
                 self.connect('input', 'c.input')
-                self.connect('c.output', 'output')            
+                self.connect('c.output', 'output')
 
         DA = DummyA()
         DA.add('c', DummyC2())
@@ -241,6 +242,36 @@ class FrameworkTest(unittest.TestCase):
         DA.run()
         assert DA.input == 2.0 and DA.output == 2.0**8., 'C3 has not been added properly'
 
+    def test_configure_assembly(self):
+        @base
+        class DummyInterface1(Component):
+            input1 = Float(iotype='in')
+            input2 = Float(iotype='in')
+            output1 = Float(iotype='out')
+        @base
+        class DummyInterface2(Component):
+            input3 = Float(iotype='in')
+            input4 = Float(iotype='in')
+            output1 = Float(iotype='out')
+
+        @implement_base(DummyInterface2)
+        class DummyC(Component):
+            input3 = Float(iotype='in')
+            input4 = Float(iotype='in')
+            output1 = Float(iotype='out')
+
+        @implement_base(DummyInterface1)
+        class DummyA(Assembly):
+            input1 = Float(iotype='in')
+            input2 = Float(iotype='in')
+            output1 = Float(iotype='out')
+
+            slot1 = InterfaceSlot(DummyC)
+
+        @configure_base(DummyA)
+        def conf_my_dummyA(self):
+            pass
+
 
 if __name__ == "__main__":
-    unittest.main()             
+    unittest.main()
