@@ -1,4 +1,4 @@
-FusedWind
+FUSED-Wind
 ==========
 
 Overview

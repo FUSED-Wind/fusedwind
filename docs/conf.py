@@ -19,9 +19,9 @@ import sys, os
 sys.path.insert(0, os.path.abspath('.'))
 # sys.path.append(os.path.abspath('exts'))
 
-codeName = u'FusedWind'
+codeName = u'FUSED-Wind'
 authorName = u'Peter Graf'
-copyright = u'2014, NREL'
+copyright = u'2014, NREL, DTU'
 version = '0.1'
 release = '0.1.0'
 
