@@ -42,7 +42,7 @@ The documentation will be available soon on the [project website](fusedwind.org)
 
 The tutorials and examples will be available soon in another repository.
 
-# Rerporting bugs
+# Reporting bugs
 
 Please use git [issue tracker](https://github.com/FUSED-Wind/fusedwind/issues) for reporting bugs.
 
