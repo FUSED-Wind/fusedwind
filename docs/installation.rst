@@ -17,7 +17,7 @@ Then run the following commands to download and install FUSED-Wind
     $ cd fusedwind
     $ plugin install
 
-To check if installation was successful try to import the module
+To check if the installation was successful try to import the module
 
 .. code-block:: bash
 
@@ -27,12 +27,11 @@ To check if installation was successful try to import the module
 
     > import fusedwind
 
-or run the unit tests for the gradient checks
+or run the unit tests:
 
 .. code-block:: bash
 
-   $ python src/fusedwind/test/test_interface.py
-   $ python src/fusedwind/test/test_geomerty.py
+   $ python -m unittest discover 'src/fusedwind/test' 'test_*.py'
 
 An "OK" signifies that all the tests passed.
 
