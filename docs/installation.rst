@@ -4,16 +4,18 @@ Installation
 .. admonition:: Prerequisites
    :class: warning
 
-   C compiler, Fortran compiler, NumPy, SciPy
+   Python 2.7.x, NumPy, SciPy, OpenMDAO, Pandas
 
-Clone the repository at `<https://github.com/WISDEM/RotorSE>`_ or download the releases and uncompress/unpack
-(RotorSE.py-|release|.tar.gz or RotorSE.py-|release|.zip)
+First install OpenMDAO development from their `repository <https://github.com/OpenMDAO/OpenMDAO-Framework>`_
+and activate its virtual environment.
 
-Install RotorSE with the following command.
+Then run the following commands to download and install FUSED-Wind
 
 .. code-block:: bash
 
-   $ python setup.py install
+    $ git clone https://github.com/FUSED-Wind/fusedwind.git
+    $ cd fusedwind
+    $ plugin install
 
 To check if installation was successful try to import the module
 
@@ -23,17 +25,17 @@ To check if installation was successful try to import the module
 
 .. code-block:: python
 
-    > import rotorse.rotor
+    > import fusedwind
 
 or run the unit tests for the gradient checks
 
 .. code-block:: bash
 
-   $ python src/towerse/test/test_rotor_gradients.py
-   $ python src/towerse/test/test_rotoraero_gradients.py
+   $ python src/fusedwind/test/test_interface.py
+   $ python src/fusedwind/test/test_geomerty.py
 
 An "OK" signifies that all the tests passed.
 
 .. only:: latex
 
-    An HTML version of this documentation that contains further details and links to the source code is available at `<http://wisdem.github.io/RotorSE>`_
+    An HTML version of this documentation that contains further details and links to the source code is available at `<http://fusedwind.org/index.html>`_
