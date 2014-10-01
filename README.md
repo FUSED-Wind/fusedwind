@@ -51,10 +51,10 @@ Please use git [issue tracker](https://github.com/FUSED-Wind/fusedwind/issues) f
 If you want more information about the platform, please contact the following authors
 
 **DTU:**
-[Pierre-Elouan Réthoré](pire@dtu.dk),
-[Frederik Zahle](frza@dtu.dk),
+[Pierre-Elouan Réthoré](mailto:pire@dtu.dk),
+[Frederik Zahle](mailto:frza@dtu.dk),
 
 **NREL:**
-[Katherine Dykes](katherine.dykes@nrel.gov),
-[Peter Graf](Peter.Graf@nrel.gov),
-[Andrew Ning](aning@byu.edu)
+[Katherine Dykes](mailto:katherine.dykes@nrel.gov),
+[Peter Graf](mailto:Peter.Graf@nrel.gov),
+[Andrew Ning](mailto:aning@byu.edu)
