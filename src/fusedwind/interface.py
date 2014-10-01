@@ -3,6 +3,7 @@ from openmdao.main.interfaces import Interface, implements
 from zope.interface import implementer
 from openmdao.main.api import Component, Assembly, VariableTree
 from openmdao.lib.datatypes.api import Slot, Instance
+from fused_helper import fused_autodoc
 
 
 # FUSED Framework ----------------------------------
@@ -16,7 +17,7 @@ def interface(comp_cls):
 
 def base(cls):
     """Decorator for a FUSED base class"""
-    return implementer(interface(cls))(cls)
+    return fused_autodoc(implementer(interface(cls))(cls))
 
 
 def cls_list_vars(cls):
@@ -111,6 +112,9 @@ class _implement_base(object):
 
         """
         self.check(cls)
+        if not hasattr(cls, '_fused_base'):
+            cls._fused_base = []
+        cls._fused_base.append(self._base)
         return base(implementer(interface(self._base))(cls))
 
     def check(self, cls):
