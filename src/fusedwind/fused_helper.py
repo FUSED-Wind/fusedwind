@@ -512,7 +512,7 @@ def fused_autodoc(cls):
 
     # Check if the class has some base:
     if hasattr(cls, '_fused_base'):
-        addl(clsname + ' implements the following interfaces: ' + ', '.join([c.__name__ for c in cls._fused_base]))
+        addl('``%s``'%(clsname) + ' implements the following interfaces: ' + ', '.join(['``%s``'%(c.__name__) for c in cls._fused_base]))
         addl()
 
 
