@@ -36,7 +36,7 @@ Then run the following commands to download and install FUSED-Wind
 
 # Documentation
 
-The documentation will be available soon on the [project website](fusedwind.org).
+The documentation is available on the [project website](http://www.fusedwind.org).
 
 # Tutorials and Examples
 
