@@ -4,7 +4,8 @@ import numpy as np
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot
 
-from fusedwind.turbine.structure_vt import BeamGeometryVT, BeamStructureVT
+from fusedwind.turbine.structure_vt import BeamStructureVT
+from fusedwind.turbine.geometry_vt import BeamGeometryVT
 from fusedwind.turbine.aero_vt import AirfoilDataset
 from fusedwind.turbine.environment_vt import TurbineEnvironmentVT
 
