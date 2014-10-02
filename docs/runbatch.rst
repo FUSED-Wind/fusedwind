@@ -8,7 +8,7 @@ the following figure (:num:`Figure #batchrunner-fig`):
 
 .. _batchrunner-fig:
 
-.. figure:: /images/batchrunner.pdf
+.. figure:: /images/batchrunner.*
     :height: 1.5in
     :align: center
 
