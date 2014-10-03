@@ -1,5 +1,7 @@
 FUSED-Wind
 ==========
+[![Stories in Ready](https://badge.waffle.io/FUSED-Wind/fusedwind.svg?label=ready&title=Ready)](http://waffle.io/FUSED-Wind/fusedwind)
+
 
 # Overview
 
@@ -17,6 +19,7 @@ of offering an environment where these codes can be used interchangeably.
 The open source nature of the framework enables third parties to develop
 interfaces to their own tools, either replacing or extending those offered by
 DTU and NREL.
+
 
 # Dependencies and supported Python versions
 
