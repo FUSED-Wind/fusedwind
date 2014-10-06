@@ -462,7 +462,7 @@ def fused_autodoc(cls):
     clsname = cls.__name__
     if not cls.__doc__:
         cls.__doc__ = '**TODO**: fill in this doc\n\n'
-    white_list = ['VarTree', 'Float', 'Slot', 'Array', 'List', 'Int', 'Str', 'Dict', 'Enum']
+    
     inputs = [k for k, v in cls.__class_traits__.iteritems() if v.iotype == 'in'
               and k not in Component.__class_traits__
               and k not in Assembly.__class_traits__
