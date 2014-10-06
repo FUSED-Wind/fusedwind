@@ -1,4 +1,5 @@
 # Unit test of FUSED_Wake
+#TODO: debug
 import unittest
 from fused_wake.wake import *
 from fused_wake.io import *
@@ -426,7 +427,7 @@ class testWakeModel(unittest.TestCase):
     def testNOJ(self):
         plt.close(1)
         plt.figure(1)
-        i = 0        
+        i = 0
         for k, v in self.tests['NOJ'].iteritems():
             # print 'Test: ', k
             wt_desc = GenericWindTurbineDesc()
@@ -606,7 +607,7 @@ class testHornsRev(unittest.TestCase):
     def HR_test(self, wfmp, file_power):
 
         ref_power = np.loadtxt(file_power)
-        
+
         # Necessary for the parallelization
         wfm = set_as_top(wfmp)
 
@@ -653,7 +654,7 @@ class testHornsRev(unittest.TestCase):
         ### Test in the single wind turbine configuration
         wfm.configure_single_turbine_type()
         wfm.wt_list = [wt_desc]
-        wfm.run()        
+        wfm.run()
         self.assertTrue(abs((sum(wfm.wt_power)-sum(ref_power))/sum(ref_power)) < 3E-3)
 
 
