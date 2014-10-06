@@ -1,12 +1,17 @@
 # Unit test of FUSED_Wake
-#TODO: debug
 import unittest
-from fused_wake.wake import *
-from fused_wake.io import *
-from fused_wake.windturbine import *
-from fused_wake.lib import *
-from fused_wake.gcl import *
-from fused_wake.noj import *
+from fusedwind.plant_flow.wake import *
+from fusedwind.plant_flow.wake.noj import *
+from fusedwind.plant_flow.wake.accumulation import *
+
+# Useless imports
+#from fusedwind.plant_flow.io import *
+#from fusedwind.plant_flow.windturbine import *
+#from fusedwind.plant_flow.wake.lib import *
+
+# DTU-FUSED-Wake
+# from fusedwind.plant_flow.wake.gcl import *
+
 import ipdb
 import numpy as np
 from numpy.linalg.linalg import norm
@@ -39,7 +44,7 @@ def generate_ws_positions():
 # UnitTest classes -----------------------------------------------------------------------
 
 
-# class WakeDBTest(unittest.TestCase):
+class WakeDBTest(unittest.TestCase):
 
     def testWakeDB(self):
         wake_db = WakeDB()
