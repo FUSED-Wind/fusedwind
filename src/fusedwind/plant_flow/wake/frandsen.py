@@ -11,8 +11,8 @@ from accumulation import QuadraticWakeSum
 #from io import GenericWindTurbineVT
 
 ## FUSED-Wind imports
-from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT
-from fusedwind.plant_flow.fused_plant_comp import WindTurbinePowerCurve
+from fusedwind.plant_flow.vt import GenericWindTurbineVT
+from fusedwind.plant_flow.comp import WindTurbinePowerCurve
 
 ## OpenMDAO imports
 from openmdao.lib.datatypes.api import VarTree, Float, Int

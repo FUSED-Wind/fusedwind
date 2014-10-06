@@ -5,7 +5,7 @@ from wake import WindFarmWake, \
     HomogeneousInflowGenerator, \
     HubCenterWSPosition, HubCenterWS, GenericEngineeringWakeModel
 
-from accumulation import QuadraticWakeSum    
+from accumulation import QuadraticWakeSum
 
 ## Moved to FUSED-Wind plugin
 #from fused_wake.io import GenericWindTurbineVT
@@ -13,8 +13,8 @@ from accumulation import QuadraticWakeSum
 #from io import GenericWindTurbineVT
 
 ## FUSED-Wind imports
-from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT
-from fusedwind.plant_flow.fused_plant_comp import WindTurbinePowerCurve
+from fusedwind.plant_flow.vt import GenericWindTurbineVT
+from fusedwind.plant_flow.comp import WindTurbinePowerCurve
 
 ## OpenMDAO imports
 from openmdao.lib.datatypes.api import VarTree, Float
@@ -133,5 +133,3 @@ class MozaicTileWindFarmWake(NOJWindFarmWake):
     def configure_single_turbine_type(self):
         super(MozaicTileWindFarmWake, self).configure_single_turbine_type()
         self.connect('wt_layout.wt_list[0]', 'wake_model.down_wt_desc')
-
-

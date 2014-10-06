@@ -1,6 +1,6 @@
 #__all__ = ['fused_wake']
 
-from fusedwind.plant_flow.wake.test.test_lib import *
+from test_lib import *
 from fusedwind.plant_flow.wake.noj import *
 from numpy import loadtxt
 
@@ -32,7 +32,7 @@ class testWakeModel(unittest.TestCase):
     def testNOJ(self):
         plt.close(1)
         plt.figure(1)
-        i = 0        
+        i = 0
         for k, v in self.tests['NOJ'].iteritems():
             # print 'Test: ', k
             wt_desc = GenericWindTurbineVT()
@@ -102,4 +102,4 @@ class test_AEP_NOJ(test_AEP):
 
 
 if __name__ == "__main__":
-    unittest.main()        
+    unittest.main()
