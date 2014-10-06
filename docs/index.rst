@@ -19,6 +19,13 @@ The open source nature of the framework enables third parties to develop
 interfaces to their own tools, either replacing or extending those offered by
 DTU and NREL.
 
+GitHub Repository
+-----------------
+
+The project lives on `<https://github.com/FUSED-Wind>`_. You will find the instruction,
+examples and tutorial and how to install
+it there, as well as the possibility to ask questions, report bug and request features.
+
 Contacts
 --------
 
