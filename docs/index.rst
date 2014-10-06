@@ -1,4 +1,5 @@
-﻿FUSED-Wind
+﻿
+FUSED-Wind
 ==========
 
 Overview
@@ -33,11 +34,11 @@ If you want more information about the platform, please contact the following au
 `Peter Graf <mailto:Peter.Graf@nrel.gov>`_,
 `Andrew Ning <mailto:aning@byu.ed>`_
 
-    .. rubric:: Table of Contents
 
+Table of Contents
+-------------------
 
 .. toctree::
-    :numbered:
     :maxdepth: 2
 
     installation

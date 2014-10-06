@@ -1,8 +1,9 @@
+
 Installation
-------------
+==============
 
 .. admonition:: Prerequisites
-   :class: warning
+   :class: note
 
    Python 2.7.x, NumPy, SciPy, OpenMDAO, Pandas
 

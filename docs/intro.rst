@@ -1,5 +1,6 @@
+
 Introduction
-------------
+==============
 
 High-level overview of code.  Probably just a few paragraphs.  Math can be added using :math:`\exp^x`, you can refer to other sections like :ref:`theory`, and link to the web like `f2py <http://www.scipy.org/F2py/>`_.
 
