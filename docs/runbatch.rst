@@ -1,6 +1,7 @@
 
+
 Run Batch
-=========
+-------------
 
 The :mod:`fusedwind.runSuite.runCaseGenerator` and :mod:`fusedwind.runSuite.runBatch` modules facilitate high throughput aeroelastic simulation via a generic
 interface that can accomodate a variety of specifc wind codes.  The philosophy of the tool is illustrated in
