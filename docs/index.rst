@@ -1,4 +1,4 @@
-FUSED-Wind
+﻿FUSED-Wind
 ==========
 
 Overview
@@ -40,8 +40,5 @@ If you want more information about the platform, please contact the following au
     :numbered:
     :maxdepth: 2
 
-    intro
     installation
-    tutorial
     documentation
-    theory

@@ -15,3 +15,4 @@ codebases in use for this ongoing project.
 
     runbatch
     plantflow
+    plantcost
