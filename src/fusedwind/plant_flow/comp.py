@@ -527,7 +527,9 @@ class SingleWindRoseCaseGenerator(Component):
 @implement_base(GenericWindRoseCaseGenerator)
 class MultipleWindRosesCaseGenerator(Component):
 
-    """Component prepare all the wind speeds, directions and frequencies inputs to the AEP calculation"""
+    """Component prepare all the wind speeds, directions and frequencies inputs to the AEP calculation.
+    """
+
     wind_speeds = List([], iotype='in', units='m/s',
         desc='The different wind speeds to run [nWS]')
     wind_directions = List([], iotype='in', units='deg',

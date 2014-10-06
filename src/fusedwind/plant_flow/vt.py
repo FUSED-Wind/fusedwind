@@ -4,7 +4,7 @@
 #    GenericMultipleTurbineTypesWindFarm # KLD: REMOVED after discussions with Pierre
 #    GenericAEP
 
-# P-E 17/9: Changed all the Desc into VT for following the rest of fusedwind laguage 
+# P-E 17/9: Changed all the Desc into VT for following the rest of fusedwind laguage
 # P-E 5/5/14: Cleaning up, removing some comments, units were not defined properly (unit instead of units)
 
 import numpy as np
@@ -54,14 +54,14 @@ class GenericWindTurbinePowerCurveVT(VariableTree):
 
         Returns
         -------
-        df      pandas.DataFrame
-                wind_speed          float
+        df:     pandas.DataFrame
+                wind_speed:          float
                                     The hub height wind speed [m/s]
 
-                power               float
+                power:               float
                                     The wind turbine power [W]
 
-                c_t                 float
+                c_t:                 float
                                     The wind turbine thrust coefficient [-]
         """
         df = pd.DataFrame(self.power_curve, columns=['wind_speed', 'power'])
@@ -69,10 +69,10 @@ class GenericWindTurbinePowerCurveVT(VariableTree):
         df = df.join(pd.DataFrame(self.c_p_curve, columns=['wind_speed', 'c_p']), on='wind_speed')
         return df
 
-    @property 
+    @property
     def rotor_area(self):
         """The rotor area"""
-        return pi * (self.rotor_diameter/2.) ** 2. 
+        return pi * (self.rotor_diameter/2.) ** 2.
 
     @property
     def c_p_curve(self):
@@ -86,7 +86,7 @@ class GenericWindTurbinePowerCurveVT(VariableTree):
         ## Test power_rating
         np.testing.assert_almost_equal(self.power_curve[:,1].max(), self.power_rating)
         ## Test c_p under Betz limit
-        
+
         try:
             assert self.c_p_curve[:,1].max() < 0.6
         except:
@@ -107,7 +107,7 @@ class ExtendedWindTurbinePowerCurveVT(VariableTree):
     cut_out_wind_speed = Float(desc='The cut-out wind speed of the wind turbine', units='m/s')
     rated_wind_speed = Float(desc='The rated wind speed of the wind turbine', units='m/s')
     air_density = Float(desc='The air density the power curve are valid for', units='kg/(m*m*m)')
-    
+
     rpm_curve = Array(desc='Machine rpm [rpm] by wind speed at hub') # KLD: used by OpenWind but may not want to include it here
     pitch_curve = Array(desc='The wind turbine pitch curve', units='deg') # P-E: It goes hand in hand with RPM curve usually
     #dB_curve = Array(desc='Machine decibal output [dB] by wind speed at hub') # KLD: important but perhaps not for generic analysis #P-E: I have never seen these types of curves, but if you have these as data inputs, why not
@@ -120,7 +120,7 @@ class WeibullWindRoseVT(VariableTree):
 
     def df(self):
         """Returns a pandas.DataFrame object"""
-        return pd.DataFrame(self.to_weibull_array(), 
+        return pd.DataFrame(self.to_weibull_array(),
                             columns=['wind_direction', 'frequency', 'A', 'k'])
 
     def to_weibull_array(self):
@@ -134,14 +134,14 @@ class WeibullWindRoseVT(VariableTree):
     #    if wind_directions == None:
     #        wind_directions = self.wind_directions
     #    wwr = WeibullWindRose()
-    #    return wwr(wind_directions=wind_directions, 
-    #               wind_speeds=wind_speeds, 
+    #    return wwr(wind_directions=wind_directions,
+    #               wind_speeds=wind_speeds,
     #               wind_rose_array=self.to_weibull_array()).wind_rose
 
 class GenericWindRoseVT(VariableTree):
     wind_directions = List(desc='Direction sectors angles [n_wd]', units='deg')
     wind_speeds = List(desc='wind speeds sectors [n_ws]', units='m/s')
-    frequency_array = Array(desc='Frequency by direction sectors and by wind speed sectors [n_wd, n_ws]')   
+    frequency_array = Array(desc='Frequency by direction sectors and by wind speed sectors [n_wd, n_ws]')
 
     def contourf(self):
         """ Plot a contour of the wind rose """
@@ -174,7 +174,7 @@ class GenericWindRoseVT(VariableTree):
                     array containing the [wind direction, wind speed, frequency]
 
         """
-        return array([[wd, ws, self.frequency_array[iwd, iws]] for iwd, wd in enumerate(self.wind_direction) 
+        return array([[wd, ws, self.frequency_array[iwd, iws]] for iwd, wd in enumerate(self.wind_direction)
                                                                 for iws, ws in enumerate(self.wind_speed)])
 
     def df(self):
@@ -201,8 +201,8 @@ class GenericWindFarmTurbineLayout(VariableTree):
     wt_positions = Array(units='m', desc='Array of wind turbines attached to particular positions [n_wt, 2]')
     wt_wind_roses = List(desc='wind rose for each wind turbine position [n_wt]')
     single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
-    wind_turbine = VarTree(GenericWindTurbinePowerCurveVT(), desc='wind turbine power curve') 
-        
+    wind_turbine = VarTree(GenericWindTurbinePowerCurveVT(), desc='wind turbine power curve')
+
     @property
     def n_wt(self):
         return self.wt_positions.shape[0]
@@ -218,18 +218,18 @@ class GenericWindFarmTurbineLayout(VariableTree):
             assert len(self.wt_wind_roses) == self.n_wt
 
     def configure_single(self):
-        """ 
-        Modify the class to adapt for single wind turbine codes. 
-        You can directly use self.wind_turbine instead of self.wt_list[0] . 
+        """
+        Modify the class to adapt for single wind turbine codes.
+        You can directly use self.wind_turbine instead of self.wt_list[0] .
         Note that when this function has been run there is a link between
-        self.wind_turbine and self.wt_list[:]. So changing one will change 
+        self.wind_turbine and self.wt_list[:]. So changing one will change
         all the other ones.
         In your code you can check if single_wind_turbine is set to True.
         """
 
         if len(self.wt_list) > 0:
             self.wind_turbine = self.wt_list[0]
-        self.wt_list = [self.wind_turbine] * self.n_wt    
+        self.wt_list = [self.wind_turbine] * self.n_wt
         self.single_wind_turbine = True
 
     def create_dict(self, n):
@@ -238,26 +238,26 @@ class GenericWindFarmTurbineLayout(VariableTree):
 
         Parameters
         ----------
-        n   int [0, self.n_wt]
+        n:   int [0, self.n_wt]
             The index of the n'th turbine
 
         Returns
         -------
-        di  dict    
-            name            str, optional
+        di:  dict
+            name:            str, optional
                             the name of the turbine contained in wt_names
 
-            rotor_diameter  GenericWindTurbinePowerCurveVT keys, optional   
-            hub_height      ...
+            rotor_diameter:  GenericWindTurbinePowerCurveVT keys, optional
+            hub_height:      ...
             ...
 
-            x               float
+            x:               float
                             x position [m] from wt_positions
 
-            y               float
+            y:               float
                             y position [m] from wt_positions
 
-            wind_rose       GenericWindRoseVT, optional
+            wind_rose:       GenericWindRoseVT, optional
                             the wind rose of the turbine at hub height contained in wt_wind_roses
         """
         di = {}
@@ -283,7 +283,7 @@ class GenericWindFarmTurbineLayout(VariableTree):
         >>> scatter(df.x, df.y, s=df.hub_height, c=df.power_rating)
         >>> colorbar()
         """
-        
+
         return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])
 
 @implement_base(GenericWindFarmTurbineLayout)
@@ -293,8 +293,8 @@ class ExtendedWindFarmTurbineLayout(VariableTree):
     wt_positions = Array(units='m', desc='Array of wind turbines attached to particular positions [n_wt, 2]')
     wt_wind_roses = List(desc='wind rose for each wind turbine position [n_wt]')
     single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
-    wind_turbine = VarTree(ExtendedWindTurbinePowerCurveVT(), desc='wind turbine power curve') 
-        
+    wind_turbine = VarTree(ExtendedWindTurbinePowerCurveVT(), desc='wind turbine power curve')
+
     @property
     def n_wt(self):
         return self.wt_positions.shape[0]
@@ -310,18 +310,18 @@ class ExtendedWindFarmTurbineLayout(VariableTree):
             assert len(self.wt_wind_roses) == self.n_wt
 
     def configure_single(self):
-        """ 
-        Modify the class to adapt for single wind turbine codes. 
-        You can directly use self.wind_turbine instead of self.wt_list[0] . 
+        """
+        Modify the class to adapt for single wind turbine codes.
+        You can directly use self.wind_turbine instead of self.wt_list[0] .
         Note that when this function has been run there is a link between
-        self.wind_turbine and self.wt_list[:]. So changing one will change 
+        self.wind_turbine and self.wt_list[:]. So changing one will change
         all the other ones.
         In your code you can check if single_wind_turbine is set to True.
         """
 
         if len(self.wt_list) > 0:
             self.wind_turbine = self.wt_list[0]
-        self.wt_list = [self.wind_turbine] * self.n_wt    
+        self.wt_list = [self.wind_turbine] * self.n_wt
         self.single_wind_turbine = True
 
     def create_dict(self, n):
@@ -335,11 +335,11 @@ class ExtendedWindFarmTurbineLayout(VariableTree):
 
         Returns
         -------
-        di  dict    
+        di  dict
             name            str, optional
                             the name of the turbine contained in wt_names
 
-            rotor_diameter  GenericWindTurbinePowerCurveVT keys, optional   
+            rotor_diameter  GenericWindTurbinePowerCurveVT keys, optional
             hub_height      ...
             ...
 
@@ -375,5 +375,5 @@ class ExtendedWindFarmTurbineLayout(VariableTree):
         >>> scatter(df.x, df.y, s=df.hub_height, c=df.power_rating)
         >>> colorbar()
         """
-        
+
         return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])
