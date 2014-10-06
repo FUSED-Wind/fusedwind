@@ -1,6 +1,6 @@
 
 from numpy import zeros, array, sqrt
-from fusedwind.plant_flow.fused_plant_comp import GenericWakeSum
+from fusedwind.plant_flow.comp import GenericWakeSum
 
 class LinearWakeSum(GenericWakeSum):
     """

@@ -9,8 +9,8 @@ from fusedwind.plant_flow.wake.accumulation import *
 #from fused_wake.windturbine import *
 
 #FUSED-Wind imports
-from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
-from fusedwind.plant_flow.fused_plant_comp import WindTurbinePowerCurve, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
+from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
+from fusedwind.plant_flow.comp import WindTurbinePowerCurve, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
 
 #OpenMDAO imports
 from openmdao.lib.casehandlers.api import CSVCaseRecorder
@@ -35,8 +35,8 @@ def generate_a_valid_wt(D = 200*random()):
 def generate_ws_positions(wt_desc = generate_a_valid_wt()):
     xy = [random()*1000, random()*1000]
     # Compute the ws_positions
-    ws_positions = array([[xy[0], 
-    					   xy[1] + cos(theta)*r, 
+    ws_positions = array([[xy[0],
+    					   xy[1] + cos(theta)*r,
     					   sin(theta)*r + wt_desc.hub_height]
     					   for r in np.linspace(0.0, wt_desc.rotor_diameter/2.0, 10)
     					   for theta in np.linspace(0.0, 2.0*np.pi, 10)])
@@ -314,7 +314,7 @@ class testHornsRev(unittest.TestCase):
     def HR_test(self, wfmp, file_power):
 
         ref_power = np.loadtxt(file_power)
-        
+
         # Necessary for the parallelization
         wfm = set_as_top(wfmp)
 
@@ -337,7 +337,7 @@ class testHornsRev(unittest.TestCase):
 
         wfm.run()
 
-        
+
 
 
         #ipdb.set_trace()
@@ -359,7 +359,7 @@ class testHornsRev(unittest.TestCase):
         ### Test in the single wind turbine configuration
         wfm.configure_single_turbine_type()
         wfm.wt_list = [wt_desc]
-        wfm.run()        
+        wfm.run()
         self.assertTrue(abs((sum(wfm.wt_power)-sum(ref_power))/sum(ref_power)) < 3E-3)
 
 
@@ -373,7 +373,7 @@ class test_AEP():#unittest.TestCase):
         aep.replace('wf', wfm)
 
         wt_desc = generate_v80()
-        aep.wt_list = [wt_desc]*80        
+        aep.wt_list = [wt_desc]*80
         aep.wf.z_0 = 1.0000e-04
         aep.wf.TI = 0.07
         aep.wf.z_ref = wt_desc.hub_height
@@ -393,5 +393,4 @@ class test_AEP():#unittest.TestCase):
         aep.wind_rose_driver.sequential = False
         t = time.time()
         aep.run()
-        print t-time.time(), aep.energies            
-
+        print t-time.time(), aep.energies

@@ -10,10 +10,10 @@ from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator
 from openmdao.main.interfaces import ICaseIterator
 from openmdao.main.case import Case
 
-## FUSED-Wind imports 
-from fusedwind.plant_flow.fused_plant_vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
-from fusedwind.plant_flow.fused_plant_comp import GenericWindTurbine, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
-from fusedwind.plant_flow.fused_plant_asym import GenericWindFarm
+## FUSED-Wind imports
+from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
+from fusedwind.plant_flow.comp import GenericWindTurbine, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
+from fusedwind.plant_flow.asym import GenericWindFarm
 
 # Wake Model stuffs ######################################################
 
@@ -32,8 +32,8 @@ RotZ = lambda a: array([[cos(a),  -sin(a),    0],
 
 ### Some helper functions --------------------------------------------------
 def call_func(self, **kwargs):
-    """ Transform an openmdao Component or Assembly into a function 
-    my_var = obj(input1=.., input2=..).output 
+    """ Transform an openmdao Component or Assembly into a function
+    my_var = obj(input1=.., input2=..).output
     -- is equivalent to --
     obj.input1=..
     obj.input2=..
@@ -73,7 +73,7 @@ class WTStreamwiseSorting(Component):
     """
     # Inputs
     wind_direction = Float(0.0, iotype='in', unit='degree')
-    wt_positions = Array([], iotype='in', unit='m', 
+    wt_positions = Array([], iotype='in', unit='m',
                          desc='The x,y position of the wind turbines in the wind farm array([n_wt,2])')
 
     # Outputs
@@ -277,7 +277,7 @@ class GaussHubWS(GenericHubWindSpeed):
 
 class GenericEngineeringWakeModel(GenericWakeModel):
     """
-    A class that sets up the single wake frame. 
+    A class that sets up the single wake frame.
     The specialized wake models have to specify the single_wake method.
     """
     def execute(self):
@@ -367,7 +367,7 @@ class WakeReader(Component):
 
 class UpstreamWakeDriver(CaseIteratorDriver):
     """
-    Loop through the upstream turbines and calculate the wake on the curent turbines. 
+    Loop through the upstream turbines and calculate the wake on the curent turbines.
     The cases are being built in the WakeDriver.
     In post_execute, the recorder is postprocessed to create a list of wakes.
     """
@@ -495,7 +495,7 @@ class WakeDriver(Driver):
             super(WakeDriver, self).execute()
         finally:
             self.evaluated = self.recorders.pop().get_iterator()
-        
+
 
 class PostProcessWTCases(Component):
     """
@@ -793,7 +793,7 @@ class PostProcessWindRose(Component):
     energies = Array([], iotype='out', desc='The energy production per sector', unit='kWh')
 
     power_str = Str('wf.power', iotype='in')
-    frequencies_str = Str('P', iotype='in')  
+    frequencies_str = Str('P', iotype='in')
 
     def execute(self):
         self.energies = [c[self.frequencies_str] * c[self.power_str] * 24 * 365 for c in self.cases]
@@ -805,11 +805,11 @@ class GenericAEP(Assembly):
     wind_speeds = Array([], iotype='in', desc='The different wind speeds to run [nWS]', unit='m/s')
     wind_directions = Array([], iotype='in', desc='The different wind directions to run [nWD]', unit='deg')
     wind_rose = Array([], iotype='in', desc='Probability distribution of wind speed, wind direction [nWS, nWD]')
-    
+
     # In case there is a list of wind turbines
     wt_list = List([], iotype='in', desc='A list of wind turbine types')
     wt_positions = Array([], iotype='in', unit='m', desc='The x,y position of the wind turbines in the wind farm array([n_wt,2])')
-    
+
     # Outputs
     aep = Float(0.0, iotype='out', desc='Annual Energy Production', unit='kWh')
     energies = Array([], iotype='out', desc='The energy production per sector', unit='kWh')
@@ -848,7 +848,7 @@ class AEP(GenericAEP):
     def _pre_execute(self, force=True):
         self.wind_rose_driver.iterator = ListCaseIterator(self.generate_cases())
         super(AEP, self)._pre_execute()
-         
+
 
 
 
@@ -892,7 +892,7 @@ def c2c_dist(WD, uWTx, uWTy, cWTx, cWTy):
         - sin(WD * pi / 180.0) * (uWTy - cWTy)
 
 
-##### Moved to FUSED-Wind: 
+##### Moved to FUSED-Wind:
 
 # class GenericWSPosition(Component):
 #     """Calculate the position of the ws_array"""
@@ -921,7 +921,7 @@ def c2c_dist(WD, uWTx, uWTy, cWTx, cWTy):
 
 # class GenericHubWindSpeed(Component):
 #     """
-#     Generic class for calculating the wind turbine hub wind speed. 
+#     Generic class for calculating the wind turbine hub wind speed.
 #     Typically used as an input to a wind turbine power curve / thrust coefficient curve.
 #     """
 #     ws_array = Array([], iotype='in', desc='an array of wind speed on the rotor', unit='m/s')
@@ -951,7 +951,7 @@ def c2c_dist(WD, uWTx, uWTy, cWTx, cWTy):
 
 #     def post_execute(self):
 #         """
-#         In the case where we are only interested in deficits, there isn't any advantage 
+#         In the case where we are only interested in deficits, there isn't any advantage
 #         of copying arrays of 0. So let's post process those out.
 #         """
 #         self.du_array = self.ws_array - self.ws_array_inflow
