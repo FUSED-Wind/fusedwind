@@ -1,0 +1,26 @@
+{%- block versions %}
+<div class="">
+<h3>{{ _('Versions') }}</h3>
+
+<div class="list-group">
+  <a href="https://github.com/FUSED-Wind/fusedwind" target="_blank" class="list-group-item">
+    <h4 class="list-group-item-heading">Development</h4>
+    <p class="list-group-item-text" href="https://github.com/FUSED-Wind/fusedwind">0.1.dev Github</p>
+  </a>
+  <a href="{{pathto('installation')}}" target="_blank" class="list-group-item">
+    <h4 class="list-group-item-heading">Stable</h4>
+    <p class="list-group-item-text" href="https://github.com/FUSED-Wind/fusedwind">Coming soon!</p>
+  </a>
+</div>
+
+</div>
+
+
+<script type="text/javascript">
+  (function() {
+    var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+    po.src = 'https://apis.google.com/js/plusone.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+  })();
+</script>
+{%- endblock %}
