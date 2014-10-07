@@ -23,9 +23,8 @@ DTU and NREL.
 GitHub Repository
 -----------------
 
-The project lives on `<https://github.com/FUSED-Wind>`_. You will find the instruction,
-examples and tutorial and how to install
-it there, as well as the possibility to ask questions, report bug and request features.
+The project lives on `<https://github.com/FUSED-Wind>`_. Along with the FUSED-Wind source code, you can find the code for the
+examples and tutorials accompanying the documentation on this site. On github.com you can also ask questions, report bugs and request features.
 
 Contacts
 --------
@@ -39,7 +38,7 @@ If you want more information about the platform, please contact the following au
 **NREL:**
 `Katherine Dykes <mailto:katherine.dykes@nrel.gov>`_,
 `Peter Graf <mailto:Peter.Graf@nrel.gov>`_,
-`Andrew Ning <mailto:aning@byu.ed>`_
+`Andrew Ning <mailto:aning@byu.edu>`_
 
 
 Table of Contents
