@@ -48,5 +48,6 @@ Table of Contents
 .. toctree::
     :maxdepth: 2
 
+    news
     installation
     documentation

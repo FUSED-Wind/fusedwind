@@ -507,11 +507,11 @@ def fused_autodoc(cls):
                           el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
                           for i in outputs]))
 
-    addl('Notes')
-    addl('-------')
-
     # Check if the class has some base:
     if hasattr(cls, '_fused_base'):
+        addl()
+        addl('Notes')
+        addl('-------')
         addl('``%s``'%(clsname) + ' implements the following interfaces: ' + ', '.join(['``%s``'%(c.__name__) for c in cls._fused_base]))
         addl()
 
