@@ -5,13 +5,13 @@ Plant Cost
 
 Turbine Capital Costs
 ++++++++++++++++++++++
-.. automodule:: fusedwind.plant_costs.fused_tcc
+.. automodule:: fusedwind.plant_cost.fused_tcc
   :members:
   :special-members:
 
 Balance of Station Costs
 +++++++++++++++++++++++++
-.. automodule:: fusedwind.plant_cost.bos_costs
+.. automodule:: fusedwind.plant_cost.fused_bos_costs
   :members:
   :special-members:
 
