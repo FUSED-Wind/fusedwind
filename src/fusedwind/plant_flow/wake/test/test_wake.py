@@ -11,6 +11,11 @@ from fusedwind.plant_flow.wake.accumulation import *
 from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT
 from fusedwind.plant_flow.comp import WindTurbinePowerCurve, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
 
+#FUSED-Wake.test imports
+from test_lib import generate_a_valid_wt, generate_ws_positions, generate_neutral_inflow, generate_v80
+
+
+
 #OpenMDAO imports
 from openmdao.lib.casehandlers.api import CSVCaseRecorder
 from openmdao.main.api import set_as_top
@@ -22,108 +27,20 @@ from numpy.linalg.linalg import norm
 from random import random
 import matplotlib.pyplot as plt
 
-#from test_NOJ import *
+#
+# class fused_wakeTestCase(unittest.TestCase):
+#
+#     def setUp(self):
+#         pass
+#
+#     def tearDown(self):
+#         pass
+#
+#     # add some tests here...
+#
+#     #def test_fused_wake(self):
+#         #pass
 
-class fused_wakeTestCase(unittest.TestCase):
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
-    # add some tests here...
-
-    #def test_fused_wake(self):
-        #pass
-
-
-
-
-# Some handy case generators ---------------------------------------------------------------
-def generate_a_valid_wt(D = 200*random()):
-    wt_desc = GenericWindTurbineVT()
-    wt_desc.rotor_diameter = D
-    wt_desc.hub_height = D * (0.5 + random())
-    return wt_desc
-
-
-def generate_ws_positions(wt_desc = generate_a_valid_wt()):
-    xy = [random()*1000, random()*1000]
-    # Compute the ws_positions
-    ws_positions = array([[xy[0],
-                           xy[1] + cos(theta)*r,
-                           sin(theta)*r + wt_desc.hub_height]
-                           for r in np.linspace(0.0, wt_desc.rotor_diameter/2.0, 10)
-                           for theta in np.linspace(0.0, 2.0*np.pi, 10)])
-    return ws_positions
-
-def generate_neutral_inflow(ws_positions, ws=random()*40, z_ref=random()*100):
-    """ Generate a ramdom neutral inflow """
-    inflow = NeutralLogLawInflowGenerator()
-    inflow.z_0 = random()
-    inflow.z_ref = z_ref
-    inflow.wind_speed = ws
-    inflow.ws_positions = ws_positions
-    inflow.execute()
-    return inflow.ws_array
-
-def generate_v80():
-
-    V80 = {'rotor_diameter': 80.0,
-           'hub_height': 70.0,
-           'power_curve': array([[4.00000000e+00, 6.66000000e+04, ],
-                                [5.00000000e+00, 1.54000000e+05],
-                                [6.00000000e+00, 2.82000000e+05],
-                                [7.00000000e+00, 4.60000000e+05],
-                                [8.00000000e+00, 6.96000000e+05],
-                                [9.00000000e+00, 9.96000000e+05],
-                                [1.00000000e+01, 1.34100000e+06],
-                                [1.10000000e+01, 1.66100000e+06],
-                                [1.20000000e+01, 1.86600000e+06],
-                                [1.30000000e+01, 1.95800000e+06],
-                                [1.40000000e+01, 1.98800000e+06],
-                                [1.50000000e+01, 1.99700000e+06],
-                                [1.60000000e+01, 1.99900000e+06],
-                                [1.70000000e+01, 2.00000000e+06],
-                                [1.80000000e+01, 2.00000000e+06],
-                                [1.90000000e+01, 2.00000000e+06],
-                                [2.00000000e+01, 2.00000000e+06],
-                                [2.10000000e+01, 2.00000000e+06],
-                                [2.20000000e+01, 2.00000000e+06],
-                                [2.30000000e+01, 2.00000000e+06],
-                                [2.40000000e+01, 2.00000000e+06],
-                                [2.50000000e+01, 2.00000000e+06]]),
-           'c_t_curve': array([[4.00000000e+00, 8.18000000e-01],
-                               [5.00000000e+00, 8.06000000e-01],
-                               [6.00000000e+00, 8.04000000e-01],
-                               [7.00000000e+00, 8.05000000e-01],
-                               [8.00000000e+00, 8.06000000e-01],
-                               [9.00000000e+00, 8.07000000e-01],
-                               [1.00000000e+01, 7.93000000e-01],
-                               [1.10000000e+01, 7.39000000e-01],
-                               [1.20000000e+01, 7.09000000e-01],
-                               [1.30000000e+01, 4.09000000e-01],
-                               [1.40000000e+01, 3.14000000e-01],
-                               [1.50000000e+01, 2.49000000e-01],
-                               [1.60000000e+01, 2.02000000e-01],
-                               [1.70000000e+01, 1.67000000e-01],
-                               [1.80000000e+01, 1.40000000e-01],
-                               [1.90000000e+01, 1.19000000e-01],
-                               [2.00000000e+01, 1.02000000e-01],
-                               [2.10000000e+01, 8.80000000e-02],
-                               [2.20000000e+01, 7.70000000e-02],
-                               [2.30000000e+01, 6.70000000e-02],
-                               [2.40000000e+01, 6.00000000e-02],
-                               [2.50000000e+01, 5.30000000e-02]])}
-
-    wt_desc = GenericWindTurbinePowerCurveVT()
-    wt_desc.hub_height = V80['hub_height']
-    wt_desc.rotor_diameter = V80['rotor_diameter']
-    wt_desc.c_t_curve = V80['c_t_curve']
-    wt_desc.power_curve = V80['power_curve']
-
-    return wt_desc
 
 
 # UnitTest classes -----------------------------------------------------------------------
