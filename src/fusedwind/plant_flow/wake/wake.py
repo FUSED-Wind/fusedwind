@@ -10,11 +10,13 @@ from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator
 from openmdao.main.interfaces import ICaseIterator
 from openmdao.main.case import Case
 
-## FUSED-Wind imports
+# FUSED-Wind imports
 from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, \
     ExtendedWindTurbinePowerCurveVT, GenericWindFarmTurbineLayout, \
     GenericWindRoseVT
-from fusedwind.plant_flow.comp import GenericWindTurbine, GenericWSPosition, HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, GenericWakeModel
+from fusedwind.plant_flow.comp import GenericWindTurbine, GenericWSPosition,\
+    HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, \
+    GenericWakeModel
 from fusedwind.plant_flow.asym import GenericWindFarm
 from fusedwind.interface import base, implement_base, InterfaceSlot, \
     FUSEDAssembly, configure_base
@@ -34,7 +36,7 @@ RotZ = lambda a: array([[cos(a),  -sin(a),    0],
                         [sin(a),   cos(a),    0],
                         [0,         0,        1]])
 
-### Some helper functions --------------------------------------------------
+# Some helper functions --------------------------------------------------
 # TODO: Is this needed?
 # def call_func(self, **kwargs):
 #     """ Transform an openmdao Component or Assembly into a function
@@ -54,6 +56,7 @@ RotZ = lambda a: array([[cos(a),  -sin(a),    0],
 # Assembly.__call__ = call_func
 # Component.__call__ = call_funck
 
+
 def set_inputs(self, dic):
     """ Helping function to set the inputs of an assembly using a dictionary """
     for k, v in dic.iteritems():
@@ -61,6 +64,7 @@ def set_inputs(self, dic):
             setattr(self, k, v)
 
 Assembly.set_inputs = set_inputs
+
 
 def nnz(list):
     """ Emulate nnz function of Matlab """
@@ -73,13 +77,14 @@ def find(nparray):
 
 
 class WTStreamwiseSorting(Component):
+
     """
     Order the wind turbine in the streamwise direction. Return an index list of the sorted wind turbines.
     """
     # Inputs
     wind_direction = Float(0.0, iotype='in', unit='degree')
     wt_positions = Array([], iotype='in', unit='m',
-                         desc='The x,y position of the wind turbines in the wind farm array([n_wt,2])')
+        desc='The x,y position of the wind turbines in the wind farm array([n_wt,2])')
 
     # Outputs
     ordered_indices = List([], iotype='out',
@@ -103,6 +108,7 @@ class WTStreamwiseSorting(Component):
 
 @implement_base(GenericHubWindSpeed)
 class HubCenterWS(Component):
+
     """
     Provide the wind speed at the center of the hub. Only compatible with HubCenterWSPosition
     """
@@ -128,14 +134,14 @@ class GaussWSPosition(Component):
       [2] http://www.holoborodko.com/pavel/?page_id=679
       [3] http://en.wikipedia.org/wiki/Gaussian_quadrature
     """
-    #GenericWSPosition
+    # GenericWSPosition
     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
     ws_positions = Array([], iotype='out', units='m',
         desc='the position [n,3] of the ws_array')
     wt_xy = List([0.0, 0.0], iotype='in', units='m',
         desc='The x,y position of the wind turbine')
 
-    #GaussWSPosition
+    # GaussWSPosition
     wind_direction = Float(270.0, iotype='in', unit='deg',
         desc='The wind direction oriented form the North [deg]')
     N = Int(5, min=4, max=6, iotype='in',
@@ -199,18 +205,20 @@ class GaussWSPosition(Component):
         for j in range(N):
             for i in range(N):
                 # (Eq.45)
-                r = self.wt_desc.rotor_diameter/2.0 * (rt[i] + 1) / 2
+                r = self.wt_desc.rotor_diameter / 2.0 * (rt[i] + 1) / 2
                 t = pi * (te[j] + 1)
                 # Flow direction
                 x = 0.0
                 # Cross-flow direction
-                y = r * cos(t+0.5*pi)
+                y = r * cos(t + 0.5 * pi)
                 # Vertical direction
-                z = r * sin(t+0.5*pi)
+                z = r * sin(t + 0.5 * pi)
 
                 # Rotate in the Z direction to obtain the right positions
-                wt_centered = dot(RotZ((-self.wind_direction + 270.0) * pi / 180.0), array([x, y, z]))
-                self.ws_positions[inc,:] = wt_centered + array([self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height])
+                wt_centered = dot(
+                    RotZ((-self.wind_direction + 270.0) * pi / 180.0), array([x, y, z]))
+                self.ws_positions[
+                    inc, :] = wt_centered + array([self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height])
                 inc += 1
         self.te = te
         self.w = w
@@ -229,21 +237,21 @@ class GaussHubWS(Component):
       [3] http://en.wikipedia.org/wiki/Gaussian_quadrature
     """
 
-    #GenericHubWindSpeed
+    # GenericHubWindSpeed
     ws_array = Array([], iotype='in', units='m/s',
         desc='an array of wind speed on the rotor')
 
     hub_wind_speed = Float(0.0, iotype='out', units='m/s',
         desc='hub wind speed')
 
-    #GaussHubWS
+    # GaussHubWS
     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
     N = Int(5, min=4, max=6, iotype='in',
         desc='coefficient of gauss integration')
     # te = Array([], iotype='in',
-        # desc='The theta angles')
+    # desc='The theta angles')
     # w = Array([], iotype='in',
-        # desc='The radiuses')
+    # desc='The radiuses')
 
     def execute(self):
         R = self.wt_desc.rotor_diameter
@@ -309,14 +317,14 @@ class GaussHubWS(Component):
         self.hub_wind_speed = sum(sum(res))
 
 
-
 @implement_base(GenericFlowModel, GenericWakeModel)
 class GenericEngineeringWakeModel(GenericWakeModel):
+
     """
     A class that sets up the single wake frame.
     The specialized wake models have to specify the single_wake method.
     """
-    #GenericWakeModel
+    # GenericWakeModel
     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in',
         desc='the geometrical description of the current turbine')
     ws_positions = Array([], iotype='in',
@@ -367,27 +375,29 @@ class GenericEngineeringWakeModel(GenericWakeModel):
 
 @implement_base(GenericFlowModel)
 class GenericInflowGenerator(GenericFlowModel):
+
     """
     Framework for an inflow model
     """
-    #GenericFlowModel
+    # GenericFlowModel
     ws_positions = Array([], iotype='in',
         desc='the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)')
 
     ws_array = Array([], iotype='out',
         desc='an array of wind speed to find wind speed')
 
-    #GenericInflowGenerator
+    # GenericInflowGenerator
     wind_speed = Float(0.0, iotype='in',
         desc='the reference wind speed')
 
 
 @implement_base(GenericInflowGenerator)
 class HomogeneousInflowGenerator(GenericInflowGenerator):
+
     """
     Same wind speed at each positions
     """
-    #GenericInflowGenerator
+    # GenericInflowGenerator
     wind_speed = Float(0.0, iotype='in', units='m/s',
         desc='the reference wind speed')
     ws_positions = Array([], iotype='in',
@@ -400,12 +410,14 @@ class HomogeneousInflowGenerator(GenericInflowGenerator):
         # print "running HomogeneousInflowGenerator"
         self.ws_array = self.wind_speed * ones(self.ws_positions.shape[0])
 
+
 @implement_base(GenericInflowGenerator)
 class NeutralLogLawInflowGenerator(GenericInflowGenerator):
+
     """
     Create the inflow for a neutral log law input
     """
-    #GenericInflowGenerator
+    # GenericInflowGenerator
     wind_speed = Float(0.0, iotype='in', units='m/s',
         desc='the reference wind speed')
     ws_positions = Array([], iotype='in',
@@ -414,7 +426,7 @@ class NeutralLogLawInflowGenerator(GenericInflowGenerator):
     ws_array = Array([], iotype='out',
         desc='an array of wind speed to find wind speed')
 
-    #NeutralLogLawInflowGenerator
+    # NeutralLogLawInflowGenerator
     z_0 = Float(0.0, iotype='in',
         desc='the surface roughness')
     z_ref = Float(0.0, iotype='in',
@@ -436,6 +448,7 @@ class NeutralLogLawInflowGenerator(GenericInflowGenerator):
 
 
 class WakeReader(Component):
+
     """
     Read the recorder from the CaseIteratorDriver, and produce the list of wakes.
     It does the same as UpstreamWakeDriver.execute(). So it's redundant.
@@ -455,7 +468,9 @@ class WakeReader(Component):
             if norm(ws_array_inflow - ws_array) > 1E-5:
                 self.wakes.append(ws_array_inflow - ws_array)
 
+
 class UpstreamWakeDriver(CaseIteratorDriver):
+
     """
     Loop through the upstream turbines and calculate the wake on the curent turbines.
     The cases are being built in the WakeDriver.
@@ -469,7 +484,7 @@ class UpstreamWakeDriver(CaseIteratorDriver):
     def execute(self):
         super(UpstreamWakeDriver, self).execute()
 
-        ### Prepare the wakes for the wake summation
+        # Prepare the wakes for the wake summation
         self.wakes = []
         for c in self.evaluated:
             ws_array = c[self.wake_model + '.ws_array']
@@ -477,7 +492,9 @@ class UpstreamWakeDriver(CaseIteratorDriver):
             if norm(ws_array_inflow - ws_array) > 1E-5:
                 self.wakes.append(ws_array_inflow - ws_array)
 
+
 class WakeDriver(Driver):
+
     """
     Loop over all the wind turbine in the direction of wt_indices.
     """
@@ -536,7 +553,8 @@ class WakeDriver(Driver):
         Copy around all the wind turbine positions
         """
         for xyc in self.xy_connections:
-            self._set_inputs(xyc, [self.wt_positions[self.wti, 0], self.wt_positions[self.wti, 1]])
+            self._set_inputs(
+                xyc, [self.wt_positions[self.wti, 0], self.wt_positions[self.wti, 1]])
 
     def _set_index_connections(self):
         """
@@ -558,7 +576,8 @@ class WakeDriver(Driver):
                 if c1 in precase:
                     upcase.add_input(c2, precase[c1])
                 else:
-                    raise Exception(c1+" have to be added to the wake_driver.printvars")
+                    raise Exception(
+                        c1 + " have to be added to the wake_driver.printvars")
             upcases.append(upcase)
         self._set_inputs(self.upstream_driver, ListCaseIterator(upcases))
 
@@ -579,11 +598,12 @@ class WakeDriver(Driver):
         # Create the hierarchy
         hiera = targ.split('.')
         target = self.parent
-        for i in range(len(hiera)-1):
+        for i in range(len(hiera) - 1):
             if hiera[i] in dir(target):
                 target = getattr(target, hiera[i])
             else:
-                raise Exception(hiera[i] + " is not in " + target.__class__.__name__)
+                raise Exception(
+                    hiera[i] + " is not in " + target.__class__.__name__)
         if hiera[-1] in dir(target):
             setattr(target, hiera[-1], obj)
         else:
@@ -592,7 +612,7 @@ class WakeDriver(Driver):
     def execute(self):
         self._nb_iterations = 0
 
-        ### Stolen from the CaseIteratorDriver class ---
+        # Stolen from the CaseIteratorDriver class ---
         self.evaluated = None
         self.recorders.append(ListCaseRecorder())
         try:
@@ -602,6 +622,7 @@ class WakeDriver(Driver):
 
 
 class PostProcessWTCases(Component):
+
     """
     Postprocess the cases generated by WakeDriver.
     """
@@ -628,26 +649,32 @@ class PostProcessWTCases(Component):
         if norm(indices - arange(len(indices))) > 1E-5:
             raise Exception('Not all the cases have been computed')
 
-        self.wt_power = array([self.cases[i]['wt_model.power'] for i in sorter_indices])
-        self.wt_thrust = array([self.cases[i]['wt_model.thrust'] for i in sorter_indices])
-        self.wt_hub_wind_speed = array([self.cases[i]['wt_model.hub_wind_speed'] for i in sorter_indices])
+        self.wt_power = array(
+            [self.cases[i]['wt_model.power'] for i in sorter_indices])
+        self.wt_thrust = array(
+            [self.cases[i]['wt_model.thrust'] for i in sorter_indices])
+        self.wt_hub_wind_speed = array(
+            [self.cases[i]['wt_model.hub_wind_speed'] for i in sorter_indices])
 
         self.power = sum(self.wt_power)
         self.thrust = sum(self.wt_thrust)
 
+
 class WTID(Component):
+
     """
     Useless component used to keep track of which case was recorded.
     """
     i = Int(0, iotype='in')
+
     def execute(self):
         pass
         # print 'running WTID', self.name, self.i
 
 
-
 @implement_base(GenericWindFarm)
 class GenericWindFarmWake(GenericWindFarm):
+
     """
     TODO: write docstring
     """
@@ -695,7 +722,9 @@ class GenericWindFarmWake(GenericWindFarm):
         self.add('hub_wind_speed', GenericHubWindSpeed())
         self.add('wake_model', GenericWakeModel())
 
+
 class WindFarmWake(GenericWindFarmWake):
+
     """
     TODO: write docstring
     """
@@ -714,21 +743,28 @@ class WindFarmWake(GenericWindFarmWake):
         # self.upstream_wake_driver.sequential = False
 
         # Add and configure the drivers
-        self.driver.workflow.add(['wake_dist', 'wake_driver', 'postprocess_wt_cases'])
+        self.driver.workflow.add(
+            ['wake_dist', 'wake_driver', 'postprocess_wt_cases'])
         # self.wake_driver.workflow.add(['wt1', 'ws_positions', 'inflow_gen', 'upstream_wake_driver',
         #                                      'wake_reader', 'wake_sum', 'hub_wind_speed', 'wt_model'])
-        self.wake_driver.workflow.add(['wt1', 'ws_positions', 'inflow_gen', 'upstream_wake_driver', 'wake_sum', 'hub_wind_speed', 'wt_model'])
+        self.wake_driver.workflow.add(
+            ['wt1', 'ws_positions', 'inflow_gen', 'upstream_wake_driver', 'wake_sum', 'hub_wind_speed', 'wt_model'])
         self.upstream_wake_driver.workflow.add(['wt2', 'wake_model'])
 
         # Wire the components
         self.connect('wake_dist.ordered_indices', 'wake_driver.wt_indices')
-        self.connect('ws_positions.ws_positions', ['inflow_gen.ws_positions', 'wake_model.ws_positions'])
-        self.connect('inflow_gen.ws_array', ['wake_sum.ws_array_inflow', 'wake_model.ws_array_inflow'])
+        self.connect('ws_positions.ws_positions', [
+                     'inflow_gen.ws_positions', 'wake_model.ws_positions'])
+        self.connect('inflow_gen.ws_array', [
+                     'wake_sum.ws_array_inflow', 'wake_model.ws_array_inflow'])
         self.connect('wake_sum.ws_array', ['hub_wind_speed.ws_array'])
-        self.connect('hub_wind_speed.hub_wind_speed', 'wt_model.hub_wind_speed')
+        self.connect(
+            'hub_wind_speed.hub_wind_speed', 'wt_model.hub_wind_speed')
         self.wake_driver.recorded_connections = [('wt_model.c_t', 'wake_model.c_t'),
-                                                 ('ws_positions.wt_desc', 'wake_model.wt_desc'),
-                                                 ('ws_positions.wt_xy', 'wake_model.wt_xy'),
+                                                 ('ws_positions.wt_desc',
+                                                  'wake_model.wt_desc'),
+                                                 ('ws_positions.wt_xy',
+                                                  'wake_model.wt_xy'),
                                                  ('wt1.i', 'wt2.i')]
 
         self.connect('wake_driver.evaluated', 'postprocess_wt_cases.cases')
@@ -737,12 +773,14 @@ class WindFarmWake(GenericWindFarmWake):
         self.connect('upstream_wake_driver.wakes', 'wake_sum.wakes')
 
         # Prepare the wake case drivers
-        self.wake_driver.wt_connections = ['ws_positions.wt_desc', 'wt_model.wt_desc']
+        self.wake_driver.wt_connections = [
+            'ws_positions.wt_desc', 'wt_model.wt_desc']
         self.wake_driver.xy_connections = ['ws_positions.wt_xy']
         self.wake_driver.index_connections = ['wt1.i']
 
         # Indicates the outputs to record in the ListCaseRecorder. Some will be used to feed in the upstream_wake_driver
-        # and some will be used to calculate the AEP after everything is finished.
+        # and some will be used to calculate the AEP after everything is
+        # finished.
         self.wake_driver.printvars = ['wake_dist.wind_direction',
                                       'inflow_gen.wind_speed',
                                       'wt_model.power',
@@ -753,8 +791,8 @@ class WindFarmWake(GenericWindFarmWake):
                                       'ws_positions.wt_xy',
                                       'ws_positions.wt_desc',
                                       'wake_driver.wti']
-        self.upstream_wake_driver.printvars = ['wt2.i', 'wake_model.ws_array', 'wake_model.ws_array_inflow', 'wake_model.ws_positions']
-
+        self.upstream_wake_driver.printvars = [
+            'wt2.i', 'wake_model.ws_array', 'wake_model.ws_array_inflow', 'wake_model.ws_positions']
 
         # def configure_single_inflow(self):
         #     """
@@ -762,8 +800,10 @@ class WindFarmWake(GenericWindFarmWake):
         #     """
         self.connect('wt_layout.wt_list', ['wake_driver.wt_list'])
         self.connect('wind_speed', 'inflow_gen.wind_speed')
-        self.connect('wind_direction', ['wake_dist.wind_direction', 'wake_model.wind_direction'])
-        self.connect('wt_layout.wt_positions', ['wake_dist.wt_positions', 'wake_driver.wt_positions'])
+        self.connect(
+            'wind_direction', ['wake_dist.wind_direction', 'wake_model.wind_direction'])
+        self.connect('wt_layout.wt_positions', [
+                     'wake_dist.wt_positions', 'wake_driver.wt_positions'])
         self.connect('postprocess_wt_cases.wt_power', 'wt_power')
         self.connect('postprocess_wt_cases.wt_thrust', 'wt_thrust')
         self.connect('postprocess_wt_cases.power', 'power')
@@ -774,7 +814,7 @@ class WindFarmWake(GenericWindFarmWake):
         There is only one type of wind turbine, so no need to copy arround the wt_desc. Just connect it.
         Should be called after self.configure and self.configure_single_inflow.
         """
-        ### Removing the existing connections
+        # Removing the existing connections
         self.wake_driver.wt_connections = []
         for i, con in enumerate(self.wake_driver.recorded_connections):
             if 'wt_desc' in con[0]:
@@ -784,41 +824,50 @@ class WindFarmWake(GenericWindFarmWake):
             if 'wt_desc' in var:
                 self.wake_driver.printvars.remove(var)
 
-        ### Adding the new connections
-        self.connect('wt_layout.wt_list[0]', ['ws_positions.wt_desc', 'wt_model.wt_desc', 'wake_model.wt_desc'])
-
-
+        # Adding the new connections
+        self.connect('wt_layout.wt_list[0]', [
+                     'ws_positions.wt_desc', 'wt_model.wt_desc', 'wake_model.wt_desc'])
 
 
 class FasterWindFarmWake(Component):
+
     """
     This component does the same thing as WindFarmWake, but without using the
     assembly driver and connection in order to speeds things up.
     """
     # Inputs:
-    wind_speed = Float(iotype='in', desc='Inflow wind speed at hub height')
-    wind_direction = Float(iotype='in', desc='Inflow wind direction at hub height', my_metadata='hello')
-    wt_positions = Array(iotype='in', desc='')
+    wind_speed = Float(iotype='in',
+        desc='Inflow wind speed at hub height')
+    wind_direction = Float(iotype='in',
+        desc='Inflow wind direction at hub height', my_metadata='hello')
+    wt_positions = Array(iotype='in')
 
     #wt_layout = VarTree(GenericWindFarmTurbineLayout(), iotype='in', desc='wind turbine properties and layout')
 
     # Outputs:
     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
-    power = Float(iotype='out', desc='Total wind farm power production', unit='W')
-    thrust = Float(iotype='out', desc='Total wind farm thrust', unit='N')
-    wt_power = Array([], iotype='out', desc='The power production of each wind turbine')
-    wt_thrust = Array([], iotype='out', desc='The thrust of each wind turbine')
-    wt_c_t = Array([], iotype='out', desc='The thrust coefficient of each wind turbine')
+    power = Float(iotype='out',
+        desc='Total wind farm power production', unit='W')
+    thrust = Float(iotype='out',
+        desc='Total wind farm thrust', unit='N')
+    wt_power = Array([], iotype='out',
+        desc='The power production of each wind turbine')
+    wt_thrust = Array([], iotype='out',
+        desc='The thrust of each wind turbine')
+    wt_c_t = Array([], iotype='out',
+        desc='The thrust coefficient of each wind turbine')
 
     # Slots:
-    ws_positions = InterfaceSlot(GenericWSPosition, desc='The wind speed positions calculator for the wind farm wake workflow')
+    ws_positions = InterfaceSlot(GenericWSPosition,
+        desc='The wind speed positions calculator for the wind farm wake workflow')
     wake_dist = InterfaceSlot(WTStreamwiseSorting)
     wake_model = InterfaceSlot(GenericWakeModel)
     wt_model = InterfaceSlot(GenericWindTurbine)
     wake_sum = InterfaceSlot(GenericWakeSum)
     wake_driver = InterfaceSlot(WakeDriver)
     upstream_wake_driver = InterfaceSlot(CaseIteratorDriver)
-    hub_wind_speed = InterfaceSlot(GenericHubWindSpeed, desc='The hub wind speed calculator for the wind farm wake workflow')
+    hub_wind_speed = InterfaceSlot(GenericHubWindSpeed,
+        desc='The hub wind speed calculator for the wind farm wake workflow')
     inflow_gen = InterfaceSlot(GenericInflowGenerator)
     # wake_reader = Slot(WakeReader)
 
@@ -855,14 +904,13 @@ class FasterWindFarmWake(Component):
         self.power = sum(self.wt_power)
         self.thrust = sum(self.wt_thrust)
 
-
     def _run_wake_dist(self):
         self.wake_dist.wind_direction = self.wind_direction
         self.wake_dist.wt_positions = self.wt_positions
         self.wake_dist.run()
 
     def _run_ws_positions(self, i_wt):
-        self.ws_positions.wt_xy = self.wt_positions[i_wt,:].tolist()
+        self.ws_positions.wt_xy = self.wt_positions[i_wt, :].tolist()
         self.ws_positions.wt_desc = self.wt_desc
         self.ws_positions.run()
 
@@ -876,7 +924,8 @@ class FasterWindFarmWake(Component):
         for j, j_wt in enumerate(self.wake_dist.ordered_indices[:i]):
             self._run_wake_model(i_wt, j_wt)
             if norm(self.wake_model.ws_array_inflow - self.wake_model.ws_array) > 1E-5:
-               self._upstream_wakes.append(self.wake_model.ws_array_inflow - self.wake_model.ws_array)
+                self._upstream_wakes.append(
+                    self.wake_model.ws_array_inflow - self.wake_model.ws_array)
 
     def _run_wake_model(self, i_wt, j_wt):
         self.wake_model.wind_direction = self.wind_direction
@@ -884,7 +933,7 @@ class FasterWindFarmWake(Component):
         self.wake_model.ws_array_inflow = self.inflow_gen.ws_array
         self.wake_model.ws_positions = self.ws_positions.ws_positions
         self.wake_model.c_t = self.wt_c_t[j_wt]
-        self.wake_model.wt_xy = self.wt_positions[j_wt,:].tolist()
+        self.wake_model.wt_xy = self.wt_positions[j_wt, :].tolist()
         self.wake_model.run()
 
     def _run_wake_sum(self, i_wt):
@@ -904,15 +953,14 @@ class FasterWindFarmWake(Component):
         self.wt_power[i_wt] = self.wt_model.power
 
 
-
-# # Moved up to plant_flow
+# Moved up to plant_flow
 #
 # class PostProcessWindRose(Component):
 #     cases = Instance(ICaseIterator, iotype='in')
 #     aep = Float(0.0, iotype='out',
-#         desc='Annual Energy Production', unit='kWh')
+#                desc='Annual Energy Production', unit='kWh')
 #     energies = Array([], iotype='out',
-#         desc='The energy production per sector', unit='kWh')
+#                desc='The energy production per sector', unit='kWh')
 #
 #     power_str = Str('wf.power', iotype='in')
 #     frequencies_str = Str('P', iotype='in')
@@ -925,39 +973,39 @@ class FasterWindFarmWake(Component):
 #
 # class GenericAEP(Assembly):
 #     """ Generic assembly to compute the Annual Energy Production of a wind farm """
-#     # Inputs
-#     wind_speeds = Array([], iotype='in',
-#         desc='The different wind speeds to run [nWS]', unit='m/s')
+# Inputs
+#     wind_speeds = Array([], iotype='in',#
+#                desc='The different wind speeds to run [nWS]', unit='m/s')
 #     wind_directions = Array([], iotype='in',
-#         desc='The different wind directions to run [nWD]', unit='deg')
+#                desc='The different wind directions to run [nWD]', unit='deg')
 #     wind_rose = Array([], iotype='in',
-#         desc='Probability distribution of wind speed, wind direction [nWS, nWD]')
+#                desc='Probability distribution of wind speed, wind direction [nWS, nWD]')
 #
-#     # In case there is a list of wind turbines
+# In case there is a list of wind turbines
 #     wt_list = List([], iotype='in',
-#         desc='A list of wind turbine types')
+#                desc='A list of wind turbine types')
 #     wt_positions = Array([], iotype='in', unit='m',
-#         desc='The x,y position of the wind turbines in the wind farm array([n_wt,2])')
+#                desc='The x,y position of the wind turbines in the wind farm array([n_wt,2])')
 #
-#     # Outputs
+# Outputs
 #     aep = Float(0.0, iotype='out',
-#         desc='Annual Energy Production', unit='kWh')
+#                desc='Annual Energy Production', unit='kWh')
 #     energies = Array([], iotype='out',
-#         desc='The energy production per sector', unit='kWh')
+#                desc='The energy production per sector', unit='kWh')
 #
-#     # In case there is a list of wind turbines
+# In case there is a list of wind turbines
 #     wt_aep = Array([], iotype='out',
-#         desc='Annual Energy Production per each turbine', unit='kWh')
+#                desc='Annual Energy Production per each turbine', unit='kWh')
 #     wt_energies = Array([], iotype='out',
-#         desc='The energy production per sector per turbine', unit='kWh')
+#                desc='The energy production per sector per turbine', unit='kWh')
 #
 #
 #
 # class AEP(GenericAEP):
 #     wf = Slot(GenericWindFarm,
-#         desc='A wind farm assembly or component')
+#                desc='A wind farm assembly or component')
 #     P = Float(0.0, iotype='in',
-#         desc='Place holder for the probability')
+#                desc='Place holder for the probability')
 #
 #     def configure(self):
 #         super(AEP, self).configure()
@@ -985,8 +1033,6 @@ class FasterWindFarmWake(Component):
 #     def _pre_execute(self, force=True):
 #         self.wind_rose_driver.iterator = ListCaseIterator(self.generate_cases())
 #         super(AEP, self)._pre_execute()
-
-
 
 
 def wake_length_dist(WD, uWTx, uWTy, cWTx, cWTy):
@@ -1027,9 +1073,6 @@ def c2c_dist(WD, uWTx, uWTy, cWTx, cWTy):
     """
     return cos(WD * pi / 180.0) * (uWTx - cWTx) \
         - sin(WD * pi / 180.0) * (uWTy - cWTy)
-
-
-
 
 
 if __name__ == '__main__':
