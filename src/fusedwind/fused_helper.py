@@ -481,9 +481,9 @@ def fused_autodoc(cls):
         cls.__doc__+=x+el
     addl()
     addl()
+    if issubclass(cls, Component) and len(inputs) > 0:
     addl('Parameters')
     addl('----------')
-    if issubclass(cls, Component):
         addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
                           ', default=' + cls.__class_traits__[i].default.__str__() +
                           ', [%s]'%(cls.__class_traits__[i].units) +
@@ -497,9 +497,8 @@ def fused_autodoc(cls):
                           el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
                           for i in variables]))
 
-    addl('')
-
-    if issubclass(cls, Component):
+    if issubclass(cls, Component) and len(outputs) > 0:
+        addl('')
         addl('Returns')
         addl('-------')
         addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
@@ -514,7 +513,6 @@ def fused_autodoc(cls):
         addl('-------')
         addl('``%s``'%(clsname) + ' implements the following interfaces: ' + ', '.join(['``%s``'%(c.__name__) for c in cls._fused_base]))
         addl()
-
 
     return cls
 
