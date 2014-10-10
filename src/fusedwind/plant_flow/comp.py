@@ -197,7 +197,7 @@ class GenericWakeSum(Component):
     ws_array = Array(iotype='out', units='m/s',
         desc='the rotor wind speed [n]')
 
-
+@base
 class GenericHubWindSpeed(Component):
 
     """
