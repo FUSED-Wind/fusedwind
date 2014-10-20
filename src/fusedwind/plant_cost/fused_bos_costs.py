@@ -13,18 +13,21 @@ from fusedwind.interface import base, implement_base
 # Base Variable Trees, Components and Assemblies
 @base
 class BaseBOSCostAggregator(Component):
+    """ Base balance of station cost aggregator for doing some auxiliary cost calculations needed to get a full wind plant balance of station cost estimate.    """
 
     # Outputs
     bos_costs = Float(iotype='out', desc='Overall wind plant balance of station/system costs up to point of comissioning')
 
 @base
 class BaseBOSCostModel(Assembly):
+    """ Base balance of station cost assembly for coupling models to get a full wind plant balance of station cost estimate.    """
 
     # Outputs
     bos_costs = Float(iotype='out', desc='Overall wind plant balance of station/system costs up to point of comissioning')
     
 def configure_base_bos(assembly):
-        
+    """ Base configure method for a balance of station cost assembly for coupling models to get a full wind plant balance of station cost estimate.  It adds a default balance of station cost aggregator component.    """
+      
     assembly.add('bos', BaseBOSCostAggregator())
     
     assembly.driver.workflow.add('bos')
@@ -34,6 +37,7 @@ def configure_base_bos(assembly):
 #Extended Variable Trees, Components and Assemblies
 @base
 class BOSVarTree(VariableTree):
+    """ Base balance of station cost variable tree based on the DOE/NREL system cost breakdown structure.    """
 
     development_costs = Float(desc='Overall wind plant balance of station/system costs up to point of comissioning')
     preparation_and_staging_costs = Float(desc='Site preparation and staging')
@@ -46,9 +50,7 @@ class BOSVarTree(VariableTree):
 
 @implement_base(BaseBOSCostAggregator)
 class ExtendedBOSCostAggregator(Component):
-    """
-    Framework for a balance of station cost model
-    """
+    """ Extended balance of station cost aggregator for doing some auxiliary cost calculations needed to get a full wind plant balance of station cost estimate as well as a detailed cost breakdown.    """
 
     # Outputs
     bos_breakdown = VarTree(BOSVarTree(), iotype='out', desc='BOS cost breakdown')
@@ -56,12 +58,14 @@ class ExtendedBOSCostAggregator(Component):
 
 @implement_base(BaseBOSCostModel)
 class ExtendedBOSCostModel(Assembly):
+    """ Extended balance of station cost assembly for coupling models to get a full wind plant balance of station cost estimate as well as a detailed cost breakdown.    """
 
     # Outputs
     bos_breakdown = VarTree(BOSVarTree(), iotype='out', desc='BOS cost breakdown')
     bos_costs = Float(iotype='out', desc='Overall wind plant balance of station/system costs up to point of comissioning')
 
 def configure_extended_bos(assembly):
+    """ Extended configure method for a balance of station cost assembly for coupling models to get a full wind plant balance of station cost estimate.  It replaces the base balance of station cost aggregator component with an extended version which contains the full balance of station variable tree.    """
 
     configure_base_bos(assembly)
     
@@ -72,6 +76,7 @@ def configure_extended_bos(assembly):
 # Full Variable Trees, Components and Assemblies
 @base
 class FullBOSVarTree(VariableTree):
+    """ Full balance of station cost variable tree based on the DOE/NREL system cost breakdown structure.    """
 
     management_costs = Float(desc='Project management costs')
     development_costs = Float(desc='Overall wind plant balance of station/system costs up to point of comissioning')
@@ -89,12 +94,21 @@ class FullBOSVarTree(VariableTree):
 
 @implement_base(BaseBOSCostAggregator)
 class FullBOSCostAggregator(Component):
+    """ Full balance of station cost aggregator for doing some auxiliary cost calculations needed to get a full wind plant balance of station cost estimate as well as a detailed cost breakdown.    """
 
     # outputs
     bos_breakdown = VarTree(FullBOSVarTree(), iotype='out', desc='BOS cost breakdown')
     bos_costs = Float(iotype='out', desc='Output BOS cost elements')
 
+@implement_base(BaseBOSCostModel)
+class FullBOSCostModel(Assembly):
+	  
+    # outputs
+    bos_breakdown = VarTree(FullBOSVarTree(), iotype='out', desc='BOS cost breakdown')
+    bos_costs = Float(iotype='out', desc='Output BOS cost elements')	  
+
 def configure_full_bos(assembly):
+    """ Full configure method for a balance of station cost assembly for coupling models to get a full wind plant balance of station cost estimate.  It replaces the extended or base balance of station cost aggregator component with an full version which contains the full balance of station variable tree.    """
 
     configure_base_bos(assembly)
     
@@ -115,7 +129,7 @@ class BaseCAPEXAggregator(Component):
     turbine_number = Int(iotype = 'in', desc = 'number of turbines at plant')
 
     # Outputs
-    capex = Float(0.0, iotype='out', desc='Overall wind plant capital expenditures including turbine and balance of station costs') 
+    capex = Float(iotype='out', desc='Overall wind plant capital expenditures including turbine and balance of station costs') 
 
 def configure_capex(assembly):
 

@@ -15,50 +15,65 @@ from fusedwind.interface import base, implement_base
 # Basic Turbine Cost Model Building Blocks
 @base
 class BaseComponentCostModel(Component):
+    """ Base component cost model class for an arbitrary wind turbine component.    """
 
     # Outputs
-    cost = Float(0.0, iotype='out', desc='Overall wind turbine component capial costs excluding transportation costs')
+    cost = Float(iotype='out', desc='Base turbine component cost')
 
 @base
 class BaseSubAssemblyCostModel(Assembly):
+    """ Base sub assembly cost model class for an arbitrary wind turbine component.    """
 
     # Outputs
-    cost = Float(0.0, iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
+    cost = Float(iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
+
+    def configure(self):
+        
+        configure_base_subassembly_cost(self)
 
 @base
 class BaseSubAssemblyCostAggregator(Component):
+    """ Base sub assembly cost aggregator for doing some auxiliary cost calculations needed to get a wind turbine component cost.    """
 
     # Outputs
-    cost = Float(0.0, iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
+    cost = Float(iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
+
+def configure_base_subassembly_cost(assembly):
+    """ Configure method for base sub assembly for cost models."""
+
+    assembly.add('bcc',BaseSubAssemblyCostAggregator())
+    
+    assembly.connect('bcc.cost','cost')
 
 @base
 class BaseTCCAggregator(Component):
+    """ Base turbine capital cost aggregator for doing some auxiliary cost calculations needed to get a full wind turbine cost.    """
 
     # Outputs
-    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
+    turbine_cost = Float(iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
 # Basic Turbine _cost Model
 @base
 class BaseTurbineCostModel(Assembly):
-    """
-    Framework for a turbine capital cost model
-    """
+    """ Base turbine capital cost assembly for coupling models to get a full wind turbine cost.    """
 
     # Outputs
-    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
+    turbine_cost = Float(iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
 def configure_base_tcc(assembly):
-   
-   assembly.add('tcc', BaseTCCAggregator())
-   
-   assembly.driver.workflow.add(['tcc'])
+    """ Base configure method for a turbine capital cost assembly for coupling models to get a full wind turbine cost.  It adds a default turbine capital cost aggregator component.    """
 
-   assembly.connect('tcc.turbine_cost','turbine_cost')
+    assembly.add('tcc', BaseTCCAggregator())
+
+    assembly.driver.workflow.add(['tcc'])
+
+    assembly.connect('tcc.turbine_cost','turbine_cost')
 
 # ------------------------------------------------------------
 # Extended Turbine Capital Costs
 @implement_base(BaseTCCAggregator)
 class ExtendedTCCAggregator(Component):
+    """ Extended turbine capital cost aggregator for doing some auxiliary cost calculations needed to get a full wind turbine cost.  It assume sub-models for rotor, nacelle and tower cost.    """
 
     # Variables
     rotor_cost = Float(iotype='in', units='USD', desc='rotor cost')
@@ -66,16 +81,18 @@ class ExtendedTCCAggregator(Component):
     tower_cost = Float(iotype='in', units='USD', desc='tower cost')
 
     # Outputs
-    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
+    turbine_cost = Float(iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
 # Extended Turbine Capital _cost Model Includes sub-assembly cost aggregation
 @implement_base(BaseTurbineCostModel)
 class ExtendedTurbineCostModel(Assembly):
+    """ Extended turbine capital cost assembly for coupling models to get a full wind turbine cost.    """
 
     # Outputs
-    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
+    turbine_cost = Float(iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
 def configure_extended_tcc(assembly):
+    """ Extended configure method for a turbine capital cost assembly for coupling models to get a full wind turbine cost.  It adds a default turbine capital cost aggregator component as well as default cost models for the rotor, nacelle and tower.    """
 
     configure_base_tcc(assembly)
 
@@ -96,6 +113,7 @@ def configure_extended_tcc(assembly):
 # Full Sub-Assembly _cost Models
 @implement_base(BaseSubAssemblyCostAggregator)
 class FullRotorCostAggregator(Component):
+    """ Full rotor cost aggregator for aggregating rotor costs from blades and hub system.    """
 
     # variables
     blade_cost = Float(iotype='in', units='USD', desc='individual blade cost')
@@ -109,6 +127,7 @@ class FullRotorCostAggregator(Component):
 
 @implement_base(BaseSubAssemblyCostAggregator)
 class FullHubSystemCostAggregator(Component):
+    """ Full hub system cost aggregator for aggregating hub component costs.    """
 
     # variables
     hub_cost = Float(iotype='in', units='USD', desc='hub component cost')
@@ -119,16 +138,18 @@ class FullHubSystemCostAggregator(Component):
     cost = Float(iotype='out', units='USD', desc='overall hub system cost')    
 
 @implement_base(BaseSubAssemblyCostModel)
-class FullRotorCostModel(BaseSubAssemblyCostModel):
+class FullRotorCostModel(Assembly):
+    """ Full rotor cost sub-assembly for aggregating rotor component costs.    """
 
     # parameters
     blade_number = Int(iotype='in', desc='number of rotor blades')
 
     # Outputs
-    cost = Float(0.0, iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
+    cost = Float(iotype='out', desc='Overall wind sub-assembly capial costs including transportation costs')
 
 def configure_full_rcc(assembly):
-    
+    """ Configure method for a detailed rotor cost model including cost models for each major rotor system component.    """
+
     assembly.add('bladeCC', BaseComponentCostModel())
     assembly.add('hubCC', BaseComponentCostModel())
     assembly.add('pitchSysCC', BaseComponentCostModel())
@@ -148,6 +169,7 @@ def configure_full_rcc(assembly):
 
 @implement_base(BaseSubAssemblyCostAggregator)
 class FullNacelleCostAggregator(Component):
+    """ Full nacelle cost aggregator to aggregate costs of individual nacelle components.    """
 
     # variables
     lss_cost = Float(iotype='in', units='USD', desc='component cost')
@@ -163,12 +185,14 @@ class FullNacelleCostAggregator(Component):
 
 @implement_base(BaseSubAssemblyCostModel)
 class FullNacelleCostModel(Assembly):
+    """ Full nacelle cost sub-assembly for bringing together individual nacelle component cost models.    """
 
     # returns
     cost = Float(iotype='out', units='USD', desc='component cost')
 
 def configure_full_ncc(assembly):
-    
+    """ Configure method for a detailed nacelle cost model including cost models for each major nacelle system component.    """
+
     assembly.add('lssCC', BaseComponentCostModel())
     assembly.add('bearingsCC', BaseComponentCostModel())
     assembly.add('gearboxCC', BaseComponentCostModel())
@@ -191,6 +215,7 @@ def configure_full_ncc(assembly):
 
 @implement_base(BaseSubAssemblyCostAggregator)
 class FullTowerCostAggregator(Component):
+    """ Full tower cost aggregator to aggregate costs of individual tower components.    """
 
     # variables
     tower_cost = Float(iotype='in', units='USD', desc='component cost')
@@ -200,12 +225,14 @@ class FullTowerCostAggregator(Component):
 
 @implement_base(BaseSubAssemblyCostModel)
 class FullTowerCostModel(Assembly):
+    """ Full tower cost sub-assembly for bringing together individual tower component cost models.    """
 
     # returns
     cost = Float(iotype='out', units='USD', desc='component cost')    
 
 def configure_full_twcc(assembly):
-    
+    """ Configure method for a detailed tower cost model including cost models for each major tower system component.    """
+
     assembly.add('towerCC', BaseComponentCostModel())
     assembly.add('twrcc', FullTowerCostAggregator())
 
@@ -217,6 +244,7 @@ def configure_full_twcc(assembly):
 # Full Turbine Cost Model
 @implement_base(BaseTCCAggregator)
 class FullTCCAggregator(Component):
+    """ Full turbine capital cost aggregator for doing some auxiliary cost calculations needed to get a full wind turbine cost.  It assume sub-models for rotor, nacelle and tower cost.    """
 
     # Variables
     rotor_cost = Float(iotype='in', units='USD', desc='rotor cost')
@@ -224,23 +252,21 @@ class FullTCCAggregator(Component):
     tower_cost = Float(iotype='in', units='USD', desc='tower cost')
 
     # Outputs
-    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
+    turbine_cost = Float(iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
 @implement_base(ExtendedTurbineCostModel)
 class FullTurbineCostModel(Assembly):
+    """ Full turbine capital cost assembly for coupling models to get a full wind turbine cost.    """
 
     # Outputs
-    turbine_cost = Float(0.0, iotype='out', desc='Overall wind turbine capial costs including transportation costs')
+    turbine_cost = Float(iotype='out', desc='Overall wind turbine capial costs including transportation costs')
 
 def configure_full_tcc(assembly):
+    """ full configure method for a turbine capital cost assembly for coupling models to get a full wind turbine cost.  It replaces cost models for the rotor, nacelle and tower with full sub-assembly cost models.    """
 
     configure_extended_tcc(assembly)
     
     assembly.replace('rotorCC', FullRotorCostModel())
     assembly.replace('nacelleCC', FullNacelleCostModel())
     assembly.replace('towerCC', FullTowerCostModel())
-
-
-if __name__=="__main__":
-
-    pass
+    assembly.replace('tcc', FullTCCAggregator())
