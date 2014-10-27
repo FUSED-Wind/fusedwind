@@ -1,7 +1,7 @@
 .. _theory:
 
 Theory
-------
+=======
 
 .. note::
 
