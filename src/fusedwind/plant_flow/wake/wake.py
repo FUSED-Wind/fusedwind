@@ -75,7 +75,7 @@ def find(nparray):
     """ Emulate find function of Matlab """
     return nonzero(nparray)[0]
 
-
+@base
 class WTStreamwiseSorting(Component):
 
     """
@@ -840,9 +840,9 @@ class FasterWindFarmWake(Component):
         desc='Inflow wind speed at hub height')
     wind_direction = Float(iotype='in',
         desc='Inflow wind direction at hub height', my_metadata='hello')
-    wt_positions = Array(iotype='in')
+    #wt_positions = Array(iotype='in')
 
-    #wt_layout = VarTree(GenericWindFarmTurbineLayout(), iotype='in', desc='wind turbine properties and layout')
+    wt_layout = VarTree(GenericWindFarmTurbineLayout(), iotype='in', desc='wind turbine properties and layout')
 
     # Outputs:
     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
@@ -888,7 +888,7 @@ class FasterWindFarmWake(Component):
         """Here we don't use any Driver, or connection, everything is done manually,
         to avoid the OpenMDAO overhead
         """
-        n_wt = self.wt_positions.shape[0]
+        n_wt = self.wt_layout.wt_positions.shape[0]
         self.wt_c_t = zeros([n_wt])
         self.wt_power = zeros([n_wt])
 
@@ -906,11 +906,11 @@ class FasterWindFarmWake(Component):
 
     def _run_wake_dist(self):
         self.wake_dist.wind_direction = self.wind_direction
-        self.wake_dist.wt_positions = self.wt_positions
+        self.wake_dist.wt_positions = self.wt_layout.wt_positions
         self.wake_dist.run()
 
     def _run_ws_positions(self, i_wt):
-        self.ws_positions.wt_xy = self.wt_positions[i_wt, :].tolist()
+        self.ws_positions.wt_xy = self.wt_layout.wt_positions[i_wt, :].tolist()
         self.ws_positions.wt_desc = self.wt_desc
         self.ws_positions.run()
 
@@ -933,7 +933,7 @@ class FasterWindFarmWake(Component):
         self.wake_model.ws_array_inflow = self.inflow_gen.ws_array
         self.wake_model.ws_positions = self.ws_positions.ws_positions
         self.wake_model.c_t = self.wt_c_t[j_wt]
-        self.wake_model.wt_xy = self.wt_positions[j_wt, :].tolist()
+        self.wake_model.wt_xy = self.wt_layout.wt_positions[j_wt, :].tolist()
         self.wake_model.run()
 
     def _run_wake_sum(self, i_wt):

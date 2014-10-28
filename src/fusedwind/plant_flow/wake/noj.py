@@ -3,7 +3,8 @@
 ## FUSED-Wake imports
 from wake import WindFarmWake, \
     HomogeneousInflowGenerator, \
-    HubCenterWSPosition, HubCenterWS, GenericEngineeringWakeModel
+    HubCenterWSPosition, HubCenterWS, GenericEngineeringWakeModel, \
+    FasterWindFarmWake
 
 from accumulation import QuadraticWakeSum
 
@@ -133,3 +134,14 @@ class MozaicTileWindFarmWake(NOJWindFarmWake):
     def configure_single_turbine_type(self):
         super(MozaicTileWindFarmWake, self).configure_single_turbine_type()
         self.connect('wt_layout.wt_list[0]', 'wake_model.down_wt_desc')
+
+
+class FasterNOJWindFarmWake(FasterWindFarmWake):
+    def _configure(self):
+        super(FasterNOJWindFarmWake, self)._configure()
+        self.ws_positions = HubCenterWSPosition()
+        self.wake_sum = QuadraticWakeSum()
+        self.hub_wind_speed = HubCenterWS()
+        self.wt_model = WindTurbinePowerCurve()
+        self.wake_model = NOJWakeModel()
+        self.inflow_gen = HomogeneousInflowGenerator()
