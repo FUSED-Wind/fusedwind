@@ -134,7 +134,7 @@ class testHornsRev(unittest.TestCase):
         wfm.wt_layout.wt_positions = np.loadtxt(self.file_Positions)
         # wfm.wake_driver.recorders.append(CSVCaseRecorder(filename='debug.csv'))
 
-        wfm.upstream_wake_driver.sequential = True
+        #wfm.upstream_wake_driver.sequential = True
 
 
         wfm.run()

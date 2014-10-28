@@ -219,5 +219,6 @@ class testWTModel(unittest.TestCase):
             self.assertAlmostEqual(wt_model.power, wt_desc.power_curve[i, 1])
 
 
+
 if __name__ == "__main__":
     unittest.main()
