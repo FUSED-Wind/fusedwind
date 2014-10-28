@@ -11,20 +11,21 @@ from fusedwind.interface import base, implement_base
 # OPEX Model Variable Trees, Components and Assemblies
 @base
 class BaseOPEXAggregator(Component):
+    """ Base operational expenditures aggregator for doing some auxiliary cost calculations needed to get a full wind plant operational expenditures estimate.    """
 
     # Outputs
     avg_annual_opex = Float(iotype='out', desc='Average annual Operating Expenditures for a wind plant over its lifetime')
 
 @base
 class BaseOPEXModel(Assembly):
-    """
-    Framework for a balance of station cost model
-    """
+    """ Base operational expenditures assembly for coupling models to get a full wind plant operational expenditures estimate.    """
+
     # Outputs
     avg_annual_opex = Float(iotype='out', desc='Average annual Operating Expenditures for a wind plant over its lifetime')
     
 def configure_base_opex(assembly):
-    
+    """ Base configure method for a operational expenditures assembly for coupling models to get a full wind plant operational expenditures estimate.  It adds a default operational expenditures aggregator component.    """
+
     assembly.add('opex', BaseOPEXAggregator())
     
     assembly.driver.workflow.add('opex')
@@ -34,6 +35,7 @@ def configure_base_opex(assembly):
 # Extended Variable Trees, Components and Assemblies
 @base
 class OPEXVarTree(VariableTree):
+    """ Base operational expenditures variable tree based on the DOE/NREL system cost breakdown structure.    """
 
     preventative_opex = Float(desc='annual expenditures on preventative maintenance - BOP and turbines')
     corrective_opex = Float(desc='annual unscheduled maintenance costs (replacements) - BOP and turbines')
@@ -42,6 +44,7 @@ class OPEXVarTree(VariableTree):
 
 @implement_base(BaseOPEXAggregator)
 class ExtendedOPEXAggregator(Component):
+    """ Extended operational expenditures aggregator for doing some auxiliary cost calculations needed to get a full wind plant operational expenditures estimate as well as a detailed cost breakdown.    """
 
     # Outputs
     avg_annual_opex = Float(iotype='out', desc='Average annual Operating Expenditures for a wind plant over its lifetime')
@@ -49,26 +52,26 @@ class ExtendedOPEXAggregator(Component):
 
 @implement_base(BaseOPEXModel)
 class ExtendedOPEXModel(Assembly):
+    """ Extended operational expenditures assembly for coupling models to get a full wind plant operational expenditures estimate as well as a detailed cost breakdown.    """
 
     # Outputs
     avg_annual_opex = Float(iotype='out', desc='Average annual Operating Expenditures for a wind plant over its lifetime')
     opex_breakdown = VarTree(OPEXVarTree(),iotype='out')
 
 def configure_extended_opex(assembly):
-	  
-	  configure_base_opex(assembly)
-	  
-	  assembly.replace('opex', ExtendedOPEXAggregator())
-	  
-	  assembly.connect('opex.opex_breakdown','opex_breakdown')
+    """ Extended configure method for a operational expenditures assembly for coupling models to get a full wind plant operational expenditures estimate.  It replaces the base operational expenditures aggregator component with an extended version which contains the full balance of station variable tree.    """
+
+    configure_base_opex(assembly)
+
+    assembly.replace('opex', ExtendedOPEXAggregator())
+
+    assembly.connect('opex.opex_breakdown','opex_breakdown')
 
 
 # Full OPEX Variable Trees, Components and Assemblies
 @implement_base(BaseOPEXAggregator)
 class FullOPEXAggregator(Component):
-    """
-    Framework for an enhanced operations expenditures model that gives a series of annual operating expenditures over the the plants lifetime
-    """
+    """ Full operational expenditures aggregator for doing some auxiliary cost calculations needed to get a full wind plant operational expenditures estimate as well as a detailed cost breakdown.    """
 
     # Outputs
     avg_annual_opex = Float(iotype='out', desc='Average annual Operating Expenditures for a wind plant over its lifetime')
@@ -81,9 +84,7 @@ class FullOPEXAggregator(Component):
 
 # DECOMEX Model
 class BaseDECOMEXModel(Assembly):
-    """
-    Framework for a decomissioning expenditures model for plant end of life
-    """
+    """ Base decomissioning expenditures assembly for coupling models to get a full wind plant decomissioning expenditures estimate.    """
 
     # Outputs
     decomex = Float(iotype='out', desc='General DECOMEX model produces Decomissioning Expenditures for a wind plant for the end of its life')

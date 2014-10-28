@@ -49,4 +49,5 @@ Table of Contents
 
     news
     installation
+    tutorial
     documentation

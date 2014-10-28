@@ -15,6 +15,7 @@ from fusedwind.interface import base, implement_base
 # Base Financial Model
 @base
 class BaseFinancialAggregator(Component):
+    """ Base financial aggregator for doing some auxiliary cost calculations needed to get a full wind plant cost of energy estimate.    """
 
     # Inputs
     turbine_cost = Float(iotype='in', desc = 'A Wind Turbine Capital _cost')
@@ -28,9 +29,7 @@ class BaseFinancialAggregator(Component):
 
 @base
 class BaseFinancialModel(Assembly):
-    """
-    Framework for a general financial model with upfront capital cost inputs and long-term averages for OPEX and net annual energy production
-    """
+    """ Base financial assembly for coupling models to get a full wind plant cost of energy estimate.    """
 
     # Inputs
     turbine_cost = Float(iotype='in', desc = 'A Wind Turbine Capital _cost')
@@ -43,6 +42,7 @@ class BaseFinancialModel(Assembly):
     coe = Float(iotype='out', desc='Levelized cost of energy for the wind plant')
 
 def configure_base_finance(assembly):
+    """ Base configure method for a financial assembly for coupling models to get a full wind plant cost of energy estimate.  It adds a default financial aggregator component.    """
 
     assembly.add('fin', BaseFinancialAggregator())
 
@@ -64,6 +64,7 @@ def configure_base_finance(assembly):
 # Main financial assembly
 @base
 class BaseFinancialAnalysis(Assembly):
+    """ Base financial analysis assembly for coupling models to get a full wind plant cost of energy estimate.    """
 
     # Inputs
     turbine_number = Int(iotype = 'in', desc = 'number of turbines at plant')
@@ -76,6 +77,7 @@ class BaseFinancialAnalysis(Assembly):
     coe = Float(iotype='out', desc='Levelized cost of energy for the wind plant')
 
 def configure_base_financial_analysis(assembly):
+    """ Base configure method for a financial analysis assembly for coupling models to get a full wind plant cost of energy estimate.  It adds a default financial aggregator component as well as base cost models for each major financial sub-model.    """
 
     # To be replaced by actual models
     assembly.add('tcc_a',BaseTurbineCostModel())
@@ -101,6 +103,7 @@ def configure_base_financial_analysis(assembly):
 
 @implement_base(BaseFinancialAnalysis)
 class ExtendedFinancialAnalysis(Assembly):
+    """ Extended financial analysis assembly for coupling models to get a full wind plant cost of energy estimate as well as provides a detailed cost breakdown for the plant.    """
 
     # Inputs
     turbine_number = Int(iotype = 'in', desc = 'number of turbines at plant')
@@ -115,6 +118,7 @@ class ExtendedFinancialAnalysis(Assembly):
     bos_breakdown = VarTree(BOSVarTree(), iotype='out', desc='BOS cost breakdown')
 
 def configure_extended_financial_analysis(assembly):
+    """ Extended configure method for a financial assembly for coupling models to get a full wind plant cost of energy estimate.  It replaces the base cost models with their extended versions for balance of station cost and operational expenditures.   """
 
     configure_base_financial_analysis(assembly)
 

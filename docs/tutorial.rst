@@ -1,30 +1,13 @@
 .. _tutorial-label:
 
-.. currentmodule:: rotorse.rotoraero
-
 Tutorial
---------
+=========
 
-You can refer to classes (:class:`AeroBase`), or methods (:meth:`CCAirfoil.initFromAerodynFile`) assuming you have set the module with ..currentmodule or ..module.  You can also refer to modules :mod:`rotorse.rotoraero`.
+These tutorials cover example usage of fused_wind for simple wind turbine and plant analysis applications.
 
-You might want to include a figure (:num:`Figure #somelabel-fig`)
+.. toctree::
+    :maxdepth: 2
 
-.. _somelabel-fig:
-
-.. figure:: /images/figurename.*
-    :height: 4in
-    :align: center
-
-    Caption goes here
-
-You can also include code from an example.  This is preferable to writing the actual code here in this page, because then you can run the example and test it.
-
-.. literalinclude:: ../src/rotorse/rotoraerodefaults.py
-    :start-after: # --- rotor geometry
-    :end-before: # ---
-
-Print out some results from the code
-
->>> CP = [0.48329808]
->>> CT = [0.7772276]
->>> CQ = [0.06401299]
+    plantcost_ex
+    plantflow_ex
+    runbatch_ex
