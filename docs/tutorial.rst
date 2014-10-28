@@ -1,6 +1,6 @@
 .. _tutorial-label:
 
-Tutorial
+Tutorials
 =========
 
 These tutorials cover example usage of fused_wind for simple wind turbine and plant analysis applications.
