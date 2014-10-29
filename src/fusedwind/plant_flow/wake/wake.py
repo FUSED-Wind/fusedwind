@@ -16,8 +16,7 @@ from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowe
     GenericWindRoseVT
 from fusedwind.plant_flow.comp import GenericWindTurbine, GenericWSPosition,\
     HubCenterWSPosition, GenericWakeSum, GenericHubWindSpeed, GenericFlowModel, \
-    GenericWakeModel
-from fusedwind.plant_flow.asym import GenericWindFarm
+    GenericWakeModel, GenericWindFarm
 from fusedwind.interface import base, implement_base, InterfaceSlot, \
     FUSEDAssembly, configure_base
 
@@ -673,7 +672,7 @@ class WTID(Component):
 
 
 @implement_base(GenericWindFarm)
-class GenericWindFarmWake(GenericWindFarm):
+class GenericWindFarmWake(FUSEDAssembly):
 
     """
     TODO: write docstring
@@ -700,12 +699,12 @@ class GenericWindFarmWake(GenericWindFarm):
     # Slots
     ws_positions = InterfaceSlot(GenericWSPosition,
         desc='The wind speed positions calculator for the wind farm wake workflow')
-    wake_dist = InterfaceSlot(WTStreamwiseSorting)
-    wake_model = InterfaceSlot(GenericWakeModel)
+    wake_dist = Slot(WTStreamwiseSorting)
+    wake_model = Slot(GenericWakeModel)
     wt_model = InterfaceSlot(GenericWindTurbine)
     wake_sum = InterfaceSlot(GenericWakeSum)
-    wake_driver = InterfaceSlot(WakeDriver)
-    upstream_wake_driver = InterfaceSlot(CaseIteratorDriver)
+    wake_driver = Slot(WakeDriver)
+    upstream_wake_driver = Slot(CaseIteratorDriver)
     hub_wind_speed = InterfaceSlot(GenericHubWindSpeed,
         desc='The hub wind speed calculator for the wind farm wake workflow')
     inflow_gen = InterfaceSlot(GenericInflowGenerator)
@@ -714,13 +713,13 @@ class GenericWindFarmWake(GenericWindFarm):
     def configure(self):
         super(GenericWindFarmWake, self).configure()
         # Add the components
-        self.add('ws_positions', GenericWSPosition())
-        self.add('inflow_gen', GenericInflowGenerator())
-        self.add('wake_dist', WTStreamwiseSorting())
-        self.add('wt_model', GenericWindTurbine())
-        self.add('wake_sum', GenericWakeSum())
-        self.add('hub_wind_speed', GenericHubWindSpeed())
-        self.add('wake_model', GenericWakeModel())
+        self.add_default('ws_positions', GenericWSPosition())
+        self.add_default('inflow_gen', GenericInflowGenerator())
+        self.add_default('wake_dist', WTStreamwiseSorting())
+        self.add_default('wt_model', GenericWindTurbine())
+        self.add_default('wake_sum', GenericWakeSum())
+        self.add_default('hub_wind_speed', GenericHubWindSpeed())
+        self.add_default('wake_model', GenericWakeModel())
 
 
 class WindFarmWake(GenericWindFarmWake):
@@ -747,8 +746,7 @@ class WindFarmWake(GenericWindFarmWake):
             ['wake_dist', 'wake_driver', 'postprocess_wt_cases'])
         # self.wake_driver.workflow.add(['wt1', 'ws_positions', 'inflow_gen', 'upstream_wake_driver',
         #                                      'wake_reader', 'wake_sum', 'hub_wind_speed', 'wt_model'])
-        self.wake_driver.workflow.add(
-            ['wt1', 'ws_positions', 'inflow_gen', 'upstream_wake_driver', 'wake_sum', 'hub_wind_speed', 'wt_model'])
+        self.wake_driver.workflow.add(['wt1', 'ws_positions', 'inflow_gen', 'upstream_wake_driver', 'wake_sum', 'hub_wind_speed', 'wt_model'])
         self.upstream_wake_driver.workflow.add(['wt2', 'wake_model'])
 
         # Wire the components
@@ -758,13 +756,10 @@ class WindFarmWake(GenericWindFarmWake):
         self.connect('inflow_gen.ws_array', [
                      'wake_sum.ws_array_inflow', 'wake_model.ws_array_inflow'])
         self.connect('wake_sum.ws_array', ['hub_wind_speed.ws_array'])
-        self.connect(
-            'hub_wind_speed.hub_wind_speed', 'wt_model.hub_wind_speed')
+        self.connect('hub_wind_speed.hub_wind_speed', 'wt_model.hub_wind_speed')
         self.wake_driver.recorded_connections = [('wt_model.c_t', 'wake_model.c_t'),
-                                                 ('ws_positions.wt_desc',
-                                                  'wake_model.wt_desc'),
-                                                 ('ws_positions.wt_xy',
-                                                  'wake_model.wt_xy'),
+                                                 ('ws_positions.wt_desc','wake_model.wt_desc'),
+                                                 ('ws_positions.wt_xy','wake_model.wt_xy'),
                                                  ('wt1.i', 'wt2.i')]
 
         self.connect('wake_driver.evaluated', 'postprocess_wt_cases.cases')
@@ -773,8 +768,7 @@ class WindFarmWake(GenericWindFarmWake):
         self.connect('upstream_wake_driver.wakes', 'wake_sum.wakes')
 
         # Prepare the wake case drivers
-        self.wake_driver.wt_connections = [
-            'ws_positions.wt_desc', 'wt_model.wt_desc']
+        self.wake_driver.wt_connections = ['ws_positions.wt_desc', 'wt_model.wt_desc']
         self.wake_driver.xy_connections = ['ws_positions.wt_xy']
         self.wake_driver.index_connections = ['wt1.i']
 
@@ -828,7 +822,7 @@ class WindFarmWake(GenericWindFarmWake):
         self.connect('wt_layout.wt_list[0]', [
                      'ws_positions.wt_desc', 'wt_model.wt_desc', 'wake_model.wt_desc'])
 
-
+@implement_base(GenericWindFarm)
 class FasterWindFarmWake(Component):
 
     """

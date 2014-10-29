@@ -117,6 +117,7 @@ class NOJWindFarmWake(WindFarmWake):
         self.replace('wt_model', WindTurbinePowerCurve())
         self.replace('wake_model', NOJWakeModel())
         self.replace('inflow_gen', HomogeneousInflowGenerator())
+        self.wake_driver.wt_connections.append('hub_wind_speed.wt_desc')
         if 'k' not in self.list_inputs():
             self.create_passthrough('wake_model.k')
 

@@ -63,7 +63,7 @@ class testWakeModel(unittest.TestCase):
             eps = 1.0E-5
 
             plt.subplot(len(self.tests['NOJ']),1,i); i+=1
-            plt.plot(wake.ws_array, label='python')
+            plt.plot(wake.ws_array, 'o-', label='python')
             plt.plot(matlab_results, label='matlab')
             plt.title('NOJ: ' + k)
             plt.legend()
@@ -85,20 +85,23 @@ class testHornsRev_NOJ(testHornsRev):
         noj = NOJWindFarmWake()
         self.HR_test(noj, self.file_NOJ_power)
 
-    def testMozaicTile(self):
-        self.HR_test(MozaicTileWindFarmWake(), self.file_NOJ_power)
+    # def testMozaicTile(self):
+    #     self.HR_test(MozaicTileWindFarmWake(), self.file_NOJ_power)
+    #
+    # def testFasterNOJ(self):
+    #     self.HR_test(FasterNOJWindFarmWake(), self.file_NOJ_power)
 
 
 
-class test_AEP_NOJ(test_AEP):
-    file_Positions = 'unittest_ref_files/HR_coordinates.dat'
-
-    def testNOJ(self):
-        noj = NOJWindFarmWake()
-        self.HR_test(noj, self.file_NOJ_power)
-
-    def testMozaicTile(self):
-        self.HR_test(MozaicTileWindFarmWake())
+# class test_AEP_NOJ(test_AEP):
+#     file_Positions = 'unittest_ref_files/HR_coordinates.dat'
+#
+#     def testNOJ(self):
+#         noj = NOJWindFarmWake()
+#         self.HR_test(noj, self.file_NOJ_power)
+#
+#     def testMozaicTile(self):
+#         self.HR_test(MozaicTileWindFarmWake())
 
 
 if __name__ == "__main__":
