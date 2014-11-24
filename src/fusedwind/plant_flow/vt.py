@@ -1,12 +1,3 @@
-# KLD: Modifications / additions made 6/14/2013 based on use of OpenWind and NREL cost models (noted by KLD:)
-# Classes added:
-#    GenericWindFarmTurbineLayout
-#    GenericMultipleTurbineTypesWindFarm # KLD: REMOVED after discussions with Pierre
-#    GenericAEP
-
-# P-E 17/9: Changed all the Desc into VT for following the rest of fusedwind laguage
-# P-E 5/5/14: Cleaning up, removing some comments, units were not defined properly (unit instead of units)
-
 import numpy as np
 from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
 from numpy import pi, sqrt, dot, diff
@@ -193,7 +184,7 @@ class GenericWindRoseVT(VariableTree):
         """
         return pd.DataFrame(self.flatten(), columns=['wind_direction', 'wind_speed', 'frequency'])
 
-#TODO: Pierre I think we need to move the configure stuff elsewhere or figure out another approach
+
 @base
 class GenericWindFarmTurbineLayout(VariableTree):
     wt_list = List(GenericWindTurbinePowerCurveVT(), desc='The wind turbine list of descriptions [n_wt]')
