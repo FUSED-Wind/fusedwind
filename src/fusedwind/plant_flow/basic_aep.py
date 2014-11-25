@@ -12,14 +12,14 @@ from openmdao.main.datatypes.api import Int, Bool, Float, Array, VarTree
 
 from fusedwind.lib.utilities import hstack, vstack
 
-from fusedwind.plant_flow.asym import BaseAEPModel
-from fusedwind.plant_flow.comp import BaseAEPAggregator
-from fusedwind.interface import implement_base, base
+from fusedwind.plant_flow.asym import BaseAEPModel, BaseAEPModel_NoFlow
+from fusedwind.plant_flow.comp import BaseAEPAggregator, BaseAEPAggregator_NoFlow, CDFBase
+from fusedwind.interface import implement_base
 
 ###################################################
 # AEP where single turbine AEP is input
 
-@implement_base(BaseAEPModel)
+@implement_base(BaseAEPModel_NoFlow)
 class aep_assembly(Assembly):
     """ Basic assembly for aep estimation for an entire wind plant based on the AEP input from one turbine."""
 
@@ -58,7 +58,7 @@ class aep_assembly(Assembly):
         self.connect('aep.net_aep', 'net_aep')
         self.connect('aep.capacity_factor','capacity_factor')
 
-@implement_base(BaseAEPAggregator)
+@implement_base(BaseAEPAggregator_NoFlow)
 class BasicAEP(Component):
     """ Basic component for aep estimation for an entire wind plant based on the AEP input from one turbine."""
 
@@ -105,13 +105,6 @@ class BasicAEP(Component):
 ################################
 # AEP where power curve and environmental conditions are input
 
-@base
-class CDFBase(Component):
-    """cumulative distribution function"""
-
-    x = Array(iotype='in', desc='input curve')
-
-    F = Array(iotype='out')
 
 @implement_base(CDFBase)
 class WeibullCDF(Component):
@@ -192,7 +185,7 @@ class RayleighCDF(CDFBase):
 
         return self.J
 
-@implement_base(BaseAEPModel)
+@implement_base(BaseAEPModel_NoFlow)
 class aep_weibull_assembly(Assembly):
     """ Basic assembly for aep estimation for an entire wind plant with the wind resource and single turbine power curve as inputs."""
 
@@ -242,7 +235,7 @@ class aep_weibull_assembly(Assembly):
         self.connect('aep.net_aep', 'net_aep')
         self.connect('aep.capacity_factor','capacity_factor')
 
-@implement_base(BaseAEPAggregator)
+@implement_base(BaseAEPAggregator_NoFlow)
 class aep_component(Component):
     """ Basic component for aep estimation for an entire wind plant with the wind resource and single turbine power curve as inputs."""
 
@@ -331,7 +324,6 @@ def example():
     aeptest.other_losses = 0.0
     aeptest.availability = 0.94
     aeptest.turbine_number = 100
-
 
     aeptest.run()
 
