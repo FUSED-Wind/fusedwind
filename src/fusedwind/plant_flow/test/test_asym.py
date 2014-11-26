@@ -54,31 +54,5 @@ class test_AEPMultipleWindRoses(unittest.TestCase):
 
 
 
-
-
-# class test_WWHAEP(unittest.TestCase):
-#     def test_init(self):
-#         wwh = WWHAEP()
-
-#     def test_HR(self):
-#         wwh = WWHAEP()
-#         wwh.wind_rose_type = 'single'
-#         wwh.configure()
-
-#     def test_HR(self):
-#         wwh = WWHAEP()
-#         wwh.filename = '/Users/pire/git/FUSED-Wind/fusedwind_examples/src/fusedwind_examples/plant_flow/wind_farms/horns_rev/hornsrev1_turbine_nodescription.wwh'
-#         wwh.wind_rose_type = 'single'
-#         wwh.configure()
-#         wwh.wind_rose_driver.sequential=True
-#         wwh.replace('wf', noj.NOJWindFarmWake())
-#         wwh.wf.wake_model.k = 0.04
-#         wwh.filename = filename
-#         wwh.wind_directions = linspace(0.0, 360.0, 14)[:-1]
-#         wwh.wind_speeds = linspace(4.0, 25.0, 3)
-#         wwh.execute()
-
-
-
 if __name__ == '__main__':
     unittest.main()

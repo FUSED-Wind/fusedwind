@@ -134,17 +134,6 @@ class test_WindTurbinePowerCurve(unittest.TestCase):
 #     def test_init(self):
 #         c = PostProcessMultipleWindRoses()
 
-class test_WTDescFromWTG(unittest.TestCase):
-    def test_init(self):
-        c = WTDescFromWTG()
-
-class test_PlantFromWWF(unittest.TestCase):
-    def test_init(self):
-        c = PlantFromWWF()
-
-class test_PlantFromWWH(unittest.TestCase):
-    def test_init(self):
-        c = PlantFromWWH()
 
 class test_GenericWindRoseCaseGenerator(unittest.TestCase):
     def test_init(self):
