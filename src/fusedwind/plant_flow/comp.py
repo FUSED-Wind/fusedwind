@@ -23,6 +23,52 @@ from fusedwind.fused_helper import *
 # ------------------------------------------------------------
 # Components and Assembly Base Classes
 
+# most basic plant flow components
+@base
+class CDFBase(Component):
+    """cumulative distribution function"""
+
+    x = Array(iotype='in', desc='input curve')
+
+    F = Array(iotype='out')
+
+@base
+class BaseAEPAggregator(Component):
+    """
+    Assumes implementing component provides overall plant energy output.
+    """
+
+    # Outputs
+    gross_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Gross Annual Energy Production before availability and loss impacts')
+    net_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Net Annual Energy Production after availability and loss impacts')
+
+
+@implement_base(BaseAEPAggregator)
+class BaseAEPAggregator_NoFlow(Component):
+    """
+    Assumes implementing component takes individual turbine output and combines with loss factors and turbine number to get plant energy output.
+    """
+
+    # parameters
+    array_losses = Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant')
+    other_losses = Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc')
+    availability = Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant')
+    turbine_number = Int(100, iotype='in', desc='total number of wind turbines at the plant')
+    machine_rating = Float(5000.0, iotype='in', desc='machine rating of turbine')
+
+    # Outputs
+    gross_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Gross Annual Energy Production before availability and loss impacts')
+    net_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Net Annual Energy Production after availability and loss impacts')
+    capacity_factor = Float(0.0, iotype='out', desc='Capacity factor for wind plant') # ??? generic or specific? will be easy to calculate, #
+
+
+#####################
+
+# wind rose based components
 
 class WeibullWindRose(Component):
 
@@ -344,19 +390,6 @@ class GenericWindFarm(Component):
         desc='The power production of each wind turbine')
     wt_thrust = Array([], iotype='out',
         desc='The thrust of each wind turbine')
-
-
-@base
-class BaseAEPAggregator(Component):
-
-    # Outputs
-    gross_aep = Float(0.0, iotype='out', units='kW*h',
-        desc='Gross Annual Energy Production before availability and loss impacts')
-    net_aep = Float(0.0, iotype='out', units='kW*h',
-        desc='Net Annual Energy Production after availability and loss impacts')
-    # capacity_factor = Float(0.0, iotype='out', desc='Capacity factor for
-    # wind plant') # ??? generic or specific? will be easy to calculate, #
-    # P-E: OK
 
 
 @base

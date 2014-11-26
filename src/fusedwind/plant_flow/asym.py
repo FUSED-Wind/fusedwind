@@ -24,6 +24,30 @@ from fusedwind.fused_helper import fused_autodoc
 
 @base
 class BaseAEPModel(Assembly):
+    """
+    Most basic AEP class which only provides key AEP outputs - flexible for use with any energy production model
+    """
+
+    # Outputs
+    gross_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Gross Annual Energy Production before availability and loss impacts')
+    net_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Net Annual Energy Production after availability and loss impacts')
+    capacity_factor = Float(0.0, iotype='out',
+        desc='Capacity factor for wind plant')
+
+@implement_base(BaseAEPModel)
+class BaseAEPModel_NoFlow(Assembly):
+    """
+    Basic AEP model that provides base outputs but also assumes no flow model is used so that loss factors and turbine number must be used to get full plant energy output
+    """
+
+    # parameters
+    array_losses = Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant')
+    other_losses = Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc')
+    availability = Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant')
+    turbine_number = Int(100, iotype='in', desc='total number of wind turbines at the plant')
+    machine_rating = Float(5000.0, iotype='in', desc='machine rating of turbine')
 
     # Outputs
     gross_aep = Float(0.0, iotype='out', units='kW*h',
