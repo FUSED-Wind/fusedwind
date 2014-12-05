@@ -196,6 +196,8 @@ class AEPSingleWindRose(FUSEDAssembly):
         self.connect('wind_rose', 'case_gen.wind_rose')
 
 
+
+
 @implement_base(BaseAEPModel, AEPWindRose)
 class AEPMultipleWindRoses(FUSEDAssembly):
 
@@ -226,11 +228,17 @@ class AEPMultipleWindRoses(FUSEDAssembly):
         desc='Net Annual Energy Production after availability and loss impacts')
     capacity_factor = Float(0.0, iotype='out',
         desc='Capacity factor for wind plant')
-
+    wt_aep = Array([], iotype='out', units='kW*h',
+        desc='The energy production per turbine [nWT]')
 
     def configure(self):
         self.add('case_gen', MultipleWindRosesCaseGenerator())
         self.add('postprocess_wind_rose', PostProcessMultipleWindRoses())
         configure_AEPWindRose(self)
         self.connect('wt_layout', 'case_gen.wt_layout')
+        self.disconnect('wind_rose_driver.case_outputs.wf.power',
+                     'postprocess_wind_rose.powers')
+        self.connect('wind_rose_driver.case_outputs.wf.wt_power',
+                     'postprocess_wind_rose.powers')
+        self.connect('postprocess_wind_rose.wt_aep', 'wt_aep')
 

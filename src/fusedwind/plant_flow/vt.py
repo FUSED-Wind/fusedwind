@@ -2,6 +2,8 @@ import numpy as np
 from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
 from numpy import pi, sqrt, dot, diff
 from numpy.linalg.linalg import norm
+from scipy.interpolate import interp1d
+from scipy.integrate import quad
 from openmdao.lib.datatypes.api import  Bool, VarTree, Float, Slot, Array, List, Int, Str, Dict
 from openmdao.main.api import Driver
 from openmdao.main.api import Component, Assembly, VariableTree, Container  # , IOInterface
@@ -103,6 +105,134 @@ class ExtendedWindTurbinePowerCurveVT(VariableTree):
     pitch_curve = Array(desc='The wind turbine pitch curve', units='deg') # P-E: It goes hand in hand with RPM curve usually
     #dB_curve = Array(desc='Machine decibal output [dB] by wind speed at hub') # KLD: important but perhaps not for generic analysis #P-E: I have never seen these types of curves, but if you have these as data inputs, why not
 
+
+
+def weibull2freq_array(wind_directions, wind_speeds, weibull_array, cut_in=4.0, cut_out=25.0):
+    """Calculates the frequency_array using a weibull distribution
+
+    Parameters
+    ----------
+    wind_directions = List(iotype='in', units='deg',
+        desc='Direction sectors angles [n_wd]')
+    wind_speeds = List(iotype='in', units='m/s',
+        desc='wind speeds sectors [n_ws]')
+    weibull_array = Array([], iotype='in', units='m/s',
+        desc='Windrose array [wind_directions, frequency, weibull_A, weibull_k]')
+    cut_in = Float(4.0, iotype='in',
+        desc='The cut-in wind speed of the wind turbine')
+    cut_out = Float(25.0, iotype='in',
+        desc='The cut-out wind speed of the wind turbine')
+
+    Returns
+    -------
+    wind_rose = frequency array [n_wd, n_ws]
+    """
+
+    # TODO: optimize this function. It's very slow.
+
+    n_wd, n_ws = len(wind_directions), len(wind_speeds)
+
+    # Calculate the new wind_rose"""
+    if len(weibull_array) == 0:
+        return
+
+    #Test the consistency of the inputs. This will be optimized away in production"""
+    assert len(weibull_array) > 0,\
+        'wind_rose_array is empty: %r' % weibull_array
+    assert len(wind_speeds) > 0,\
+        'wind_speeds is empty: %r' % wind_speeds
+    assert len(wind_directions) > 0,\
+        'wind_directions is empty: %r' % wind_directions
+    assert isinstance(weibull_array, ndarray),\
+        'The wind rose array is a ndarray of 4 columns'
+    assert weibull_array.shape[1] == 4,\
+        'wind_rose_array = array([wind_directions, frequency, weibull_A, weibull_k])'
+    assert mean(wind_directions) > 20.0,\
+        'Wind direction should be given in degrees'
+    assert weibull_array[:, 0].mean() > 20.0,\
+        'The first column of wind_rose should be in degrees'
+    assert 1.0 - sum(weibull_array[:, 1]) < 1.0E-3,\
+        'The second column of wind_rose_array should sum to 1.0'
+
+
+    _directions = weibull_array[:, 0]
+    _direction_frequency = weibull_array[:, 1]
+    _weibull_A = weibull_array[:, 2]
+    _weibull_k = weibull_array[:, 3]
+
+    # Creating the interpolation functions
+    indis = range(weibull_array.shape[0])
+    indis.extend([0])
+    _d_wd = _directions[1] - _directions[0]
+    diff_dir = _direction_frequency[indis] / _d_wd
+    directions = _directions.tolist() + [360.0]
+
+    def corr_dir(d):
+        if d < 0.0:
+            return d + 360.0
+        if d >= 360.0:
+            return d - 360.0
+        return d
+    pdf_wd = interp1d(directions, diff_dir, kind='linear')
+    pdf_wd_ext = lambda d: pdf_wd(corr_dir(d))
+    weibull_A = interp1d(directions, _weibull_A[indis], kind='linear')
+    weibull_k = interp1d(directions, _weibull_k[indis], kind='linear')
+
+
+    # Statistical functions
+    pdf_ws = lambda A, k, u: k / A * \
+        (u / A) ** (k - 1.0) * exp(-(u / A) ** k)
+    #cdf_ws = lambda A,k,u, bin=1.0: exp(-(max(0.0, u-bin/2.0)/A)**k) - exp(-((u+bin/2.0)/A)**k)
+    cdf_ws = lambda A, k, u0, u1: exp(-(u0 / A) ** k) - exp(-(u1 / A) ** k)
+    # TODO: Fine tune this epsrel
+    cdf_wd = lambda wd0, wd1: quad(pdf_wd_ext, wd0, wd1, epsrel=0.1)[0]
+
+    # Create the array
+    frequency_array = zeros([n_wd, n_ws])
+
+    for iwd, wd in enumerate(wind_directions):
+
+        A = weibull_A(wd)
+        k = weibull_k(wd)
+
+        # We include all the wind directions between each wind directions
+        if iwd == 0:
+            wd0 = 0.5 * (wind_directions[-1] + wd + 360)
+        else:
+            wd0 = 0.5 * (wind_directions[iwd - 1] + wd)
+        if iwd == len(wind_directions) - 1:
+            wd1 = 0.5 * (wind_directions[0] + wd + 360)
+        else:
+            wd1 = 0.5 * (wind_directions[iwd + 1] + wd)
+
+        if wd0 > wd1:  # deal with the 360-0 issue
+            p_dir = cdf_wd(wd0, 359.99) + cdf_wd(0.0, wd1)
+        else:
+            p_dir = cdf_wd(wd0, wd1)
+        # print 'between', wd0, wd1, p_dir
+        for iws, ws in enumerate(wind_speeds):
+            if iws == 0:  # We include all the cases from cut_in
+                ws0 = cut_in
+            else:
+                ws0 = 0.5 * (wind_speeds[iws - 1] + ws)
+            if iws == len(wind_speeds) - 1:
+                ws1 = cut_out
+            else:
+                ws1 = 0.5 * (wind_speeds[iws + 1] + ws)
+            ws0 = min(cut_out, max(cut_in, ws0))
+            ws1 = min(cut_out, max(cut_in, ws1))
+
+            frequency_array[iwd, iws] = p_dir * cdf_ws(A, k, ws0, ws1)
+
+    #Test the consistency of the outputs. This will be optimized away in production"""
+    assert sum(frequency_array.flatten()) <= 1.0 + 1.0E-3, \
+        'The frequency array should never reach 1.0, because there are some high wind speeds not considered in the array.'
+
+    return frequency_array
+
+
+
+
 class WeibullWindRoseVT(VariableTree):
     wind_directions = List(desc='Direction sectors angles [n_wd]', units='deg')
     k = List(desc='Weibull exponent k [n_wd]', units='deg')
@@ -133,6 +263,70 @@ class GenericWindRoseVT(VariableTree):
     wind_directions = List(desc='Direction sectors angles [n_wd]', units='deg')
     wind_speeds = List(desc='wind speeds sectors [n_ws]', units='m/s')
     frequency_array = Array(desc='Frequency by direction sectors and by wind speed sectors [n_wd, n_ws]')
+
+    def __init__(self, wind_directions=None, wind_speeds=None, frequency_array=None, weibull_array=None):
+        """
+        Initialise the wind rose with frequency_array or a weibull distribution [optional]
+        :param wind_directions: list[nwd]
+        :param wind_speeds: list[nws]
+        :param frequency_array: numpy.ndarray[nwd, nws]
+        :param weibull_array: numpy.ndarray[nwd, 4]
+                              The weibull distribution
+        :return: self
+        """
+        super(GenericWindRoseVT, self).__init__()
+
+        if weibull_array is not None:
+            assert isinstance(weibull_array, np.ndarray), 'weibull_array should be a ndarray'
+            assert weibull_array.shape[1] == 4, 'weibull_array.shape should be [nwd, 4]'
+            self.weibull_array = weibull_array
+
+        if wind_speeds is not None:
+            assert isinstance(wind_speeds, list), 'wind_speed should be a list'
+            self.wind_speeds = wind_speeds
+        else:
+            #default value = [4., 5., ...,25.]
+            self.wind_speeds = np.linspace(4., 25., 22).tolist()
+
+        if wind_directions is not None:
+            assert isinstance(wind_directions, list), 'wind_directions should be a list'
+            self.wind_directions = wind_directions
+        elif weibull_array is not None:
+            # Using the wind direction defined in the weibull array
+            self.wind_directions = weibull_array[:,0].tolist()
+
+        if frequency_array is not None:
+            assert isinstance(frequency_array, np.ndarray), \
+                    'frequency_array should be a ndarray'
+            assert frequency_array.shape == [len(wind_directions), len(wind_speeds)], \
+                    'frequency_array.shape should be [nwd, nws]'
+            self.frequency_array = frequency_array
+
+        if weibull_array is not None:
+            self.change_resolution(self.wind_directions, self.wind_speeds, force=True)
+
+
+    def change_resolution(self, wind_directions=None, wind_speeds=None, force=False):
+        """
+        Change the resolution of the wind rose on the basis of existing the weibull_array
+        :param wind_directions: list[nwd], optional
+        :param wind_speeds: list[nws], optional
+        :param force: Bool, forces to change the resolution
+        """
+        changed = False
+        if wind_directions is not None:
+            if not np.array_equal(self.wind_directions, wind_directions):
+                changed = True
+            self.wind_directions = wind_directions
+
+        if wind_speeds is not None:
+            if not np.array_equal(self.wind_speeds, wind_speeds):
+                changed = True
+            self.wind_speeds = wind_speeds
+
+        if changed or force:
+            self.frequency_array = weibull2freq_array(self.wind_directions, self.wind_speeds, self.weibull_array)
+
 
     def contourf(self):
         """ Plot a contour of the wind rose """
@@ -185,43 +379,229 @@ class GenericWindRoseVT(VariableTree):
         return pd.DataFrame(self.flatten(), columns=['wind_direction', 'wind_speed', 'frequency'])
 
 
+# @base
+# class old_GenericWindFarmTurbineLayout(VariableTree):
+#     wt_list = List(GenericWindTurbinePowerCurveVT(), desc='The wind turbine list of descriptions [n_wt]')
+#     wt_names = List(desc='The wind turbine list of names [n_wt]')
+#     wt_positions = Array(units='m', desc='Array of wind turbines attached to particular positions [n_wt, 2]')
+#     wt_wind_roses = List(desc='wind rose for each wind turbine position [n_wt]')
+#     single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
+#     wind_turbine = VarTree(GenericWindTurbinePowerCurveVT(), desc='wind turbine power curve')
+#
+#     @property
+#     def n_wt(self):
+#         return self.wt_positions.shape[0]
+#
+#     def test_consistency(self):
+#         if len(self.wt_list) > 0:
+#             assert len(self.wt_list) == self.n_wt
+#
+#         if len(self.wt_names) > 0:
+#             assert len(self.wt_names) == self.n_wt
+#
+#         if len(self.wt_wind_roses) > 0:
+#             assert len(self.wt_wind_roses) == self.n_wt
+#
+#     def configure_single(self):
+#         """
+#         Modify the class to adapt for single wind turbine codes.
+#         You can directly use self.wind_turbine instead of self.wt_list[0] .
+#         Note that when this function has been run there is a link between
+#         self.wind_turbine and self.wt_list[:]. So changing one will change
+#         all the other ones.
+#         In your code you can check if single_wind_turbine is set to True.
+#         """
+#
+#         if len(self.wt_list) > 0:
+#             self.wind_turbine = self.wt_list[0]
+#         self.wt_list = [self.wind_turbine] * self.n_wt
+#         self.single_wind_turbine = True
+#
+#     def create_dict(self, n):
+#         """
+#         Returns a dictionary containing the information of the n'th turbine
+#
+#         Parameters
+#         ----------
+#         n:   int [0, self.n_wt]
+#             The index of the n'th turbine
+#
+#         Returns
+#         -------
+#         di:  dict
+#             name:            str, optional
+#                             the name of the turbine contained in wt_names
+#
+#             rotor_diameter:  GenericWindTurbinePowerCurveVT keys, optional
+#             hub_height:      ...
+#             ...
+#
+#             x:               float
+#                             x position [m] from wt_positions
+#
+#             y:               float
+#                             y position [m] from wt_positions
+#
+#             wind_rose:       GenericWindRoseVT, optional
+#                             the wind rose of the turbine at hub height contained in wt_wind_roses
+#         """
+#         di = {}
+#         if len(self.wt_names) > 0:
+#             di['name'] = self.wt_names[n]
+#         if len(self.wt_list) > 0:
+#             for k,v in self.wt_list[n].items():
+#                 di[k] = v
+#         di['x'] = self.wt_positions[n,0]
+#         di['y'] = self.wt_positions[n,1]
+#         if len(self.wt_wind_roses) > 0:
+#             di['wind_rose'] = self.wt_wind_roses[n]
+#
+#         return di
+#
+#     def df(self):
+#         """
+#         create a pandas dataframe containing all the information flatten, using the `create_dict` function
+#
+#         Example:
+#         --------
+#         >>> df = generate_random_wt_layout().df
+#         >>> scatter(df.x, df.y, s=df.hub_height, c=df.power_rating)
+#         >>> colorbar()
+#         """
+#
+#         return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])
+#
+# @implement_base(GenericWindFarmTurbineLayout)
+# class ExtendedWindFarmTurbineLayout(GenericWindFarmTurbineLayout):
+#     wt_list = List(ExtendedWindTurbinePowerCurveVT(), desc='The wind turbine list of descriptions [n_wt]')
+#     wt_names = List(desc='The wind turbine list of names [n_wt]')
+#     wt_positions = Array(units='m', desc='Array of wind turbines attached to particular positions [n_wt, 2]')
+#     wt_wind_roses = List(desc='wind rose for each wind turbine position [n_wt]')
+#     single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
+#     wind_turbine = VarTree(ExtendedWindTurbinePowerCurveVT(), desc='wind turbine power curve')
+
+    
+implement_base(GenericWindTurbineVT, GenericWindTurbinePowerCurveVT)
+class WTPC(VariableTree):
+    """ A GenericWindTurbinePowerCurveVT with a name, position and wind rose
+    """
+    # GenericWindTurbineVT
+    hub_height = Float(desc='Machine hub height', units='m')
+    rotor_diameter = Float(desc='Machine rotor diameter', units='m')
+    power_rating = Float(desc='Machine power rating', units='W')
+
+    # GenericWindTurbinePowerCurveVT
+    c_t_curve = Array(desc='Machine thrust coefficients by wind speed at hub')
+    power_curve = Array(desc='Machine power output [W] by wind speed at hub')
+    cut_in_wind_speed = Float(4., desc='The cut-in wind speed of the wind turbine', units='m/s')
+    cut_out_wind_speed = Float(25., desc='The cut-out wind speed of the wind turbine', units='m/s')
+    rated_wind_speed = Float(desc='The rated wind speed of the wind turbine', units='m/s')
+    air_density = Float(desc='The air density the power curve are valid for', units='kg/(m*m*m)')
+
+    # WTPC
+    name = Str(desc='The wind turbine name')
+    position = Array(shape=(2,), desc='The UTM position of the turbine', units='m')
+    wind_rose = VarTree(GenericWindRoseVT(), desc='The wind turbine wind rose')
+
+    def __init__(self, **kwargs):
+        """Initialise the variable tree with the right inputs"""
+        super(WTPC, self).__init__()
+        for k,v in kwargs.iteritems():
+            if k in self.list_vars():
+                setattr(self, k, v)
+
 @base
 class GenericWindFarmTurbineLayout(VariableTree):
-    wt_list = List(GenericWindTurbinePowerCurveVT(), desc='The wind turbine list of descriptions [n_wt]')
-    wt_names = List(desc='The wind turbine list of names [n_wt]')
-    wt_positions = Array(units='m', desc='Array of wind turbines attached to particular positions [n_wt, 2]')
-    wt_wind_roses = List(desc='wind rose for each wind turbine position [n_wt]')
-    single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
-    wind_turbine = VarTree(GenericWindTurbinePowerCurveVT(), desc='wind turbine power curve')
+    wt_names = List([], desc='The wind turbine list of names [n_wt]')
+
+    def __init__(self, wt_list=[]):
+        """Initialise the leafes of the GenericWindFarmTurbineLayout based on the wt_list
+        Parameters
+        ----------
+            wt_list:    list(WTPC)
+                        list of Wind turbine object
+        """
+        super(GenericWindFarmTurbineLayout, self).__init__()
+        for wt in wt_list:
+            self.add_wt(wt)
+
+    def add_wt(self, wt):
+        """ Add a turbine to the layout tree, append the name at the end of wt_names
+        Parameters
+        ----------
+            wt: WTPC
+                Wind turbine object
+        """
+        self.add(wt.name, VarTree(wt))
+        self.wt_names.append(wt.name)
+
+    def wt_list(self, attr=None):
+        """ Get a list of leafs
+        Parameters
+        ----------
+            attr:   str, default=None
+                    The attribute of the leaf to list
+        Returns
+        -------
+        list
+        """
+        if attr:
+            return [getattr(getattr(self, wtn), attr) for wtn in self.wt_names]
+        else:
+            return [getattr(self, wtn) for wtn in self.wt_names]
+
+    def wt_array(self, attr=None):
+        """ Get an array of attributes of the leafs
+        Parameters
+        ----------
+            attr:   str, default=None
+                    The attribute of the leaf to list
+        Returns
+        -------
+         numpy.ndarray
+        """
+        return np.array(self.wt_list(attr))
+
 
     @property
     def n_wt(self):
-        return self.wt_positions.shape[0]
+        return len(self.wt_names)
 
-    def test_consistency(self):
-        if len(self.wt_list) > 0:
-            assert len(self.wt_list) == self.n_wt
+    @property
+    def wt_positions(self):
+        """backward compatibility access to wt_positions """
+        return self.wt_array(attr='position')
 
-        if len(self.wt_names) > 0:
-            assert len(self.wt_names) == self.n_wt
+    @property
+    def wt_wind_roses(self):
+        """backward compatibility access to wt_wind_roses: wind rose for each wind turbine position list[n_wt]"""
+        return self.wt_list(attr='wind_rose')
 
-        if len(self.wt_wind_roses) > 0:
-            assert len(self.wt_wind_roses) == self.n_wt
 
-    def configure_single(self):
-        """
-        Modify the class to adapt for single wind turbine codes.
-        You can directly use self.wind_turbine instead of self.wt_list[0] .
-        Note that when this function has been run there is a link between
-        self.wind_turbine and self.wt_list[:]. So changing one will change
-        all the other ones.
-        In your code you can check if single_wind_turbine is set to True.
-        """
+    # def test_consistency(self):
+    #     if len(self.wt_list) > 0:
+    #         assert len(self.wt_list()) == self.n_wt
+    #
+    #     if len(self.wt_names) > 0:
+    #         assert len(self.wt_names) == self.n_wt
+    #
+    #     if len(self.wt_wind_roses) > 0:
+    #         assert len(self.wt_wind_roses) == self.n_wt
 
-        if len(self.wt_list) > 0:
-            self.wind_turbine = self.wt_list[0]
-        self.wt_list = [self.wind_turbine] * self.n_wt
-        self.single_wind_turbine = True
+    # def configure_single(self):
+    #     """
+    #     Modify the class to adapt for single wind turbine codes.
+    #     You can directly use self.wind_turbine instead of self.wt_list[0] .
+    #     Note that when this function has been run there is a link between
+    #     self.wind_turbine and self.wt_list[:]. So changing one will change
+    #     all the other ones.
+    #     In your code you can check if single_wind_turbine is set to True.
+    #     """
+    #
+    #     if len(self.wt_list) > 0:
+    #         self.wind_turbine = self.wt_list[0]
+    #     self.wt_list = [self.wind_turbine] * self.n_wt
+    #     self.single_wind_turbine = True
 
     def create_dict(self, n):
         """
@@ -254,8 +634,8 @@ class GenericWindFarmTurbineLayout(VariableTree):
         di = {}
         if len(self.wt_names) > 0:
             di['name'] = self.wt_names[n]
-        if len(self.wt_list) > 0:
-            for k,v in self.wt_list[n].items():
+        if self.n_wt > 0:
+            for k,v in self.wt_list()[n].items():
                 di[k] = v
         di['x'] = self.wt_positions[n,0]
         di['y'] = self.wt_positions[n,1]
@@ -264,107 +644,18 @@ class GenericWindFarmTurbineLayout(VariableTree):
 
         return di
 
+    @property
     def df(self):
         """
         create a pandas dataframe containing all the information flatten, using the `create_dict` function
 
+        :rtype : pandas.DataFrame
+
         Example:
         --------
-        >>> df = generate_random_wt_layout().df()
+        >>> df = generate_random_wt_layout().df
         >>> scatter(df.x, df.y, s=df.hub_height, c=df.power_rating)
         >>> colorbar()
         """
 
         return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])
-
-@implement_base(GenericWindFarmTurbineLayout)
-class ExtendedWindFarmTurbineLayout(GenericWindFarmTurbineLayout):
-    wt_list = List(ExtendedWindTurbinePowerCurveVT(), desc='The wind turbine list of descriptions [n_wt]')
-    wt_names = List(desc='The wind turbine list of names [n_wt]')
-    wt_positions = Array(units='m', desc='Array of wind turbines attached to particular positions [n_wt, 2]')
-    wt_wind_roses = List(desc='wind rose for each wind turbine position [n_wt]')
-    single_wind_turbine = Bool(False, desc='Define if the layout has only one type of turbine or more')
-    wind_turbine = VarTree(ExtendedWindTurbinePowerCurveVT(), desc='wind turbine power curve')
-    #
-    # @property
-    # def n_wt(self):
-    #     return self.wt_positions.shape[0]
-    #
-    # def test_consistency(self):
-    #     if len(self.wt_list) > 0:
-    #         assert len(self.wt_list) == self.n_wt
-    #
-    #     if len(self.wt_names) > 0:
-    #         assert len(self.wt_names) == self.n_wt
-    #
-    #     if len(self.wt_wind_roses) > 0:
-    #         assert len(self.wt_wind_roses) == self.n_wt
-    #
-    # def configure_single(self):
-    #     """
-    #     Modify the class to adapt for single wind turbine codes.
-    #     You can directly use self.wind_turbine instead of self.wt_list[0] .
-    #     Note that when this function has been run there is a link between
-    #     self.wind_turbine and self.wt_list[:]. So changing one will change
-    #     all the other ones.
-    #     In your code you can check if single_wind_turbine is set to True.
-    #     """
-    #
-    #     if len(self.wt_list) > 0:
-    #         self.wind_turbine = self.wt_list[0]
-    #     self.wt_list = [self.wind_turbine] * self.n_wt
-    #     self.single_wind_turbine = True
-    #
-    # def create_dict(self, n):
-    #     """
-    #     Returns a dictionary containing the information of the n'th turbine
-    #
-    #     Parameters
-    #     ----------
-    #     n   int [0, self.n_wt]
-    #         The index of the n'th turbine
-    #
-    #     Returns
-    #     -------
-    #     di  dict
-    #         name            str, optional
-    #                         the name of the turbine contained in wt_names
-    #
-    #         rotor_diameter  GenericWindTurbinePowerCurveVT keys, optional
-    #         hub_height      ...
-    #         ...
-    #
-    #         x               float
-    #                         x position [m] from wt_positions
-    #
-    #         y               float
-    #                         y position [m] from wt_positions
-    #
-    #         wind_rose       GenericWindRoseVT, optional
-    #                         the wind rose of the turbine at hub height contained in wt_wind_roses
-    #     """
-    #     di = {}
-    #     if len(self.wt_names) > 0:
-    #         di['name'] = self.wt_names[n]
-    #     if len(self.wt_list) > 0:
-    #         for k,v in self.wt_list[n].items():
-    #             di[k] = v
-    #     di['x'] = self.wt_positions[n,0]
-    #     di['y'] = self.wt_positions[n,1]
-    #     if len(self.wt_wind_roses) > 0:
-    #         di['wind_rose'] = self.wt_wind_roses[n]
-    #
-    #     return di
-    #
-    # def df(self):
-    #     """
-    #     create a pandas dataframe containing all the information flatten, using the `create_dict` function
-    #
-    #     Example:
-    #     --------
-    #     >>> df = generate_random_wt_layout().df()
-    #     >>> scatter(df.x, df.y, s=df.hub_height, c=df.power_rating)
-    #     >>> colorbar()
-    #     """
-    #
-    #     return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])

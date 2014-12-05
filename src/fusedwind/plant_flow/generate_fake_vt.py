@@ -1,5 +1,5 @@
 from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, \
-    ExtendedWindTurbinePowerCurveVT, WeibullWindRoseVT, GenericWindRoseVT, GenericWindFarmTurbineLayout
+    ExtendedWindTurbinePowerCurveVT, WeibullWindRoseVT, GenericWindRoseVT, GenericWindFarmTurbineLayout, WTPC
 from fusedwind.plant_flow.comp import WeibullWindRose
 from fusedwind.fused_helper import init_container
 
@@ -90,6 +90,17 @@ def generate_random_GenericWindTurbinePowerCurveVT(D=None):
     wt_desc.test_consistency()
     return wt_desc
 
+def generate_random_WTPC(D=None, **kwargs):
+    wt = generate_random_GenericWindTurbinePowerCurveVT(D)
+    inputs = {k: getattr(wt, k) for k in wt.list_vars()}
+    inputs['position'] = np.random.rand(2)
+    inputs['name'] = 'wt'
+    # Replacing the parameters by the inputs of the function
+    for k, v in kwargs.iteritems():
+        inputs[k] = v
+    return WTPC(**inputs)
+
+
 def generate_random_wt_positions(D=None, nwt=None, min_D=None):
     """
     Generate a random layout of wind turbines
@@ -125,7 +136,7 @@ def generate_random_wt_positions(D=None, nwt=None, min_D=None):
     if not D:
         D = 200*random()
     if not nwt:
-        nwt = int(500*random())
+        nwt = int(30*random())
     if not min_D:
         min_D = 3. + 5.*random()
 
@@ -161,25 +172,63 @@ def generate_random_GenericWindRoseVT():
                 A wind rose variable tree
 
     """
+    weibull_array = np.array([[  0.00000000e+00,   3.59673400e-02,  9.22422800e+00,   2.38867200e+00],
+                             [  3.00000000e+01,   3.94977300e-02,   9.86435600e+00,   2.44726600e+00],
+                             [  6.00000000e+01,   5.17838000e-02,   9.65220200e+00,   2.41992200e+00],
+                             [  9.00000000e+01,   6.99794900e-02,   9.98217800e+00,   2.58789100e+00],
+                             [  1.20000000e+02,   8.36383000e-02,   1.00946000e+01,   2.74804700e+00],
+                             [  1.50000000e+02,   6.43412500e-02,   9.64369000e+00,   2.59179700e+00],
+                             [  1.80000000e+02,   8.64220000e-02,   9.63377500e+00,   2.58007800e+00],
+                             [  2.10000000e+02,   1.17690000e-01,   1.05678600e+01,   2.54492200e+00],
+                             [  2.40000000e+02,   1.51555100e-01,   1.14525200e+01,   2.46679700e+00],
+                             [  2.70000000e+02,   1.47361100e-01,   1.17423700e+01,   2.60351600e+00],
+                             [  3.00000000e+02,   1.00109800e-01,   1.16923200e+01,   2.62304700e+00],
+                             [  3.30000000e+02,   5.16542400e-02,   1.01385800e+01,   2.32226600e+00]])
     ### -> This is going to be really slow because of interpolation
-    #nwd, nws = int(random()*360), int(random()*25)
-    #wd = linspace(0., 360., nwd)[:-1]
-    #ws = linspace(3., 30., nws)
+    nwd, nws = 4+int(random()*360), 4+int(random()*25)
+    wd = linspace(0., 360., nwd)[:-1].tolist()
+    ws = linspace(3., 30., nws).tolist()
     #wind_rose_array = array([[wd_, random(), random()*15., random()*4.] for wd_ in wd])
     #wind_rose_array *= [1., 1./wind_rose_array[:,1].sum(), 1., 1.]
     #return WeibullWindRose()(wind_directions= wd,
     #                         wind_speeds=ws,
     #                         wind_rose_array=wind_rose_array).wind_rose
     #
-    # TODO: fix this bug. In the mean time it will return the wr_example
-    gwr = GenericWindRoseVT()
-    init_container(gwr, **wr_example)
+    gwr = GenericWindRoseVT(wind_directions=wd, wind_speeds=ws, weibull_array=weibull_array)
     return gwr
+
+# def generate_random_wt_layout(D=None, nwt=None):
+#     """
+#     Generate a random GenericWindFarmTurbineLayout of wind turbines
+#
+#     Parameters
+#     ----------
+#     D       float, default=random, (optional)
+#             The wind turbine rotor diameter
+#
+#     nwt     int, default=random, (optional)
+#             The number of turbines in the layout
+#
+#     Returns
+#     -------
+#     wt_layout   GenericWindFarmTurbineLayout
+#                 A random wind turbine layout
+#
+#     """
+#     if D is None:
+#         D = 200*random()
+#     if nwt is None:
+#         nwt = int(30*random())
+#     wt_layout = GenericWindFarmTurbineLayout()
+#     wt_layout.wt_positions = generate_random_wt_positions(D=D, nwt=nwt)
+#     wt_layout.wt_list = [generate_random_GenericWindTurbinePowerCurveVT(D) for i in range(nwt)]
+#     wt_layout.wt_wind_roses = [generate_random_GenericWindRoseVT() for i in range(nwt)]
+#     wt_layout.wt_names = ['wt_%d'%(i) for i in range(nwt)]
+#     wt_layout.test_consistency()
+#     return wt_layout
 
 def generate_random_wt_layout(D=None, nwt=None):
     """
-    Generate a random GenericWindFarmTurbineLayout of wind turbines
-
     Parameters
     ----------
     D       float, default=random, (optional)
@@ -190,18 +239,14 @@ def generate_random_wt_layout(D=None, nwt=None):
 
     Returns
     -------
-    wt_layout   GenericWindFarmTurbineLayout
-                A random wind turbine layout
-
+    a random GenericWindFarmTurbineLayout instance
     """
     if not D:
         D = 200*random()
     if not nwt:
-        nwt = int(500*random())
-    wt_layout = GenericWindFarmTurbineLayout()
-    wt_layout.wt_positions = generate_random_wt_positions(D=D, nwt=nwt)
-    wt_layout.wt_list = [generate_random_GenericWindTurbinePowerCurveVT(D) for i in range(nwt)]
-    wt_layout.wt_wind_roses = [generate_random_GenericWindRoseVT() for i in range(nwt)]
-    wt_layout.wt_names = ['wt_%d'%(i) for i in range(nwt)]
-    wt_layout.test_consistency()
-    return wt_layout
+        nwt = int(30*random())
+    wt_positions = generate_random_wt_positions(D=D, nwt=nwt)
+    return GenericWindFarmTurbineLayout([generate_random_WTPC(
+        name='wt%d'%(n),
+        position=wt_positions[n,:],
+        wind_rose=generate_random_GenericWindRoseVT()) for n in range(nwt)])

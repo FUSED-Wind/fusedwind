@@ -203,6 +203,224 @@ class WeibullWindRose(Component):
 
 
 @base
+class GenericWindFarm(Component):
+
+    # Inputs:
+    wind_speed = Float(iotype='in', low=0.0, high=100.0, units='m/s',
+        desc='Inflow wind speed at hub height')
+    wind_direction = Float(iotype='in', low=0.0, high=360.0, units='deg',
+        desc='Inflow wind direction at hub height')
+    wt_layout = VarTree(GenericWindFarmTurbineLayout(), iotype='in',
+        desc='wind turbine properties and layout')
+
+    # Outputs:
+    power = Float(iotype='out', units='kW',
+        desc='Total wind farm power production')
+    thrust = Float(iotype='out', units='N',
+        desc='Total wind farm thrust')
+    wt_power = Array([], iotype='out',
+        desc='The power production of each wind turbine')
+    wt_thrust = Array([], iotype='out',
+        desc='The thrust of each wind turbine')
+
+
+@base
+class GenericWindRoseCaseGenerator(Component):
+
+    """Component prepare all the wind speeds, directions and frequencies inputs to the AEP calculation"""
+    wind_speeds = List([], iotype='in', units='m/s',
+        desc='The different wind speeds to run [nWS]')
+    wind_directions = List([], iotype='in', units='deg',
+        desc='The different wind directions to run [nWD]')
+
+    all_wind_speeds = List(iotype='out', units='m/s',
+        desc='The different wind speeds to run [nWD*nWS]')
+    all_wind_directions = List(iotype='out', units='deg',
+        desc='The different wind directions to run [nWD*nWS]')
+    all_frequencies = List(iotype='out',
+        desc='The different wind directions to run [nWD*nWS]')
+
+
+@implement_base(GenericWindRoseCaseGenerator)
+class SingleWindRoseCaseGenerator(Component):
+
+    """Component prepare all the wind speeds, directions and frequencies inputs to the AEP calculation"""
+    wind_speeds = List([], iotype='in', units='m/s',
+        desc='The different wind speeds to run [nWS]')
+    wind_directions = List([], iotype='in', units='deg',
+        desc='The different wind directions to run [nWD]')
+    wind_rose = Array([], iotype='in',
+        desc='Probability distribution of wind speed, wind direction [nWS, nWD]')
+
+    all_wind_speeds = List(iotype='out', units='m/s',
+        desc='The different wind speeds to run [nWD*nWS]')
+    all_wind_directions = List(iotype='out', units='deg',
+        desc='The different wind directions to run [nWD*nWS]')
+    all_frequencies = List(iotype='out',
+        desc='The different wind directions to run [nWD*nWS]')
+
+    def execute(self):
+        # Not needed anymore
+        # wr = WeibullWindRose()(wind_directions=self.wind_directions, wind_speeds=self.wind_speeds,
+        #                       wind_rose_array=self.wind_rose).wind_rose
+
+        self.all_wind_directions = []
+        self.all_wind_speeds = []
+        self.all_frequencies = []
+        if self.wind_rose.size > 0:
+            for i_ws, ws in enumerate(self.wind_speeds):
+                for i_wd, wd in enumerate(self.wind_directions):
+                    self.all_wind_directions.append(wd)
+                    self.all_wind_speeds.append(ws)
+                    self.all_frequencies.append(self.wind_rose[i_wd, i_ws])
+        else:
+            print self.__class__.__name__, 'input, wind_rose is empty'
+
+
+@implement_base(GenericWindRoseCaseGenerator)
+class MultipleWindRosesCaseGenerator(Component):
+
+    """Component prepare all the wind speeds, directions and frequencies inputs to the AEP calculation.
+    """
+
+    wind_speeds = List([], iotype='in', units='m/s',
+        desc='The different wind speeds to run [nWS]')
+    wind_directions = List([], iotype='in', units='deg',
+        desc='The different wind directions to run [nWD]')
+    wt_layout = VarTree(GenericWindFarmTurbineLayout(), iotype='in',
+        desc='the wind farm layout')
+
+    all_wind_speeds = List(iotype='out', units='m/s',
+        desc='The different wind speeds to run [nWD*nWS]')
+    all_wind_directions = List(iotype='out', units='deg',
+        desc='The different wind directions to run [nWD*nWS]')
+    all_frequencies = List(iotype='out',
+        desc='The different wind directions to run [nWD*nWS][nWT]')
+
+    def execute(self):
+        self.all_wind_directions = []
+        self.all_wind_speeds = []
+        self.all_frequencies = []
+        for wt in self.wt_layout.wt_list():
+            wt.wind_rose.change_resolution(wind_directions=self.wind_directions, wind_speeds=self.wind_speeds)
+        for i_ws, ws in enumerate(self.wind_speeds):
+            for i_wd, wd in enumerate(self.wind_directions):
+                self.all_wind_directions.append(wd)
+                self.all_wind_speeds.append(ws)
+                self.all_frequencies.append([wt.wind_rose.frequency_array[i_wd, i_ws] for wt in self.wt_layout.wt_list()])
+
+
+@base
+class GenericPostProcessWindRose(Component):
+
+    """Using the same wind rose for all the wind turbines"""
+    # Inputs
+    wind_speeds = List([], iotype='in', units='m/s',
+        desc='The different wind speeds to run [nWS]')
+    wind_directions = List([], iotype='in', units='deg',
+        desc='The different wind directions to run [nWD]')
+    frequencies = List([], iotype='in',
+        desc='The different wind directions to run [nWD*nWS]')
+    powers = List([], iotype='in', units='kW*h',
+        desc='The different wind directions to run [nWD*nWS]')
+
+    # Outputs
+    net_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Annual Energy Production')
+    gross_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Gross Annual Energy Production')
+    capacity_factor = Float(0.0, iotype='out',
+        desc='Capacity factor')
+    array_aep = Array([], iotype='out', units='kW*h',
+        desc='The energy production per sector [nWD, nWS]')
+
+
+@implement_base(GenericPostProcessWindRose)
+class PostProcessSingleWindRose(Component):
+
+    """Using the same wind rose for all the wind turbines"""
+    # Inputs
+    wind_speeds = List([], iotype='in', units='m/s',
+        desc='The different wind speeds to run [nWS]')
+    wind_directions = List([], iotype='in', units='deg',
+        desc='The different wind directions to run [nWD]')
+    frequencies = List([], iotype='in',
+        desc='The different wind directions to run [nWD*nWS]')
+    powers = List([], iotype='in', units='kW*h',
+        desc='The different wind directions to run [nWD*nWS]')
+
+    # Outputs
+    net_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Annual Energy Production')
+    gross_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Gross Annual Energy Production')
+    capacity_factor = Float(0.0, iotype='out',
+        desc='Capacity factor')
+    array_aep = Array([], iotype='out', units='kW*h',
+        desc='The energy production per sector [nWD, nWS]')
+
+    def execute(self):
+        list_aep = [freq * power * 24 * 365 for freq,
+                    power in zip(self.frequencies, self.powers)]
+        self.net_aep = sum(list_aep)
+        # TODO: FIX gross_aep and capacity factor
+        #self.gross_aep = self.net_aep
+        #self.capacity_factor = self.net_aep / self.gross_aep
+
+        if len(self.wind_speeds) > 0 and len(self.wind_directions) > 0:
+            self.array_aep = array(list_aep).reshape([len(self.wind_speeds), len(self.wind_directions)])
+        else:
+            print self.__class__.__name__, 'inputs, wind_speed or wind_directions are empty'
+
+
+@implement_base(GenericPostProcessWindRose)
+class PostProcessMultipleWindRoses(Component):
+
+    """Use a different wind rose for each wind turbine"""
+    # Inputs
+    wind_speeds = List([], iotype='in', units='m/s',
+        desc='The different wind speeds to run [nWS]')
+    wind_directions = List([], iotype='in', units='deg',
+        desc='The different wind directions to run [nWD]')
+    frequencies = List([], iotype='in',
+        desc='The different wind directions to run [nWD*nWS][nWT]')
+    powers = List([], iotype='in', units='kW*h',
+        desc='The different wind directions to run [nWD*nWS][nWT]')
+
+    # Outputs
+    net_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Net Annual Energy Production')
+    gross_aep = Float(0.0, iotype='out', units='kW*h',
+        desc='Gross Annual Energy Production')
+    capacity_factor = Float(0.0, iotype='out',
+        desc='Capacity factor')
+    array_aep = Array([], iotype='out', units='kW*h',
+        desc='The energy production per sector [nWD, nWS]')
+    wt_aep = Array([], iotype='out', units='kW*h',
+        desc='The energy production per turbine [nWT]')
+
+
+    def execute(self):
+        nwd, nws = len(self.wind_directions), len(self.wind_speeds)
+        assert len(self.frequencies) == nws * nwd
+        assert len(self.powers) == nws * nwd
+
+        array_aep = array([array(freq) * array(power) * 24 *
+                           365 for freq, power in zip(self.frequencies, self.powers)])
+        self.net_aep = array_aep.sum()
+        # TODO: FIX gross_aep and capacity factor
+        #self.gross_aep = array([array(freq) * array(power).max() * 24 * 365 for freq, power in zip(self.frequencies, self.powers)]).sum()
+        #self.capacity_factor = self.net_aep / self.gross_aep
+
+        self.array_aep = array_aep.sum(1).reshape([len(self.wind_directions), len(self.wind_speeds)])
+        self.wt_aep = array_aep.sum(0)
+
+
+
+### TODO: Move these components to FUSED-Wake ##########################################################################
+
+
+@base
 class GenericWSPosition(Component):
 
     """Calculate the positions where we should calculate the wind speed on the rotor"""
@@ -369,218 +587,3 @@ class WindTurbinePowerCurve(Component):
         self.thrust = self.c_t * self.density * self.hub_wind_speed ** 2.0 * \
             self.wt_desc.rotor_diameter ** 2.0 * pi / 4.0
 
-
-@base
-class GenericWindFarm(Component):
-
-    # Inputs:
-    wind_speed = Float(iotype='in', low=0.0, high=100.0, units='m/s',
-        desc='Inflow wind speed at hub height')
-    wind_direction = Float(iotype='in', low=0.0, high=360.0, units='deg',
-        desc='Inflow wind direction at hub height')
-    wt_layout = VarTree(GenericWindFarmTurbineLayout(), iotype='in',
-        desc='wind turbine properties and layout')
-
-    # Outputs:
-    power = Float(iotype='out', units='kW',
-        desc='Total wind farm power production')
-    thrust = Float(iotype='out', units='N',
-        desc='Total wind farm thrust')
-    wt_power = Array([], iotype='out',
-        desc='The power production of each wind turbine')
-    wt_thrust = Array([], iotype='out',
-        desc='The thrust of each wind turbine')
-
-
-@base
-class GenericWindRoseCaseGenerator(Component):
-
-    """Component prepare all the wind speeds, directions and frequencies inputs to the AEP calculation"""
-    wind_speeds = List([], iotype='in', units='m/s',
-        desc='The different wind speeds to run [nWS]')
-    wind_directions = List([], iotype='in', units='deg',
-        desc='The different wind directions to run [nWD]')
-
-    all_wind_speeds = List(iotype='out', units='m/s',
-        desc='The different wind speeds to run [nWD*nWS]')
-    all_wind_directions = List(iotype='out', units='deg',
-        desc='The different wind directions to run [nWD*nWS]')
-    all_frequencies = List(iotype='out',
-        desc='The different wind directions to run [nWD*nWS]')
-
-
-@implement_base(GenericWindRoseCaseGenerator)
-class SingleWindRoseCaseGenerator(Component):
-
-    """Component prepare all the wind speeds, directions and frequencies inputs to the AEP calculation"""
-    wind_speeds = List([], iotype='in', units='m/s',
-        desc='The different wind speeds to run [nWS]')
-    wind_directions = List([], iotype='in', units='deg',
-        desc='The different wind directions to run [nWD]')
-    wind_rose = Array([], iotype='in',
-        desc='Probability distribution of wind speed, wind direction [nWS, nWD]')
-
-    all_wind_speeds = List(iotype='out', units='m/s',
-        desc='The different wind speeds to run [nWD*nWS]')
-    all_wind_directions = List(iotype='out', units='deg',
-        desc='The different wind directions to run [nWD*nWS]')
-    all_frequencies = List(iotype='out',
-        desc='The different wind directions to run [nWD*nWS]')
-
-    def execute(self):
-        # Not needed anymore
-        # wr = WeibullWindRose()(wind_directions=self.wind_directions, wind_speeds=self.wind_speeds,
-        #                       wind_rose_array=self.wind_rose).wind_rose
-
-        self.all_wind_directions = []
-        self.all_wind_speeds = []
-        self.all_frequencies = []
-
-        if self.wind_rose.size > 0:
-            for i_ws, ws in enumerate(self.wind_speeds):
-                for i_wd, wd in enumerate(self.wind_directions):
-                    self.all_wind_directions.append(wd)
-                    self.all_wind_speeds.append(ws)
-                    self.all_frequencies.append(self.wind_rose[i_wd, i_ws])
-        else:
-            print self.__class__.__name__, 'input, wind_rose is empty'
-
-
-@implement_base(GenericWindRoseCaseGenerator)
-class MultipleWindRosesCaseGenerator(Component):
-
-    """Component prepare all the wind speeds, directions and frequencies inputs to the AEP calculation.
-    """
-
-    wind_speeds = List([], iotype='in', units='m/s',
-        desc='The different wind speeds to run [nWS]')
-    wind_directions = List([], iotype='in', units='deg',
-        desc='The different wind directions to run [nWD]')
-    wt_layout = VarTree(GenericWindFarmTurbineLayout(), iotype='in',
-        desc='the wind farm layout')
-
-    all_wind_speeds = List(iotype='out', units='m/s',
-        desc='The different wind speeds to run [nWD*nWS]')
-    all_wind_directions = List(iotype='out', units='deg',
-        desc='The different wind directions to run [nWD*nWS]')
-    all_frequencies = List(iotype='out',
-        desc='The different wind directions to run [nWD*nWS][nWT]')
-
-    def execute(self):
-        self.all_wind_directions = []
-        self.all_wind_speeds = []
-        self.all_frequencies = []
-
-        # Not needed anymore
-        # wt_wr = [WeibullWindRose()(wind_directions=self.wind_directions,
-        #                           wind_speeds=self.wind_speeds,
-        #                           wind_rose_array=wr).wind_rose
-        #            for wr in self.wt_layout.wt_wind_roses]
-
-        for i_ws, ws in enumerate(self.wind_speeds):
-            for i_wd, wd in enumerate(self.wind_directions):
-                self.all_wind_directions.append(wd)
-                self.all_wind_speeds.append(ws)
-                self.all_frequencies.append(
-                    [wr.frequency_array[i_wd, i_ws] for wr in self.wt_layout.wt_wind_roses])
-
-
-@base
-class GenericPostProcessWindRose(Component):
-
-    """Using the same wind rose for all the wind turbines"""
-    # Inputs
-    wind_speeds = List([], iotype='in', units='m/s',
-        desc='The different wind speeds to run [nWS]')
-    wind_directions = List([], iotype='in', units='deg',
-        desc='The different wind directions to run [nWD]')
-    frequencies = List([], iotype='in',
-        desc='The different wind directions to run [nWD*nWS]')
-    powers = List([], iotype='in', units='kW*h',
-        desc='The different wind directions to run [nWD*nWS]')
-
-    # Outputs
-    net_aep = Float(0.0, iotype='out', units='kW*h',
-        desc='Annual Energy Production')
-    gross_aep = Float(0.0, iotype='out', units='kW*h',
-        desc='Gross Annual Energy Production')
-    capacity_factor = Float(0.0, iotype='out',
-        desc='Capacity factor')
-    array_aep = Array([], iotype='out', units='kW*h',
-        desc='The energy production per sector [nWD, nWS]')
-
-
-@implement_base(GenericPostProcessWindRose)
-class PostProcessSingleWindRose(Component):
-
-    """Using the same wind rose for all the wind turbines"""
-    # Inputs
-    wind_speeds = List([], iotype='in', units='m/s',
-        desc='The different wind speeds to run [nWS]')
-    wind_directions = List([], iotype='in', units='deg',
-        desc='The different wind directions to run [nWD]')
-    frequencies = List([], iotype='in',
-        desc='The different wind directions to run [nWD*nWS]')
-    powers = List([], iotype='in', units='kW*h',
-        desc='The different wind directions to run [nWD*nWS]')
-
-    # Outputs
-    net_aep = Float(0.0, iotype='out', units='kW*h',
-        desc='Annual Energy Production')
-    gross_aep = Float(0.0, iotype='out', units='kW*h',
-        desc='Gross Annual Energy Production')
-    capacity_factor = Float(0.0, iotype='out',
-        desc='Capacity factor')
-    array_aep = Array([], iotype='out', units='kW*h',
-        desc='The energy production per sector [nWD, nWS]')
-
-    def execute(self):
-        list_aep = [freq * power * 24 * 365 for freq,
-                    power in zip(self.frequencies, self.powers)]
-        self.net_aep = sum(list_aep)
-        # TODO: FIX gross_aep and capacity factor
-        #self.gross_aep = self.net_aep
-        #self.capacity_factor = self.net_aep / self.gross_aep
-
-        if len(self.wind_speeds) > 0 and len(self.wind_directions) > 0:
-            self.array_aep = array(list_aep).reshape([len(self.wind_speeds), len(self.wind_directions)])
-        else:
-            print self.__class__.__name__, 'inputs, wind_speed or wind_directions are empty'
-
-
-@implement_base(GenericPostProcessWindRose)
-class PostProcessMultipleWindRoses(Component):
-
-    """Use a different wind rose for each wind turbine"""
-    # Inputs
-    wind_speeds = List([], iotype='in', units='m/s',
-        desc='The different wind speeds to run [nWS]')
-    wind_directions = List([], iotype='in', units='deg',
-        desc='The different wind directions to run [nWD]')
-    frequencies = List([], iotype='in',
-        desc='The different wind directions to run [nWD*nWS][nWT]')
-    powers = List([], iotype='in', units='kW*h',
-        desc='The different wind directions to run [nWD*nWS][nWT]')
-
-    # Outputs
-    net_aep = Float(0.0, iotype='out', units='kW*h',
-        desc='Net Annual Energy Production')
-    gross_aep = Float(0.0, iotype='out', units='kW*h',
-        desc='Gross Annual Energy Production')
-    capacity_factor = Float(0.0, iotype='out',
-        desc='Capacity factor')
-    array_aep = Array([], iotype='out', units='kW*h',
-        desc='The energy production per sector [nWD, nWS]')
-
-    def execute(self):
-        array_aep = array([array(freq) * array(power) * 24 *
-                           365 for freq, power in zip(self.frequencies, self.powers)])
-        self.net_aep = array_aep.sum()
-        # TODO: FIX gross_aep and capacity factor
-        #self.gross_aep = array([array(freq) * array(power).max() * 24 * 365 for freq, power in zip(self.frequencies, self.powers)]).sum()
-        #self.capacity_factor = self.net_aep / self.gross_aep
-
-        try:
-            self.array_aep = array_aep.sum(1).reshape([len(self.wind_directions), len(self.wind_speeds)])
-        except ValueError as e:
-            print 'the array `array_aep doesn\'t have the right shape: %r, ' % array_aep.shape, e

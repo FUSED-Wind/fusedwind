@@ -44,6 +44,13 @@ class test_AEPSingleWindRose(unittest.TestCase):
 
         #import ipdb; ipdb.set_trace()
 
+class MyTestWindFarm(GenericWindFarm):
+    def execute(self):
+        self.wt_power = [random() * wt_desc.power_rating for wt_desc in self.wt_layout.wt_list()]
+        self.wt_thrust = [pow_ / (random() * self.wind_speed) for pow_ in self.wt_power]
+        self.power = sum(self.wt_power)
+        self.thrust = sum(self.wt_thrust)
+
 class test_AEPMultipleWindRoses(unittest.TestCase):
     def test_init(self):
         aep = AEPMultipleWindRoses()
@@ -52,7 +59,19 @@ class test_AEPMultipleWindRoses(unittest.TestCase):
         aep = AEPMultipleWindRoses()
         aep.configure()
 
-
+    def test_execute(self):
+        cG = AEPMultipleWindRoses()
+        cG.add('wf', MyTestWindFarm())
+        cG.configure()
+        cG.connect('wt_layout', 'wf.wt_layout')
+        cG.wind_speeds = np.linspace(4., 25., 10).tolist()
+        cG.wind_directions = np.linspace(0., 360., 36)[:-1].tolist()
+        nwt = 5
+        cG.wt_layout = generate_random_wt_layout(nwt=nwt)
+        cG.run()
+        print cG.net_aep
+        print cG.wt_aep
 
 if __name__ == '__main__':
     unittest.main()
+
