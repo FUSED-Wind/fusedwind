@@ -175,7 +175,7 @@ class TestGenericWindFarmTurbineLayout(TestCase):
         self.assertIsInstance(getattr(self.wtl, name), WTPC)
 
     def test_wt_list(self):
-        self.assertEqual(self.wtl.wt_list('name'), self.wtl.wt_names)
+        self.assertEqual(self.wtl._wt_list('name'), self.wtl.wt_names)
 
     def test_wt_array(self):
         assert_almost_equal(self.wtl.wt_array('position').shape, [self.wtl.n_wt, 2])
@@ -200,6 +200,11 @@ class TestGenericWindFarmTurbineLayout(TestCase):
         # TODO:
         # - figure out what to test
         pass
+
+    def test_update_positions(self):
+        new_position = generate_random_wt_positions(D=self.wtl.wt_array('rotor_diameter').max(), nwt=self.wtl.n_wt)
+        self.wtl.wt_positions = new_position
+        assert_almost_equal(new_position, self.wtl.wt_positions, err_msg='The new position has not been updated')
 
 
 if __name__ == '__main__':

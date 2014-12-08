@@ -46,7 +46,7 @@ class test_AEPSingleWindRose(unittest.TestCase):
 
 class MyTestWindFarm(GenericWindFarm):
     def execute(self):
-        self.wt_power = [random() * wt_desc.power_rating for wt_desc in self.wt_layout.wt_list()]
+        self.wt_power = [random() * wt_desc.power_rating for wt_desc in self.wt_layout.wt_list]
         self.wt_thrust = [pow_ / (random() * self.wind_speed) for pow_ in self.wt_power]
         self.power = sum(self.wt_power)
         self.thrust = sum(self.wt_thrust)

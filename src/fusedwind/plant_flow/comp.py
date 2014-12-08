@@ -301,13 +301,13 @@ class MultipleWindRosesCaseGenerator(Component):
         self.all_wind_directions = []
         self.all_wind_speeds = []
         self.all_frequencies = []
-        for wt in self.wt_layout.wt_list():
+        for wt in self.wt_layout.wt_list:
             wt.wind_rose.change_resolution(wind_directions=self.wind_directions, wind_speeds=self.wind_speeds)
         for i_ws, ws in enumerate(self.wind_speeds):
             for i_wd, wd in enumerate(self.wind_directions):
                 self.all_wind_directions.append(wd)
                 self.all_wind_speeds.append(ws)
-                self.all_frequencies.append([wt.wind_rose.frequency_array[i_wd, i_ws] for wt in self.wt_layout.wt_list()])
+                self.all_frequencies.append([wt.wind_rose.frequency_array[i_wd, i_ws] for wt in self.wt_layout.wt_list])
 
 
 @base

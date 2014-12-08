@@ -2,6 +2,7 @@ import numpy as np
 from numpy import ndarray, array, loadtxt, log, zeros, cos, arccos, sin, nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, arctan, arange
 from numpy import pi, sqrt, dot, diff
 from numpy.linalg.linalg import norm
+from numpy.testing import assert_equal
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from openmdao.lib.datatypes.api import  Bool, VarTree, Float, Slot, Array, List, Int, Str, Dict
@@ -535,7 +536,7 @@ class GenericWindFarmTurbineLayout(VariableTree):
         self.add(wt.name, VarTree(wt))
         self.wt_names.append(wt.name)
 
-    def wt_list(self, attr=None):
+    def _wt_list(self, attr=None):
         """ Get a list of leafs
         Parameters
         ----------
@@ -550,6 +551,13 @@ class GenericWindFarmTurbineLayout(VariableTree):
         else:
             return [getattr(self, wtn) for wtn in self.wt_names]
 
+    @property
+    def wt_list(self):
+        """backward compatibility access to wt_list
+        :returns a list of wind turbine object
+        """
+        return self._wt_list()
+
     def wt_array(self, attr=None):
         """ Get an array of attributes of the leafs
         Parameters
@@ -560,7 +568,7 @@ class GenericWindFarmTurbineLayout(VariableTree):
         -------
          numpy.ndarray
         """
-        return np.array(self.wt_list(attr))
+        return np.array(self._wt_list(attr))
 
 
     @property
@@ -572,10 +580,21 @@ class GenericWindFarmTurbineLayout(VariableTree):
         """backward compatibility access to wt_positions """
         return self.wt_array(attr='position')
 
+    @wt_positions.setter
+    def wt_positions(self, value):
+        """backward compatibility access to wt_positions
+        update the position of the wind farm layout
+        :param value: ndarray([nwt, 2])
+        :return: nothing
+        """
+        assert_equal(value.shape, [self.n_wt, 2])
+        for iwt, wt in enumerate(self.wt_list):
+            wt.position = value[iwt,:]
+
     @property
     def wt_wind_roses(self):
         """backward compatibility access to wt_wind_roses: wind rose for each wind turbine position list[n_wt]"""
-        return self.wt_list(attr='wind_rose')
+        return self._wt_list(attr='wind_rose')
 
 
     # def test_consistency(self):
@@ -635,7 +654,7 @@ class GenericWindFarmTurbineLayout(VariableTree):
         if len(self.wt_names) > 0:
             di['name'] = self.wt_names[n]
         if self.n_wt > 0:
-            for k,v in self.wt_list()[n].items():
+            for k,v in self.wt_list[n].items():
                 di[k] = v
         di['x'] = self.wt_positions[n,0]
         di['y'] = self.wt_positions[n,1]
