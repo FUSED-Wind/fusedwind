@@ -18,6 +18,7 @@ class Curve(VariableTree):
         self.points = points
 
         self._compute_s()
+        self._compute_dp()
 
     def _compute_s(self):
         """
@@ -27,9 +28,14 @@ class Curve(VariableTree):
         self.length = s[-1]
         self.s = s/s[-1]
 
+    def _compute_dp(self):
+        """compute the unit direction vectors along the curve"""
+ 
+        t1 = np.gradient(self.points[:,:])[0]
+        self.dp = np.array([t1[i, :] / np.linalg.norm(t1[i, :]) for i in range(t1.shape[0])])
+
 
 class BeamGeometryVT(VariableTree):
-
 
     s = Array(desc='x-coordinates of beam')
     x = Array(desc='x-coordinates of beam')
