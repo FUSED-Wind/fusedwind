@@ -9,7 +9,7 @@ def distfunc(dinp, ival=1):
     function for smoothly distributing points along a curve
     according to a set of control points
 
-    Adapted from NN Sørensen's distfunc.f
+    Adapted from NN Soerensen's distfunc.f
 
     parameters:
     -----------
@@ -26,6 +26,8 @@ def distfunc(dinp, ival=1):
     s: array
         distribed points
     """
+
+    dinp = np.asarray(dinp)
 
     ndist=dinp[-1, 2]
     nn = len(dinp)
