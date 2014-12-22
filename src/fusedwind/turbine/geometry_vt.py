@@ -59,7 +59,7 @@ class BladePlanformVT(BeamGeometryVT):
     p_le = Array(units=None, desc='Normalized distance from LE to pitch axis')
 
 
-class TowerGeometVT(BeamGeometryVT):
+class TubularTowerGeometryVT(BeamGeometryVT):
 
     radius = Array(desc='Tower radius as function of s')
 
