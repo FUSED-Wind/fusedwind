@@ -10,7 +10,7 @@ Copyright (c) NREL. All rights reserved.
 
 import unittest
 import numpy as np
-from commonse.utilities import check_gradient_unit_test
+from fusedwind.lib.utilities import check_gradient_unit_test
 from fusedwind.plant_flow.basic_aep import aep_component, WeibullCDF, RayleighCDF, BasicAEP
 
 
