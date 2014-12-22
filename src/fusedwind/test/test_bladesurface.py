@@ -12,7 +12,7 @@ PATH = pkg_resources.resource_filename('fusedwind', 'test')
 
 def configure_blade():
 
-    pf = read_blade_planform('data/DTU_10MW_RWT_blade_axis_prebend.dat')
+    pf = read_blade_planform(os.path.join(PATH, 'data/DTU_10MW_RWT_blade_axis_prebend.dat'))
     pf = redistribute_blade_planform(pf, np.linspace(0, 1, 5))
 
     b = LoftedBladeSurface()
