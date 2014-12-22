@@ -1,11 +1,13 @@
 
 import numpy as np
-from scipy.interpolate import pchip
-
+from scipy.interpolate import pchip, Akima1DInterpolator
+from scipy.linalg import norm
 from openmdao.main.api import Component
-from openmdao.lib.datatypes.api import Array, VarTree, Enum, Int
+from openmdao.lib.datatypes.api import Instance, Array, VarTree, Enum, Int, List, Str
 
-from fusedwind.turbine.geometry_vt import BladePlanformVT
+from fusedwind.lib.geom_tools import RotMat, dotXC, calculate_length
+from fusedwind.turbine.geometry_vt import Curve, BladePlanformVT, BladeSurfaceVT
+from fusedwind.turbine.airfoil_vt import BlendAirfoilShapes
 from fusedwind.interface import base, implement_base
 
 
@@ -162,3 +164,152 @@ class RedistributedBladePlanform(Component):
             tck = pchip(self.pfIn.s, var)
             newvar = tck(self.x) 
             setattr(self.pfOut, name, newvar)
+
+
+def redistribute_blade_planform(pfIn, x):
+
+    pfOut = BladePlanformVT()
+    pfOut.s = x.copy()
+
+    for name in pfIn.list_vars():
+        var = getattr(pfIn, name)
+        if not isinstance(var, np.ndarray): continue
+        tck = Akima1DInterpolator(pfIn.s, var)
+        newvar = tck(x) 
+        setattr(pfOut, name, newvar)
+
+    return pfOut
+
+
+def read_blade_planform(filename):
+
+    data = np.loadtxt(filename)
+    s = calculate_length(data[:, [0, 1, 2]])
+
+    pf = BladePlanformVT()
+    pf.length = data[-1, 2]
+    pf.s = s
+    pf.x = data[:, 0] / data[-1, 2]
+    pf.y = data[:, 1] / data[-1, 2]
+    pf.z = data[:, 2] / data[-1, 2]
+    pf.rot_x = data[:, 3]
+    pf.rot_y = data[:, 4]
+    pf.rot_z = data[:, 5]
+    pf.chord = data[:, 6] / data[-1, 2]
+    pf.rthick = data[:, 7]
+    pf.rthick /= pf.rthick.max()
+    pf.p_le = data[:, 8]
+
+    return pf
+
+
+class LoftedBladeSurface(Component):
+
+    pfIn = VarTree(BladePlanformVT(), iotype='in')
+    base_airfoils = List(iotype='in')
+    blend_var = Array(iotype='in')
+    chord_ni = Int(300, iotype='in')
+
+    interp_type = Enum('rthick', ('rthick', 's'), iotype='in')
+    surface_spline = Str('akima', iotype='in', desc='Spline')
+
+    rot_order = Array(np.array([2,1,0]),iotype='in',desc='rotation order of airfoil sections'
+                                                         'default z,y,x (twist,sweep,dihedral)')
+
+    x = Array(iotype='out')
+    surfout = VarTree(BladeSurfaceVT(), iotype='out')
+    surfnorot = VarTree(BladeSurfaceVT(), iotype='out')
+
+    def execute(self):
+
+        self.interpolator = BlendAirfoilShapes()
+        self.interpolator.ni = self.chord_ni
+        self.interpolator.spline = self.surface_spline
+        self.interpolator.blend_var = self.blend_var
+        self.interpolator.airfoil_list = self.base_airfoils
+        self.interpolator.initialize()
+
+        ni = self.pfIn.s.shape[0]
+        x = np.zeros((self.chord_ni, ni, 3))
+
+        for i in range(ni):
+
+            s = self.pfIn.s[i]
+            pos_x = self.pfIn.x[i]
+            pos_y = self.pfIn.y[i]
+            pos_z = self.pfIn.z[i]
+            chord = self.pfIn.chord[i]
+            p_le = self.pfIn.p_le[i]
+
+            # generate the blended airfoil shape
+            if self.interp_type == 'rthick':
+                rthick = self.pfIn.rthick[i]
+                points = self.interpolator(rthick)
+            else:
+                points = self.interpolator(s)
+
+            points *= chord
+            points[:, 0] += pos_x - chord * p_le
+
+            # x-coordinate needs to be inverted for clockwise rotating blades
+            x[:, i, :] = (np.array([-points[:,0], points[:,1], x.shape[0] * [pos_z]]).T)
+
+        # save non-rotated blade (only really applicable for straight blades)
+        x_norm = x.copy()
+        x[:, :, 1] += self.pfIn.y
+        self.x = self.rotate(x)
+
+        self.surfnorot.surface = x_norm
+        self.surfout.surface = self.x
+
+    def rotate(self, x):
+        """
+        rotate blade sections accounting for twist and main axis orientation
+        
+        the blade will be built with a "sheared" layout, ie no rotation around y
+        in the case of sweep.
+        if the main axis includes a winglet, the blade sections will be
+        rotated accordingly. ensure that an adequate point distribution is
+        used in this case to avoid sections colliding in the winglet junction!
+        """
+
+        main_axis = Curve(points=np.array([self.pfIn.x, self.pfIn.y, self.pfIn.z]).T)
+
+        rot_normals = np.zeros((3,3))
+        x_rot = np.zeros(x.shape)
+
+        for i in range(x.shape[1]):
+            points = x[:, i, :]
+            rot_center = main_axis.points[i]
+            # rotation angles read from file
+            angles = np.array([self.pfIn.rot_x[i],
+                               self.pfIn.rot_y[i], 
+                               self.pfIn.rot_z[i]]) * np.pi / 180.
+
+            # compute rotation angles of main_axis
+            t = main_axis.dp[i]
+            rot = np.zeros(3)
+            rot[0] = -np.arctan(t[1]/(t[2]+1.e-20))
+            v = np.array([t[2], t[1]])
+            vt = np.dot(v, v)**0.5
+            rot[1] = (np.arcsin(t[0]/vt))
+            angles[0] += rot[0]
+            angles[1] += rot[1]
+
+            # compute x-y-z normal vectors of rotation
+            n_y = np.cross(t, [1,0,0])
+            n_y = n_y/norm(n_y)
+            rot_normals[0, :] = np.array([1,0,0])
+            rot_normals[1, :] = n_y
+            rot_normals[2, :] = t
+
+            # compute final rotation matrix
+            rotation_matrix = np.matrix([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
+            for n, ii in enumerate(self.rot_order):
+                mat = np.matrix(RotMat(rot_normals[ii], angles[ii]))
+                rotation_matrix = mat * rotation_matrix
+
+            # apply rotation
+            x_rot[:, i, :] = dotXC(rotation_matrix, points, rot_center)
+
+        return x_rot
