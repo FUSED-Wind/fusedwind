@@ -173,7 +173,7 @@ class BlendAirfoilShapes(object):
     ``scipy.interpolate.pchip``: has some unappealing characteristics at the bounds\n
     ``fusedwind.lib.cubicspline``: can overshoot significantly with large spacing in
     thickness\n
-    ``scipy.interpolate.Akima1DInterpolator`: good compromise, overshoots less
+    ``scipy.interpolate.Akima1DInterpolator``: good compromise, overshoots less
     than a natural cubic spline\n
 
     The default spline is scipy.interpolate.Akima1DInterpolator.

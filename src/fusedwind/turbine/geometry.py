@@ -187,7 +187,7 @@ def read_blade_planform(filename):
 
     pf = BladePlanformVT()
     pf.length = data[-1, 2]
-    pf.s = s
+    pf.s = s / s[-1]
     pf.x = data[:, 0] / data[-1, 2]
     pf.y = data[:, 1] / data[-1, 2]
     pf.z = data[:, 2] / data[-1, 2]
@@ -235,10 +235,10 @@ class LoftedBladeSurface(Component):
         self.interpolator.airfoil_list = self.base_airfoils
         self.interpolator.initialize()
 
-        ni = self.pfIn.s.shape[0]
-        x = np.zeros((self.chord_ni, ni, 3))
+        self.span_ni = self.pfIn.s.shape[0]
+        x = np.zeros((self.chord_ni, self.span_ni, 3))
 
-        for i in range(ni):
+        for i in range(self.span_ni):
 
             s = self.pfIn.s[i]
             pos_x = self.pfIn.x[i]
