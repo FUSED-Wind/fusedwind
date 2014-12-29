@@ -431,11 +431,12 @@ class BladeStructureBuilderBase(Component):
         retrieve a material by its name
         
         parameters
-        -----------
+        ----------
         name: string
             name of material
+
         returns
-        --------
+        -------
         mat: object
             MaterialProps VariableTree object
         """
@@ -455,7 +456,7 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
     vartrees (CrossSectionStructureVT) used by structural codes like BECAS
     """
 
-    radius = Float(iotype='in')
+    blade_length = Float(iotype='in')
     surface = VarTree(BladeSurfaceVT(), iotype='in', desc='Stacked blade surface object')
     st3d = VarTree(BladeStructureVT3D(), iotype='in', desc='Blade structure definition')
 
@@ -475,10 +476,10 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
             x = self.st3d.x[i]
             # print 'adding section at r/R = %2.2f' % x 
             st2d = CrossSectionStructureVT()
-            st2d.s = x * self.radius
+            st2d.s = x * self.blade_length
             st2d.DPs = []
             try:
-                st2d.curve = self.surface.interpolate_profile(x) * self.radius
+                st2d.curve = self.surface.interpolate_profile(x) * self.blade_length
             except:
                 pass
             for ir, rname in enumerate(self.st3d.regions):
