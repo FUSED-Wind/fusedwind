@@ -36,7 +36,7 @@ class LoftedBladeSurfaceTest(unittest.TestCase):
         b = configure_blade()
         b.execute()
         d = np.loadtxt(os.path.join(PATH, 'data/blade_test_data.dat')).reshape(40, 5, 3)
-        self.assertEqual(np.testing.assert_array_almost_equal(b.x, d, decimal=6), None)
+        self.assertEqual(np.testing.assert_array_almost_equal(b.surfout.surface, d, decimal=6), None)
 
 if __name__ == '__main__':
 

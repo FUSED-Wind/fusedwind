@@ -6,8 +6,7 @@ from openmdao.main.api import Component
 from openmdao.lib.datatypes.api import Instance, Array, VarTree, Enum, Int, List, Str
 
 from fusedwind.lib.geom_tools import RotMat, dotXC, calculate_length
-from fusedwind.turbine.geometry_vt import Curve, BladePlanformVT, BladeSurfaceVT
-from fusedwind.turbine.airfoil_vt import BlendAirfoilShapes
+from fusedwind.turbine.geometry_vt import Curve, BladePlanformVT, BladeSurfaceVT, BlendAirfoilShapes
 from fusedwind.interface import base, implement_base
 
 
@@ -203,6 +202,14 @@ def read_blade_planform(filename):
     return pf
 
 
+@base
+class LoftedBladeSurfaceBase(Component):
+
+    surfout = VarTree(BladeSurfaceVT(), iotype='out')
+    surfnorot = VarTree(BladeSurfaceVT(), iotype='out')
+
+
+@implement_base(LoftedBladeSurfaceBase)
 class LoftedBladeSurface(Component):
 
     pfIn = VarTree(BladePlanformVT(), iotype='in')
@@ -216,7 +223,6 @@ class LoftedBladeSurface(Component):
     rot_order = Array(np.array([2,1,0]),iotype='in',desc='rotation order of airfoil sections'
                                                          'default z,y,x (twist,sweep,dihedral)')
 
-    x = Array(iotype='out')
     surfout = VarTree(BladeSurfaceVT(), iotype='out')
     surfnorot = VarTree(BladeSurfaceVT(), iotype='out')
 
@@ -257,10 +263,10 @@ class LoftedBladeSurface(Component):
         # save non-rotated blade (only really applicable for straight blades)
         x_norm = x.copy()
         x[:, :, 1] += self.pfIn.y
-        self.x = self.rotate(x)
+        x = self.rotate(x)
 
         self.surfnorot.surface = x_norm
-        self.surfout.surface = self.x
+        self.surfout.surface = x
 
     def rotate(self, x):
         """
