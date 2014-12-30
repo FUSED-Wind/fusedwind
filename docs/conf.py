@@ -1,6 +1,11 @@
 # -*- coding: utf-8 -*-
 import sys, os
 
+def _sys_path_add(toadd=None):
+    if toadd:
+        distdir = os.path.dirname(os.path.dirname(__file__))
+        sys.path = [distdir] + [os.path.join(distdir, p) for p in toadd] + sys.path
+
 sys.path.insert(0, os.path.abspath('../../'))
 sys.path.append(os.path.abspath('_themes'))
 
@@ -10,6 +15,7 @@ sys.path.append(os.path.abspath('_themes'))
 sys.path.insert(0, os.path.abspath('.'))
 # sys.path.append(os.path.abspath('exts'))
 
+_sys_path_add(['src', 'src/fusedwind','src/fusedwind/test'])
 
 # General information about the project.
 project = u'FUSED-Wind'
