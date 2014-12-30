@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 from scipy.interpolate import pchip, Akima1DInterpolator
 
 from openmdao.main.api import VariableTree
-from openmdao.lib.datatypes.api import Float, Array, VarTree
+from openmdao.lib.datatypes.api import Float, Array, VarTree, Int
 
 from fusedwind.interface import base, implement_base
 from fusedwind.lib.geom_tools import calculate_length, curvature
@@ -45,8 +45,15 @@ class Curve(VariableTree):
 @base
 class AirfoilShape(Curve):
 
+    ni = Int(desc='Number of points')
+    LE = Array(desc='Leading edge coordinates')
+    TE = Array(desc='Leading edge coordinates')
+    sLE = Float(desc='Leading edge curve fraction')
+
     def __init__(self, points):
         super(AirfoilShape, self).__init__(points)
+
+        self.ni = points.shape[0]
 
         self.spline = []
         self.spline.append(NaturalCubicSpline(self.s, points[:, 0]))
@@ -298,6 +305,7 @@ class BeamGeometryVT(VariableTree):
 @base
 class BladePlanformVT(BeamGeometryVT):
 
+    blade_length = Float(units='m', desc='Blade length')
     chord = Array(units=None, desc='Chord length at each section')
     rthick = Array(units=None, desc='Relative thickness at each section, t/c')
     p_le = Array(units=None, desc='Normalized distance from LE to pitch axis')
