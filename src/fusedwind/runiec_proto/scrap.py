@@ -1,4 +1,5 @@
 
+def some_func():
 
         print "collecting ALL the output"
         for c in self.ws_driver.recorders[0].get_iterator():
