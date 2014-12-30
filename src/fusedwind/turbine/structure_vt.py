@@ -2,11 +2,12 @@
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot, Dict
 # from fusedwind.turbine.airfoil_vt import AirfoilShapeVT 
-
+from fusedwind.interface import base, implement_base
 
 
 
 # too aeroelastic code specific?!
+@base
 class ConcentratedMass(VariableTree):
 
     s = Float(desc='Non-dimens the inertia is attached')
@@ -15,6 +16,7 @@ class ConcentratedMass(VariableTree):
     mass = Float(desc='Concentrated mass', units='kg')
 
 
+@base
 class MassProperties(VariableTree):
     """mass and mass moments of inertia of a component"""
 
@@ -27,6 +29,7 @@ class MassProperties(VariableTree):
     Iyz = Float(units='kg*m**2', desc='mass y-z product of inertia')
 
 
+@base
 class BeamStructureVT(VariableTree):
 
     s = Array(desc='Running curve length of beam', units='m')
@@ -50,6 +53,7 @@ class BeamStructureVT(VariableTree):
     y_e = Array(desc='y-distance from main axis to center of elasticity', units='m')
 
 
+@base
 class MaterialProps(VariableTree):
     """
     Material properties 
@@ -98,6 +102,7 @@ class MaterialProps(VariableTree):
     C4a = Float(1., desc='influence of curing technique')
 
 
+@base
 class Layer(VariableTree):
     """
     A layer represents a stack of multidirectional plies and is assigned
@@ -114,6 +119,7 @@ class Layer(VariableTree):
     plyname = Str()
 
 
+@base
 class Region(VariableTree):
     """
     A region covers a fraction of the curve length along the surface of
@@ -140,6 +146,7 @@ class Region(VariableTree):
             self.thickness += np.maximum(0., getattr(self, lname).thickness)
 
 
+@base
 class CrossSectionStructureVT(VariableTree):
     """
     Container for a cross-sectional definition of the
@@ -174,6 +181,7 @@ class CrossSectionStructureVT(VariableTree):
         return self.materials[name]
 
 
+@base
 class Layer3D(VariableTree):
     """
     Same as Layer, except for being a function of span
@@ -186,6 +194,7 @@ class Layer3D(VariableTree):
     angle = Array(units='deg', desc='layup angle')
 
 
+@base
 class Region3D(VariableTree):
     """
     Same as region except for being a function of span
@@ -208,10 +217,10 @@ class Region3D(VariableTree):
         return getattr(self, lname)
 
 
+@base
 class BladeStructureVT3D(VariableTree):
     """
-    A section covers a fraction of the span of a blade
-    and is a container for a list of regions with layers.
+    Variable tree for the structural definition of a blade.
     """
 
     x = Array(desc='spanwise discretization of blade')

@@ -43,8 +43,7 @@ def distfunc(dinp, ival=1):
         s1 = dinp[i, 0]
         if i  > 0  and d0 < 0.:
             d0 = fdist[n0] - fdist[n0-1]
-            print 'set d0', d0
-        d1 = dinp[i,1]
+        d1 = dinp[i, 1]
         n1 = np.int(dinp[i, 2]) - 1
         _len = s1 - s0
         delta1 = d0
@@ -71,15 +70,15 @@ def tanhdist(delta1=None,delta2=None,_len=None,i1=None,i2=None):
     delta2=delta2 / _len
     ni = i2 - i1
     fdist = np.zeros(ni + 1)
-    if (((delta1) <= (0.0)) and ((1 / delta2) < (ni))):
+    if delta1 <= 0.0 and 1. / delta2 < ni:
         delta1=1 / (ni ** 2 * delta2 * 1.02)
     else:
-        if (((delta2) <= 0.0) and ((1 / delta1) < (ni))):
+        if delta2 <= 0.0 and 1. / delta1 < ni:
             delta2=1 / (ni ** 2 * delta1 * 1.02)
-    if ((delta1 > 0.0) and (delta2 > 0.0)):
+    if delta1 > 0.0 and delta2 > 0.0:
         a=np.sqrt(delta2) / np.sqrt(delta1)
         b=1.0 / (ni * np.sqrt(delta1 * delta2))
-        if (b >= 1.0):
+        if b >= 1.0:
             delta=transsinh(b)
             for i in range(ni + 1):
                 ftmp=0.5 * (1 + np.tanh(delta * (i / ni - 0.5)) / np.tanh(0.5 * delta))
@@ -90,13 +89,13 @@ def tanhdist(delta1=None,delta2=None,_len=None,i1=None,i2=None):
                 ftmp=0.5 * (1 + np.sinh(delta * (i  / ni - 0.5)) / np.sinh(0.5 * delta))
                 fdist[i]=ftmp / (a + (1 - a) * ftmp)
     else:
-        if (delta1 > 0.0):
+        if delta1 > 0.0:
             b=1.0 / (ni * delta1)
             delta=transsinh(b)
             for i in range(ni + 1):
                 fdist[i]=1.0 + np.tanh(0.5 * delta * (i / ni - 1.0)) / np.tanh(0.5 * delta)
         else:
-            if (delta2 > 0.0):
+            if delta2 > 0.0:
                 b=1.0 / (ni * delta2)
                 delta=transsinh(b)
                 for i in range(ni + 1):
@@ -109,7 +108,7 @@ def tanhdist(delta1=None,delta2=None,_len=None,i1=None,i2=None):
 
 def sinhdist(delta1=None,delta2=None,_len=None,i1=None,i2=None):
 
-    if (i2 == i1):
+    if i2 == i1:
         return fdist
     delta1=delta1 / _len
     delta2=delta2 / _len
