@@ -12,7 +12,7 @@ First, the necessary modules are imported; in this case we import the example mo
 We will perform a set up of each of the base, extended and full models for analysis of turbine and balance of station costs as well as operational expenditures and overall financial analysis.
 
 Turbine Cost Models
-^^^^^^^^^^^^^^^^^^^^
+++++++++++++++++++++
 
 We begin with the turbine cost models and the most basic of them which simple allows you to have a turbine assembly consisting of whatever sub-models necessary and a simple cost aggregator model for the turbine.  We set up the model, run it and print out the turbine cost results.
  
@@ -34,7 +34,7 @@ Finally, the full version of the turbine cost model includes individual cost mod
     :end-before: # --- 4
 
 Balance of Station Cost Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++++++++
 
 The basic balance of station model includes an assembly consisting of whatever sub-models are necessary and a simple cost aggregator.  We set up the model, run it and print out the balance of station cost results.
 
@@ -55,7 +55,7 @@ The full version of the balance of station model requires even higher resolution
     :end-before: # --- 7
 
 Operational Expenditures Models
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+++++++++++++++++++++++++++++++++
 
 The basic operational expenditures model includes an assembly consisting of whatever sub-models are necessary and a simple cost aggregator.  We set up the model, run it and print out the operational expenditures results.
 
@@ -70,7 +70,7 @@ The extended operational expenditures model is similar but requires a more speci
     :end-before: # --- 9
 
 Finance Models
-^^^^^^^^^^^^^^^
++++++++++++++++
 
 The basic finance model includes an assembly consisting of whatever sub-models are necessary and a simple cost aggregator.  We set up the model, run it and print out the finance results.
 

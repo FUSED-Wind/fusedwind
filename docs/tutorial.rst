@@ -11,3 +11,4 @@ These tutorials cover example usage of fused_wind for simple wind turbine and pl
     plantcost_ex
     plantflow_ex
     runbatch_ex
+    turbine_ex
