@@ -7,20 +7,17 @@ Variable Trees
 ++++++++++++++++
 .. automodule:: fusedwind.plant_flow.vt
   :members:
-  :special-members:
 
 Components
 +++++++++++++
 
 .. automodule:: fusedwind.plant_flow.comp
   :members:
-  :special-members:
 
 Assemblies
 +++++++++++
 .. automodule:: fusedwind.plant_flow.asym
   :members:
-  :special-members:
 
 Basic AEP Module
 +++++++++++++++++
@@ -29,4 +26,3 @@ This set of components and assemblies implements a basic set of aep estimation t
 
 .. automodule:: fusedwind.plant_flow.basic_aep
   :members:
-  :special-members:
