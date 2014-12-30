@@ -16,7 +16,7 @@ def configure_blade():
     pf = redistribute_blade_planform(pf, np.linspace(0, 1, 5))
 
     b = LoftedBladeSurface()
-    b.pfIn = pf
+    b.pf = pf
     b.chord_ni = 40
 
     for f in [os.path.join(PATH, 'data/ffaw3241.dat'),

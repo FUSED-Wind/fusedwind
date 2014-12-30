@@ -308,6 +308,7 @@ class BladePlanformVT(BeamGeometryVT):
     blade_length = Float(units='m', desc='Blade length')
     chord = Array(units=None, desc='Chord length at each section')
     rthick = Array(units=None, desc='Relative thickness at each section, t/c')
+    athick = Array(units=None, desc='Relative thickness at each section, t/c')
     p_le = Array(units=None, desc='Normalized distance from LE to pitch axis')
 
 

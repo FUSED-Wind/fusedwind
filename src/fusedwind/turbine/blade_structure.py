@@ -7,6 +7,7 @@ from openmdao.main.api import Component, Assembly
 from openmdao.lib.datatypes.api import VarTree, Float, Array, Bool, Str, List, Int
 
 from fusedwind.turbine.geometry_vt import BladeSurfaceVT
+from fusedwind.turbine.geometry import RedistributedBladePlanform, SplineComponentBase, FFDSplineComponentBase
 from fusedwind.turbine.structure_vt import BladeStructureVT3D, CrossSectionStructureVT, BeamStructureVT
 from fusedwind.interface import base, implement_base
 
@@ -111,23 +112,23 @@ class BladeStructureReader(Component):
         """
         dp3d data format:
 
-        # web00 web01
-        <DP index0> <DP index1>
-        <DP index0> <DP index0>
-        # s DP00  DP01  DP02  DP03  DP04  DP05
-        <float> <float> <float> <float> ... <float>
-         .    .       .     .           .
-         .    .       .     .           .
-         .    .       .     .           .
+        # web00 web01\n
+        <DP index0> <DP index1>\n
+        <DP index0> <DP index0>\n
+        # s DP00  DP01  DP02  DP03  DP04  DP05\n
+        <float> <float> <float> <float> ... <float>\n
+        .       .       .       .           .\n
+        .       .       .       .           .\n
+        .       .       .       .           .\n
 
-        st3d data format:
+        st3d data format:\n
 
-        # region00
-        # s    triax    uniax    core    uniax01    triax01    core01
-        <float> <float> <float> <float> <float> <float> <float>
-           .       .       .       .       .       .       .
-           .       .       .       .       .       .       .
-           .       .       .       .       .       .       .
+        # region00\n
+        # s    triax    uniax    core    uniax01    triax01    core01\n
+        <float> <float> <float> <float> <float> <float> <float>\n
+        .       .       .       .       .       .       .\n
+        .       .       .       .       .       .       .\n
+        .       .       .       .       .       .       .\n
         """
 
         self.dp_files = glob.glob(self.filebase + '*.dp3d')
@@ -365,18 +366,25 @@ class BladeStructureWriter(Component):
             fid.close()
 
 
-class BeamStructureReader(Component):
+@base
+class BeamStructureReaderBase(Component):
 
+    beamprops = VarTree(BeamStructureVT(), iotype='out')
+
+
+@implement_base(BeamStructureReaderBase)
+class BeamStructureReader(Component):
+    """
+    Default reader for a beam structure file.
+    """
 
     st_filename = Str(iotype='in')
     beamprops = VarTree(BeamStructureVT(), iotype='out')
 
     def execute(self):
         """  
-        Default reader for a beam structure file.
-
         The format of the file should be:
-        main_s[0] dm[1] x_cg[2] y_cg[3] ri_x[4] ri_y[5] x_sh[6] y_sh[7] E[8] ...
+        main_s[0] dm[1] x_cg[2] y_cg[3] ri_x[4] ri_y[5] x_sh[6] y_sh[7] E[8] ...\n
         G[9] I_x[10] I_y[11] K[12] k_x[13] k_y[14] A[15] pitch[16] x_e[17] y_e[18]
 
         Sub-classes can overwrite this function to change the reader's behaviour.
@@ -410,6 +418,171 @@ class BeamStructureReader(Component):
         self.beamprops.pitch = st_data[:, 16]
         self.beamprops.x_e = st_data[:, 17]
         self.beamprops.y_e = st_data[:, 18]
+
+
+@implement_base(ModifyBladeStructureBase)
+class SplinedBladeStructure(Assembly):
+    """
+    Class for building a complete spline parameterized
+    representation of the blade structure.
+
+    Outputs a BladeStructureVT3D vartree with a discrete
+    representation of the structural geometry.
+
+    Interface with a BladeStructureBuilder class for generating code specific
+    inputs.
+    """
+
+    x = Array(iotype='in', desc='spanwise resolution of blade')
+    span_ni = Int(20, iotype='in', desc='Number of discrete points along span')
+    nC = Int(8, iotype='in', desc='Number of spline control points along span')
+    Cx = Array(iotype='in', desc='spanwise distribution of spline control points')
+    st3dIn = VarTree(BladeStructureVT3D(), iotype='in',
+                                         desc='Vartree containing initial discrete definition of blade structure')
+    st3dOut = VarTree(BladeStructureVT3D(), iotype='out',
+                                         desc='Vartree containing re-splined discrete definition of blade structure')
+
+    def __init__(self):
+        """
+        initialize the blade structure
+
+        parameters
+        -----------
+        nsec: int
+            total number of sections in blade
+        """
+        super(SplinedBladeStructure, self).__init__()
+
+        self._nsec = 0
+
+        self.add('pf', RedistributedBladePlanform())
+        self.driver.workflow.add('pf')
+        self.create_passthrough('pf.pfIn')
+        self.create_passthrough('pf.pfOut.blade_length')
+        self.connect('x', 'pf.x')
+
+    def configure_bladestructure(self):
+        """
+        method for trawling through the st3dIn vartree
+        and initializing all spline curves in the assembly
+        """
+
+        if self.x.shape[0] == 0:
+            self.x = np.linspace(0, 1, self.span_ni)
+        else:
+            self.span_ni = self.x.shape[0]
+        if self.Cx.shape[0] == 0:
+            self.Cx = np.linspace(0, 1, self.nC)
+        else:
+            self.nC = self.Cx.shape[0]
+
+        self.st3dOut = self.st3dIn.copy()
+        self.connect('x', 'st3dOut.x')
+
+        sec = self.st3dIn
+        nr = len(sec.regions)
+        for ip in range(nr + 1):
+            dpname = 'DP%02d' % ip
+            # division point spline
+            DPc = self.add(dpname, FFDSplineComponentBase(self.nC))
+            self.driver.workflow.add(dpname)
+            # DPc.log_level = logging.DEBUG
+            x = getattr(sec, 'x')
+            DP = getattr(sec, dpname)
+            self.connect('x', '%s.x' % dpname)
+            self.connect('Cx', dpname + '.Cx')
+            DPc.xinit = x
+            DPc.Pinit = DP
+            self.connect(dpname + '.P', '.'.join(['st3dOut', dpname]))
+            self.create_passthrough(dpname + '.C', alias=dpname + '_C')
+            # regions
+            if ip < nr:
+                rname = 'region%02d' % ip
+                region = getattr(sec, rname)
+                for lname in region.layers:
+                    layer = getattr(region, lname)
+                    lcname = 'r%02d%s' % (ip, lname)
+                    # thickness spline
+                    lcomp = self.add(lcname+'T', FFDSplineComponentBase(self.nC))
+                    self.driver.workflow.add(lcname+'T')
+                    # lcomp.log_level = logging.DEBUG
+                    self.connect('x', '%s.x' % (lcname + 'T'))
+                    lcomp.xinit = sec.x
+                    lcomp.Pinit = layer.thickness
+                    self.connect('Cx', lcname+'T' + '.Cx')
+                    self.connect('%sT.P'%lcname, '.'.join(['st3dOut', rname, lname, 'thickness']))
+                    # angle spline
+                    lcomp = self.add(lcname+'A', FFDSplineComponentBase(self.nC))
+                    self.driver.workflow.add(lcname+'A')
+                    # lcomp.log_level = logging.DEBUG
+                    self.connect('x', '%s.x' % (lcname + 'A'))
+                    self.create_passthrough(lcname+'T' + '.C', alias=lcname+'T' + '_C')
+                    lcomp.xinit = sec.x
+                    lcomp.Pinit = layer.angle
+                    self.connect('Cx', lcname+'A' + '.Cx')
+                    self.connect('%sA.P'%lcname, '.'.join(['st3dOut', rname, lname, 'angle']))
+                    self.create_passthrough(lcname+'A' + '.C', alias=lcname+'A' + '_C')
+        # shear webs
+        for wname in sec.webs:
+            web = getattr(sec, wname)
+            for lname in web.layers:
+                layer = getattr(web, lname)
+                lcname = '%s%s' % (wname, lname)
+                # thickness spline
+                lcomp = self.add(lcname+'T', FFDSplineComponentBase(self.nC))
+                # lcomp.log_level = logging.DEBUG
+                self.driver.workflow.add(lcname+'T')
+                self.connect('x', '%s.x' % (lcname + 'T'))
+                lcomp.xinit = sec.x
+                lcomp.Pinit = layer.thickness
+                self.connect('Cx', lcname+'T' + '.Cx')
+                self.connect('%sT.P'%lcname, '.'.join(['st3dOut', wname, lname, 'thickness']))
+                self.create_passthrough(lcname+'T' + '.C', alias=lcname+'T' + '_C')
+                # angle spline
+                lcomp = self.add(lcname+'A', FFDSplineComponentBase(self.nC))
+                # lcomp.log_level = logging.DEBUG
+                self.driver.workflow.add(lcname+'A')
+                self.connect('x', '%s.x' % (lcname + 'A'))
+                lcomp.xinit = sec.x
+                lcomp.Pinit = layer.angle
+                self.connect('Cx', lcname+'A' + '.Cx')
+                self.connect('%sA.P'%lcname, '.'.join(['st3dOut', wname, lname, 'angle']))
+                self.create_passthrough(lcname+'A' + '.C', alias=lcname+'A' + '_C')
+        
+        # copy materials to output VT
+        self.st3dOut.materials = self.st3dIn.materials.copy()
+
+
+
+    def _post_execute(self):
+        """
+        update all thicknesses and region widths
+        """
+        super(SplinedBladeStructure, self)._post_execute()
+
+        for i, rname in enumerate(self.st3dOut.regions):
+            region = getattr(self.st3dOut, rname)
+            DP0 = getattr(self.st3dOut, 'DP%02d' % i)
+            DP1 = getattr(self.st3dOut, 'DP%02d' % (i + 1))
+            width = DP1 - DP0
+            for ix in range(width.shape[0]):
+                if width[ix] < 0.:
+                    DPt = DP0[ix]
+                    DP0[ix] = DP1[ix]
+                    DP1[ix] = DPt
+                    width[ix] *= -1.
+                    self._logger.warning('switching DPs %i %i for section %i' %
+                                         (i, i + 1, ix))
+            region.width = width * self.pf.pfOut.chord * self.blade_length
+            region.thickness = np.zeros(self.st3dOut.x.shape)
+            for layer in region.layers:
+                region.thickness += np.maximum(0., getattr(region, layer).thickness)
+
+        for i, rname in enumerate(self.st3dOut.webs):
+            region = getattr(self.st3dOut, rname)
+            region.thickness = np.zeros(self.st3dOut.x.shape)
+            for layer in region.layers:
+                region.thickness += np.maximum(0., getattr(region, layer).thickness)
 
 
 @base
@@ -456,7 +629,7 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
     vartrees (CrossSectionStructureVT) used by structural codes like BECAS
     """
 
-    blade_length = Float(iotype='in')
+    blade_length = Float(1., iotype='in')
     surface = VarTree(BladeSurfaceVT(), iotype='in', desc='Stacked blade surface object')
     st3d = VarTree(BladeStructureVT3D(), iotype='in', desc='Blade structure definition')
 
@@ -479,14 +652,14 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
             st2d.s = x * self.blade_length
             st2d.DPs = []
             try:
-                st2d.curve = self.surface.interpolate_profile(x) * self.blade_length
+                st2d.airfoil = self.surface.interpolate_profile(x)[:, [0, 1]] * self.blade_length
             except:
                 pass
             for ir, rname in enumerate(self.st3d.regions):
                 reg = getattr(self.st3d, rname)
                 if reg.thickness[i] == 0.:
                     print 'zero thickness region!', rname
-                    continue
+                    # continue
                 DP0 = getattr(self.st3d, 'DP%02d' % ir)
                 DP1 = getattr(self.st3d, 'DP%02d' % (ir + 1))
                 r = st2d.add_region(rname.upper())
