@@ -31,3 +31,32 @@ class AirfoilDatasetVT(VariableTree):
     desc = Str(desc='Description of dataset')
     interpolator = Array(desc='The interpolator could characterize e.g. TE flap angle, roughness ratio etc')
     polars = List(AirfoilDataVT, desc='List of AirfoilDataVT')
+
+class AirfoilDataExtVT(AirfoilDataVT):
+    """
+    Extended airfoil polar data
+    """
+
+    alpha_rel = Array(units='deg', desc='angles of attack relative to alpha|Cl=0')
+    clcd = Array(desc='corresponding lift coefficients')
+    xtr_s = Array(desc='chordwise suction side transition points')
+    xtr_p = Array(desc='chordwise pressure side transition points')
+    xsep_s = Array(desc='chordwise suction side transition points')
+    xsep_p = Array(desc='chordwise pressure side transition points')
+
+
+class AirfoilBLdata(VariableTree):
+    """
+    Airfoil boundary layer parameters
+    """
+    x = Array(desc='chordwise discretization')
+    dstar_s = Array(desc='suction side displacement thickness')
+    dstar_p = Array(desc='pressure side displacement thickness')
+    theta_s = Array(desc='suction side momentum thickness')
+    theta_p = Array(desc='pressure side momentum thickness')
+    hk_s = Array(desc='suction side shape factor')
+    hk_p = Array(desc='pressure side shape factor')
+    cf_s = Array(desc='suction side skin friction coefficient')
+    cf_p = Array(desc='pressure side skin friction coefficient')
+    cp_s = Array(desc='suction side pressure coefficient')
+    cp_p = Array(desc='pressure side pressure coefficient')
