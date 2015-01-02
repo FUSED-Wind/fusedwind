@@ -6,7 +6,7 @@ from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool,
 
 from fusedwind.turbine.structure_vt import BeamStructureVT
 from fusedwind.turbine.geometry_vt import BeamGeometryVT, BladePlanformVT, TubularTowerGeometryVT
-from fusedwind.turbine.airfoil_vt import AirfoilDatasetVT
+from fusedwind.turbine.airfoilaero_vt import AirfoilDatasetVT
 from fusedwind.turbine.environment_vt import TurbineEnvironmentVT
 
 

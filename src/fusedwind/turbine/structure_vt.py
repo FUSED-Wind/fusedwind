@@ -1,7 +1,6 @@
 
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot, Dict
-# from fusedwind.turbine.airfoil_vt import AirfoilShapeVT 
 from fusedwind.interface import base, implement_base
 
 
