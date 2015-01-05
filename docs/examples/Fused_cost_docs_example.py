@@ -2,7 +2,7 @@
 # KLD 11/14/2013
 
 # --- 1 -----
-from fused_cost_example import BaseTurbineCostModel_Example, ExtendedTurbineCostModel_Example, FullTurbineCostModel_Example, \
+from fusedwind.examples.fused_cost_example import BaseTurbineCostModel_Example, ExtendedTurbineCostModel_Example, FullTurbineCostModel_Example, \
                                  BaseBOSCostModel_Example, ExtendedBOSCostModel_Example, FullBOSCostModel_Example, \
                                  BaseOPEXModel_Example, ExtendedOPEXModel_Example, \
                                  BaseFinancialModel_Example, BaseFinancialAnalysis_Example, ExtendedFinancialAnalysis_Example
