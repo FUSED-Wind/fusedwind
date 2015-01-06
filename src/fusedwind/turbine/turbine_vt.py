@@ -4,12 +4,14 @@ import numpy as np
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot
 
+from fusedwind.interface import base, implement_base
 from fusedwind.turbine.structure_vt import BeamStructureVT
 from fusedwind.turbine.geometry_vt import BeamGeometryVT, BladePlanformVT, TubularTowerGeometryVT
 from fusedwind.turbine.airfoilaero_vt import AirfoilDatasetVT
 from fusedwind.turbine.environment_vt import TurbineEnvironmentVT
 
 
+@base
 class MainBody(VariableTree):
 
     body_name = Str('body')
@@ -22,6 +24,7 @@ class MainBody(VariableTree):
     concentrated_mass = List(Array())
 
 
+@base
 class DrivetrainPerformanceVT(VariableTree):
 
     gear_ratio = Float(desc='Transmission gear ratio')
@@ -35,6 +38,7 @@ class DrivetrainPerformanceVT(VariableTree):
     max_torque = Float(desc='Maximum allowable generator torque')
     
 
+@base
 class ControlsVT(VariableTree):
     """Base class for controllers"""
 
@@ -45,6 +49,7 @@ class ControlsVT(VariableTree):
     ratedPower = Float(units='W')
 
 
+@base
 class FixedSpeedFixedPitch(ControlsVT):
 
     Omega = Float(units='rpm')
@@ -54,6 +59,7 @@ class FixedSpeedFixedPitch(ControlsVT):
     varPitch = Bool(False)
 
 
+@base
 class FixedSpeedVarPitch(ControlsVT):
 
     Omega = Float(units='rpm')
@@ -62,6 +68,7 @@ class FixedSpeedVarPitch(ControlsVT):
     varPitch = Bool(True)
 
 
+@base
 class VarSpeedFixedPitch(ControlsVT):
 
     minOmega = Float(units='rpm')
@@ -72,6 +79,7 @@ class VarSpeedFixedPitch(ControlsVT):
     varPitch = Bool(False)
 
 
+@base
 class VarSpeedVarPitch(ControlsVT):
 
     minOmega = Float(units='rpm')
@@ -85,6 +93,7 @@ class VarSpeedVarPitch(ControlsVT):
 # all controllers...
 
 
+@base
 class BasicTurbineVT(VariableTree):
 
     turbine_name = Str('FUSED-Wind turbine', desc='Wind turbine name')
@@ -100,6 +109,7 @@ class BasicTurbineVT(VariableTree):
     controls = VarTree(ControlsVT(), desc='control specifications VT')
 
 
+@base
 class AeroelasticHAWTVT(BasicTurbineVT):
 
     tilt_angle = Float(units='deg', desc='Rotor tilt angle')
@@ -157,6 +167,7 @@ class AeroelasticHAWTVT(BasicTurbineVT):
 
         return self.controls
 
+
 def create_turbine(cls, name='wt'):
     """
     method that adds an AeroelasticHAWTVT vartree too an Assembly instance 
@@ -164,6 +175,7 @@ def create_turbine(cls, name='wt'):
 
     cls.add(name, VarTree(AeroelasticHAWTVT()))
     return getattr(cls, name)
+
 
 def configure_turbine(wt):
     """
