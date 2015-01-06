@@ -18,6 +18,7 @@ class MainBody(VariableTree):
     subsystem = Enum('Tower', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
     beam_structure = VarTree(BeamStructureVT(), desc='Structural beam properties of the body')
+    geom = VarTree(BeamGeometryVT(), desc='Beam geometry')
     mass = Float(desc='mass of the body')
 
     damping_posdef = Array(np.zeros(6))
