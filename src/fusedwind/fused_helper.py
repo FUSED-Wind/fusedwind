@@ -485,7 +485,7 @@ def fused_autodoc(cls):
     addl()
 
     if issubclass(cls, Component):
-        if len(inputs) > 0 or len(variables) > 0:
+        if len(inputs) > 0:
             addl('Parameters')
             addl('----------')
             addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
@@ -496,14 +496,15 @@ def fused_autodoc(cls):
             addl('')
 
     if issubclass(cls, VariableTree):
-        addl('Parameters')
-        addl('----------')
-        addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
-                          ', default=' + cls.__class_traits__[i].default.__str__() +
-                          ', [%s]'%(cls.__class_traits__[i].units) +
-                          el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
-                          for i in variables]))
-        addl('')
+        if len(variables) > 0:
+            addl('Parameters')
+            addl('----------')
+            addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
+                              ', default=' + cls.__class_traits__[i].default.__str__() +
+                              ', [%s]'%(cls.__class_traits__[i].units) +
+                              el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
+                              for i in variables]))
+            addl('')
 
     if issubclass(cls, Component) and len(outputs) > 0:
         addl('Returns')
