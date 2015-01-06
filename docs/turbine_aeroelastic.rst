@@ -8,7 +8,7 @@ Aero-Elastic Turbine Definition
 
 .. _turbine_vt.py:
 
-geometry_vt.py
+turbine_vt.py
 --------------
 
 .. automodule:: fusedwind.turbine.turbine_vt
