@@ -8,5 +8,5 @@ In the following sections each of these modules is described in more detail, acc
 .. toctree::
     :maxdepth: 1
 
-    turbine_aeroelastic
     turbine_structure
+    turbine_aeroelastic

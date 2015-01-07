@@ -15,3 +15,14 @@ turbine_vt.py
    :members:
    :show-inheritance:
 
+.. index:: aeroelastic_solver.py
+
+.. _aeroelastic_solver.py:
+
+aeroelastic_solver.py
+---------------------
+
+.. automodule:: fusedwind.turbine.aeroelastic_solver
+   :members:
+   :show-inheritance:
+

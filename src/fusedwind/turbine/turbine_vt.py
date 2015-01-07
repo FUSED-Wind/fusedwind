@@ -174,7 +174,9 @@ def create_turbine(cls, name='wt'):
     method that adds an AeroelasticHAWTVT vartree too an Assembly instance 
     """
 
-    cls.add(name, VarTree(AeroelasticHAWTVT()))
+    if not hasattr(cls, 'wt'):
+        cls.add(name, VarTree(AeroelasticHAWTVT(), iotype='in'))
+        
     return getattr(cls, name)
 
 
