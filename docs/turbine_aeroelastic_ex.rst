@@ -40,3 +40,51 @@ The final configuration step is to link the splined geometry to the blade geomet
     :end-before: # --- 5
 
 And all that remains is to run the assembly which in this case is not so eventful.
+
+
+Coupled Structural Aero-elastic Turbine Example
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In this example, we extend the above example to also interface to to a structural model capable of computing the mass and stiffness beam properties of the blade, that is a required input to most aeroelastic solvers, e.g. FAST and HAWC2.
+The aim with this is to have the capability of *simultaneously* optimize the structural and aerodynamic design of a blade.
+
+The example combines the example explaining the blade structural parameterization with the above example of interfacing an aeroelastic solver.
+The example is located in ``src/fusedwind/examples/turbine/aerostructural_turbine.py``.
+
+The first step is to define our solvers, which is now both an aeroelastic solver and a cross-sectional structure solver capable of computing the beam properties of a blade.
+
+.. literalinclude:: ../src/fusedwind/examples/turbine/aerostructural_turbine.py
+    :start-after: # --- 1
+    :end-before: # --- 2
+
+Next, we define our blade geometry, both in terms of planform and lofted shape.
+
+.. literalinclude:: ../src/fusedwind/examples/turbine/aerostructural_turbine.py
+    :start-after: # --- 2
+    :end-before: # --- 3
+
+Then we add our two solvers:
+
+.. literalinclude:: ../src/fusedwind/examples/turbine/aerostructural_turbine.py
+    :start-after: # --- 3
+    :end-before: # --- 4
+
+And configure the turbine:
+
+.. literalinclude:: ../src/fusedwind/examples/turbine/aerostructural_turbine.py
+    :start-after: # --- 4
+    :end-before: # --- 5
+
+And finally make the necessary connections between, firstly, the structural geometry and the cross-sectional
+solver, secondly, the planform splines and the aeroelastic solver, and finally the beam structural properties
+computed by the structural solver with the blade beam properties used by the aeroelastic solver.
+
+.. literalinclude:: ../src/fusedwind/examples/turbine/aerostructural_turbine.py
+    :start-after: # --- 5
+    :end-before: # --- 6
+
+And lastly, we run the aero-structural analysis.
+
+.. literalinclude:: ../src/fusedwind/examples/turbine/aerostructural_turbine.py
+    :start-after: # --- 6
+    :end-before: # --- 7
