@@ -40,28 +40,28 @@ class GenericWindTurbinePowerCurveVT(VariableTree):
     rated_wind_speed = Float(desc='The rated wind speed of the wind turbine', units='m/s')
     air_density = Float(desc='The air density the power curve are valid for', units='kg/(m*m*m)')
 
-    def df(self):
-        """
-        Create a pandas dataframe containing the power_curve and c_t_curve.
-        If the power_curve and c_t_curve do not use the same wind_speed bins, they will be concatenated with NaN.
-        See pandas.concat function for more info.
-
-        Returns
-        -------
-        df:     pandas.DataFrame
-                wind_speed:          float
-                                    The hub height wind speed [m/s]
-
-                power:               float
-                                    The wind turbine power [W]
-
-                c_t:                 float
-                                    The wind turbine thrust coefficient [-]
-        """
-        df = pd.DataFrame(self.power_curve, columns=['wind_speed', 'power'])
-        df = df.join(pd.DataFrame(self.c_t_curve, columns=['wind_speed', 'c_t']), on='wind_speed')
-        df = df.join(pd.DataFrame(self.c_p_curve, columns=['wind_speed', 'c_p']), on='wind_speed')
-        return df
+    # def df(self):
+    #     """
+    #     Create a pandas dataframe containing the power_curve and c_t_curve.
+    #     If the power_curve and c_t_curve do not use the same wind_speed bins, they will be concatenated with NaN.
+    #     See pandas.concat function for more info.
+    #
+    #     Returns
+    #     -------
+    #     df:     pandas.DataFrame
+    #             wind_speed:          float
+    #                                 The hub height wind speed [m/s]
+    #
+    #             power:               float
+    #                                 The wind turbine power [W]
+    #
+    #             c_t:                 float
+    #                                 The wind turbine thrust coefficient [-]
+    #     """
+    #     df = pd.DataFrame(self.power_curve, columns=['wind_speed', 'power'])
+    #     df = df.join(pd.DataFrame(self.c_t_curve, columns=['wind_speed', 'c_t']), on='wind_speed', lsuffix='c_t')
+    #     df = df.join(pd.DataFrame(self.c_p_curve, columns=['wind_speed', 'c_p']), on='wind_speed', lsuffix='c_p')
+    #     return df
 
     @property
     def rotor_area(self):
@@ -483,7 +483,7 @@ class GenericWindRoseVT(VariableTree):
 
     
 implement_base(GenericWindTurbineVT, GenericWindTurbinePowerCurveVT)
-class WTPC(VariableTree):
+class WTPC(GenericWindTurbinePowerCurveVT):
     """ A GenericWindTurbinePowerCurveVT with a name, position and wind rose
     """
     # GenericWindTurbineVT
@@ -533,6 +533,7 @@ class GenericWindFarmTurbineLayout(VariableTree):
             wt: WTPC
                 Wind turbine object
         """
+        wt.name = wt.name.replace('-','_')
         self.add(wt.name, VarTree(wt))
         self.wt_names.append(wt.name)
 

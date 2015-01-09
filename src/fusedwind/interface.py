@@ -204,6 +204,16 @@ def InterfaceSlot(cls, *args, **kwargs):
 class FUSEDAssembly(Assembly):
     _debug = False
 
+
+    def __init__(self, **kwargs):
+        super(FUSEDAssembly, self).__init__()
+        for k, v in kwargs.iteritems():
+            if k in self.list_containers():
+                self.add(k, v)
+
+            if k in self.list_inputs():
+                setattr(self, k, v)
+
     def add_default(self, name, obj):
         obj_name = self._add(name, obj, replace=False)
         self._fused_components[name]['default'] = obj
