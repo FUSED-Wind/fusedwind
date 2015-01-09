@@ -6,10 +6,11 @@ Airfoil and Blade Geometry Examples
 
 A class for airfoil geometries is provided in the ``fusedwind.turbine.geometry_vt.AirfoilShape`` class.
 The convention used for airfoil shapes is that the coordinates are defined as a continuous curve starting from the trailing edge pressure side, around the leading edge to the suction side trailing edge.
-The class assumes that the airfoil shape is non-rotated with the leading edge pointing in the negative *x*-direction.
-The method ``computeLETE`` determines the leading and edges, which are defined as the mininum *x*-coordinate and the mean of the first and last points on the airfoil, respectively.
+The airfoil geometry can be oriented in any direction in the *x*-*y*-plane.
+The method ``computeLETE`` determines the trailing and leading edges.
+The trailing edge is defined as the mean of the first and last points on the airfoil and the leading edge is defined as the point along the curve with maximum distance to the trailing edge.
 The ``redistribute`` method can be used to redistribute the points on the airfoil with an arbitrary number of points.
-See the source docs below for specific parameters for this method.
+See the source docs for specific parameters for this method.
 
 In the simple example below, which is located in ``src/fusedwind/examples/turbine/fused_turbine_geom_example.py``, we load in the FFA-W3-301 airfoil and distribute 200 points along its surface, letting the AirfoilShape class determine an appropriate leading edge cell size.
 Since the trailing edge is not closed, we do not need high clustering there, so we don't have to specify any cell size.

@@ -19,13 +19,18 @@ class Curve(VariableTree):
     s = Array(desc='Curve accumulated curve length')
     points = Array(desc='coordinates of curve')
 
-    def __init__(self, points):
+    def __init__(self, points=None):
         super(Curve, self).__init__()
 
-        self.points = points
+        if points is not None:
+            self.initialize(points)
 
-        self._compute_s()
-        self._compute_dp()
+    def initialize(self, points):
+
+            self.points = points
+
+            self._compute_s()
+            self._compute_dp()
 
     def _compute_s(self):
         """
@@ -44,33 +49,64 @@ class Curve(VariableTree):
 
 @base
 class AirfoilShape(Curve):
+    """
+    Base class for airfoil shapes.
+
+    The class automatically computes the LE and TE
+    and can redistribute the points smoothly along the surface.
+    Points along the surface need to be defined starting at the
+    TE pressure side ending at the TE suction side.
+    """
 
     ni = Int(desc='Number of points')
     LE = Array(desc='Leading edge coordinates')
-    TE = Array(desc='Leading edge coordinates')
+    TE = Array(desc='Trailing edge coordinates')
     sLE = Float(desc='Leading edge curve fraction')
 
-    def __init__(self, points):
+    def __init__(self, points=None):
         super(AirfoilShape, self).__init__(points)
 
-        self.ni = points.shape[0]
+        if points is not None:
+            self.initialize(points)
 
-        self.spline = []
-        self.spline.append(NaturalCubicSpline(self.s, points[:, 0]))
-        self.spline.append(NaturalCubicSpline(self.s, points[:, 1]))
+    def initialize(self, points):
 
-        self.computeLETE()
+            self.points = points
+
+            self._compute_s()
+            self._compute_dp()
+
+            self.ni = points.shape[0]
+
+            self.spline = []
+            self.spline.append(NaturalCubicSpline(self.s, points[:, 0]))
+            self.spline.append(NaturalCubicSpline(self.s, points[:, 1]))
+
+            self.computeLETE()
 
     def computeLETE(self):
+        """
+        computes the leading and trailing edge of the airfoil.
 
-        res = minimize(self.spline[0], (0.5), method='SLSQP')
-        self.sLE = res['x'][0]
-        xLE = res['fun']
-        yLE = self.spline[1](self.sLE)
-        self.LE = np.array([xLE, yLE])
+        TE is computed as the mid-point between lower and upper TE points
+        LE is computed as the point with maximum distance from the TE.
+        """
+
         self.TE = np.array([np.average(self.points[[0, -1], 0]),
                             np.average(self.points[[0, -1], 1])])
+
+        res = minimize(self._sdist, (0.5), method='SLSQP', bounds=[(0, 1)])
+        self.sLE = res['x'][0]
+        xLE = self.spline[0](self.sLE)
+        yLE = self.spline[1](self.sLE)
+        self.LE = np.array([xLE, yLE])
         self.curvLE = NaturalCubicSpline(self.s, curvature(self.points))(self.sLE)
+
+    def _sdist(self, s):
+
+        x = self.spline[0](s)
+        y = self.spline[1](s)
+        return -((x - self.TE[0])**2 + (y - self.TE[1])**2)**0.5
 
     def leading_edge_dist(self, ni):
         """ function that returns a suitable cell size based on airfoil LE curvature """
@@ -230,7 +266,6 @@ class BlendAirfoilShapes(object):
         afs = []
         for af in self.airfoil_list:
             a = AirfoilShape(af)
-            a.computeLETE()
             aa = a.redistribute(ni=self.ni, even=True)
             afs.append(aa.points)
         self.airfoil_list = afs

@@ -47,7 +47,7 @@ def lofted_blade_shape_example():
     # load the planform file
     top.pf_splines.pfIn = read_blade_planform('data/DTU_10MW_RWT_blade_axis_prebend.dat')
     top.blade_length = 86.366
-    top.pf_splines.span_ni = 50
+    top.span_ni = 50
 
     print 'planform variables: ', top.pf_splines.pfOut.list_vars()
 
@@ -90,8 +90,10 @@ def lofted_blade_shape_example():
     plt.savefig('p_le.eps')
 
     plt.figure()
+    plt.axis('equal')
     for i in range(b.span_ni):
         plt.plot(b.surfout.surface[:, i, 0], b.surfout.surface[:, i, 1])
+    plt.savefig('lofted_blade.eps')
 
     return top
 
