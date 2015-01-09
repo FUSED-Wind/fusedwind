@@ -5,7 +5,7 @@ from openmdao.main.api import Component
 from openmdao.lib.datatypes.api import List, Array, VarTree, Float, Str
 
 from fusedwind.interface import base, implement_base
-from fusedwind.turbine.rotoraero import LoadVectorArray, LoadVectorArrayCaseList, LoadVectorCaseList
+from fusedwind.turbine.rotoraero_vt import LoadVectorArray, LoadVectorArrayCaseList, LoadVectorCaseList
 
 
 @base
