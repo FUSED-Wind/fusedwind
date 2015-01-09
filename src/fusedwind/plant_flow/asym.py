@@ -231,6 +231,7 @@ class AEPMultipleWindRoses(FUSEDAssembly):
     wt_aep = Array([], iotype='out', units='kW*h',
         desc='The energy production per turbine [nWT]')
 
+
     def configure(self):
         self.add('case_gen', MultipleWindRosesCaseGenerator())
         self.add('postprocess_wind_rose', PostProcessMultipleWindRoses())
