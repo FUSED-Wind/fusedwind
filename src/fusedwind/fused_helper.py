@@ -10,7 +10,7 @@ base_keys = Assembly.__base_traits__.keys() + Driver.__base_traits__.keys() + \
 from IPython.display import SVG
 from collections import defaultdict
 import json
-from numpy import ndarray, array
+from numpy import ndarray, array, sort
 import pandas
 
 
@@ -459,6 +459,7 @@ def fused_autodoc(cls):
     """Decorator to automatically document the inputs and outputs of an Assembly / Component
 
     """
+
     clsname = cls.__name__
     if not cls.__doc__:
         cls.__doc__ = '**TODO**: fill in this doc\n\n'
@@ -475,14 +476,16 @@ def fused_autodoc(cls):
     variables = [k for k, v in cls.__class_traits__.iteritems()
                     if k not in VariableTree.__class_traits__
                     and k.find('_items') == -1]
+    variables = sort(variables)
     #print inputs
     el = '\n    '
     def addl(x=''):
         cls.__doc__+=x+el
     addl()
     addl()
+
     if issubclass(cls, Component):
-        if len(inputs) > 0 or len(variables) > 0:
+        if len(inputs) > 0:
             addl('Parameters')
             addl('----------')
             addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
@@ -490,18 +493,20 @@ def fused_autodoc(cls):
                           ', [%s]'%(cls.__class_traits__[i].units) +
                           el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
                           for i in inputs]))
+            addl('')
 
     if issubclass(cls, VariableTree):
-        addl('Parameters')
-        addl('----------')
-        addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
-                          ', default=' + cls.__class_traits__[i].default.__str__() +
-                          ', [%s]'%(cls.__class_traits__[i].units) +
-                          el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
-                          for i in variables]))
+        if len(variables) > 0:
+            addl('Parameters')
+            addl('----------')
+            addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
+                              ', default=' + cls.__class_traits__[i].default.__str__() +
+                              ', [%s]'%(cls.__class_traits__[i].units) +
+                              el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
+                              for i in variables]))
+            addl('')
 
     if issubclass(cls, Component) and len(outputs) > 0:
-        addl('')
         addl('Returns')
         addl('-------')
         addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
@@ -511,11 +516,11 @@ def fused_autodoc(cls):
 
     # Check if the class has some base:
     if hasattr(cls, '_fused_base'):
-        addl()
+        addl('')
         addl('Notes')
-        addl('-------')
+        addl('-----')
         addl('``%s``'%(clsname) + ' implements the following interfaces: ' + ', '.join(['``%s``'%(c.__name__) for c in cls._fused_base]))
-        addl()
+        addl('')
 
     return cls
 

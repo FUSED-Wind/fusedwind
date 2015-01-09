@@ -20,10 +20,8 @@ Run Case Generator
 ^^^^^^^^^^^^^^^^^^
 .. automodule:: fusedwind.runSuite.runCaseGenerator
   :members:
-  :special-members:
 
 Case Runner
 ^^^^^^^^^^^
 .. automodule:: fusedwind.runSuite.runBatch
   :members:
-  :special-members:

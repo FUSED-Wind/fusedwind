@@ -18,8 +18,8 @@ def interface(comp_cls):
 def base(cls):
     """Decorator for a FUSED base class"""
     # desactivating the autodoc feature
-    #return fused_autodoc(implementer(interface(cls))(cls))
-    return implementer(interface(cls))(cls)
+    return fused_autodoc(implementer(interface(cls))(cls))
+    # return implementer(interface(cls))(cls)
 
 
 def cls_list_vars(cls):

@@ -4,110 +4,28 @@ import numpy as np
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot
 
+from fusedwind.interface import base, implement_base
 from fusedwind.turbine.structure_vt import BeamStructureVT
-from fusedwind.turbine.geometry_vt import BeamGeometryVT
-from fusedwind.turbine.airfoil_vt import AirfoilDataset
+from fusedwind.turbine.geometry_vt import BeamGeometryVT, BladePlanformVT, TubularTowerGeometryVT
+from fusedwind.turbine.airfoilaero_vt import AirfoilDatasetVT
 from fusedwind.turbine.environment_vt import TurbineEnvironmentVT
 
 
-# Support Classes for Overall Orientation of structural components relative to one another
-class OrientationBase(VariableTree):
-
-    inipos = Array(np.zeros(3), desc='Initial position in global coordinates')
-    eulerang = List(Array(np.zeros(3)), desc='sequence of euler angle rotations, x->y->z')
-
-
-class OrientationRelative(VariableTree):
-
-    mbdy1_name = Str(desc='Main body name to which the body is attached')
-    eulerang = List(Array(np.zeros(3)), desc='sequence of euler angle rotations, x->y->z')
-    initial_speed = Float()
-    rotation_dof = Array([0, 0, 0])
-
-
-class Constraint(VariableTree):
-
-    con_name = Str()
-    con_type = Enum('free', ('fixed', 'fixed_to_body', 'free', 'prescribed_angle'), desc='Constraint type')
-    body1 = Str(desc='Main body name to which the body is attached')
-    DOF = Array(np.zeros(6), desc='Degrees of freedom')
-
-
+@base
 class MainBody(VariableTree):
 
     body_name = Str('body')
     subsystem = Enum('Tower', ('Rotor', 'Nacelle', 'Tower', 'Foundation'))
 
-    geom = VarTree(BeamGeometryVT(), desc='Geometry of body containing main axis and rotations')
-    orientations = List()
+    beam_structure = VarTree(BeamStructureVT(), desc='Structural beam properties of the body')
+    geom = VarTree(BeamGeometryVT(), desc='Beam geometry')
+    mass = Float(desc='mass of the body')
 
-    def initialize_geom(self, nb=10):
-        """
-        convenience method for initializing geometry
-
-        could be moved to an __init__ method, but often the geometry is set directly
-        from e.g. a file
-        """
-
-        self.geom.main_axis = np.zeros((nb, 3))
-        self.geom.rot_x = np.zeros(nb)
-        self.geom.rot_y = np.zeros(nb)
-        self.geom.rot_z = np.zeros(nb)
-
-    def add_orientation(self, orientation):
-
-        if orientation == 'base':
-            self.orientations.append(OrientationBase())
-        elif orientation == 'relative':
-            self.orientations.append(OrientationRelative())
-
-
-class AeroelasticMainBody(MainBody):
-
-    beam_structure = List(BeamStructureVT)
-    n_elements = Int(1)
     damping_posdef = Array(np.zeros(6))
     concentrated_mass = List(Array())
-    constraints = List()
-
-    def add_constraint(self, con_type, con_name=None, body1=None, DOF=None):
-        """
-        add a constraint
-        """
-
-        con = Constraint()
-        con.con_type = con_type
-        if con_type == 'fixed_to_body':
-            con.body1 = body1
-        if con_type in ('free', 'prescribed_angle'):
-            if con_name is None:
-                raise RuntimeError('Contraint name not specified')
-            con.DOF = DOF
-            con.con_name = con_name
-            con.body1 = body1
-
-        self.constraints.append(con)
 
 
-class MainBodies(VariableTree):
-    """
-    Empty placeholder vartree for main bodies
-    """
-
-    bodies = List(desc='')
-
-    def add_body(self, name, body=None):
-
-        if body is None:
-            if 'blade' in name:
-                body = BladeGeometryVT()
-            else:
-                body = BeamGeometryVT()
-
-        self.add(name, VarTree(body))
-        self.bodies.append(name)
-
-
+@base
 class DrivetrainPerformanceVT(VariableTree):
 
     gear_ratio = Float(desc='Transmission gear ratio')
@@ -121,6 +39,7 @@ class DrivetrainPerformanceVT(VariableTree):
     max_torque = Float(desc='Maximum allowable generator torque')
     
 
+@base
 class ControlsVT(VariableTree):
     """Base class for controllers"""
 
@@ -131,6 +50,7 @@ class ControlsVT(VariableTree):
     ratedPower = Float(units='W')
 
 
+@base
 class FixedSpeedFixedPitch(ControlsVT):
 
     Omega = Float(units='rpm')
@@ -140,6 +60,7 @@ class FixedSpeedFixedPitch(ControlsVT):
     varPitch = Bool(False)
 
 
+@base
 class FixedSpeedVarPitch(ControlsVT):
 
     Omega = Float(units='rpm')
@@ -148,6 +69,7 @@ class FixedSpeedVarPitch(ControlsVT):
     varPitch = Bool(True)
 
 
+@base
 class VarSpeedFixedPitch(ControlsVT):
 
     minOmega = Float(units='rpm')
@@ -158,10 +80,12 @@ class VarSpeedFixedPitch(ControlsVT):
     varPitch = Bool(False)
 
 
+@base
 class VarSpeedVarPitch(ControlsVT):
 
     minOmega = Float(units='rpm')
     maxOmega = Float(units='rpm')
+    minPitch = Float(units='deg')
 
     varSpeed = Bool(True)
     varPitch = Bool(True)
@@ -169,10 +93,8 @@ class VarSpeedVarPitch(ControlsVT):
 # More generic variables can probably be added here which are pretty much in common to
 # all controllers...
 
-#####################
-# Overall turbine definition in multi-body formulation
 
-
+@base
 class BasicTurbineVT(VariableTree):
 
     turbine_name = Str('FUSED-Wind turbine', desc='Wind turbine name')
@@ -188,18 +110,90 @@ class BasicTurbineVT(VariableTree):
     controls = VarTree(ControlsVT(), desc='control specifications VT')
 
 
-class AeroelasticTurbineVT(BasicTurbineVT):
+@base
+class AeroelasticHAWTVT(BasicTurbineVT):
 
-    tilt_angle = Float(units='deg', desc='rotor tilt angle')
-    cone_angle = Float(units='deg', desc='rotor cone angle')
+    tilt_angle = Float(units='deg', desc='Rotor tilt angle')
+    cone_angle = Float(units='deg', desc='Rotor cone angle')
     hub_radius = Float(units='m', desc='Hub radius')
+    blade_length = Float(units='m', desc='blade length')
     tower_height = Float(units='m', desc='Tower height')
     towertop_length = Float(units='m', desc='Nacelle Diameter')
     shaft_length = Float(units='m', desc='Shaft length')
 
-    environment = VarTree(TurbineEnvironmentVT(), desc='Inflow conditions')
-    airfoildata = VarTree(AirfoilDataset(), desc='Airfoil Aerodynamic characteristics')
-
-    main_bodies = Slot(MainBodies(), desc='List of main bodies')
+    airfoildata = VarTree(AirfoilDatasetVT(), desc='Airfoil Aerodynamic characteristics')
 
     drivetrain_performance = VarTree(DrivetrainPerformanceVT(), desc='drivetrain performance VT')
+
+    bodies = List()
+
+    def add_main_body(self, name, body=None):
+
+        if body is None:
+
+            body = MainBody()
+            
+            if 'blade' in name:
+                body.remove('geom')
+                body.add('geom', VarTree(BladePlanformVT()))
+            if 'tower' in name:
+                body.remove('geom')
+                body.add('geom', VarTree(TubularTowerGeometryVT()))
+
+        self.add(name, VarTree(body))
+        self.bodies.append(name)
+
+        return getattr(self, name)
+
+    def get_main_body(self, name):
+
+        return getattr(self, name)
+
+    def remove_main_body(self, name):
+
+        self.delete(name)
+
+    def set_machine_type(self, machine_type):
+
+        self.remove('controls')
+
+        if machine_type == 'FixedSpeedFixedPitch':
+            self.add('controls', VarTree(FixedSpeedFixedPitch()))
+        if machine_type == 'FixedSpeedVarPitch':
+            self.add('controls', VarTree(FixedSpeedVarPitch()))
+        if machine_type == 'VarSpeedFixedPitch':
+            self.add('controls', VarTree(VarSpeedFixedPitch()))
+        if machine_type == 'VarSpeedVarPitch':
+            self.add('controls', VarTree(VarSpeedVarPitch()))
+
+        return self.controls
+
+
+def create_turbine(cls, name='wt'):
+    """
+    method that adds an AeroelasticHAWTVT vartree too an Assembly instance 
+    """
+
+    if not hasattr(cls, 'wt'):
+        cls.add(name, VarTree(AeroelasticHAWTVT(), iotype='in'))
+        
+    return getattr(cls, name)
+
+
+def configure_turbine(wt):
+    """
+    method that configures an AeroelasticHAWTVT instance with
+    standard components
+    """
+
+    b = wt.add_main_body('tower')
+    b.subsystem = 'Tower'
+    wt.add_main_body('towertop')
+    b.subsystem = 'Nacelle'
+    wt.add_main_body('shaft')
+    b.subsystem = 'Nacelle'
+    wt.add_main_body('hub1')
+    b.subsystem = 'Rotor'
+    wt.add_main_body('blade1')
+    b.subsystem = 'Rotor'
+

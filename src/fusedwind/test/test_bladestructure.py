@@ -150,11 +150,6 @@ class BladeStructureSetup(Assembly):
         self.writer.filebase = 'testST'
         self.reader.filebase = 'testST'
 
-        # lofted blade shape not added yet
-        # self.add('cs', BladeStructureCSBuilder())
-        # self.connect('reader.st3d', 'cs.st3d')
-        # self.cs.radius = 89.166
-
 
 class BladeSurfaceTestCase(unittest.TestCase):
 

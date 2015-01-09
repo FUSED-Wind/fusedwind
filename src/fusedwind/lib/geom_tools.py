@@ -1,18 +1,8 @@
+
 import numpy as np
 from scipy.interpolate import griddata
 from numpy.linalg import norm
-try:
-    from distfunc import distfunc
-    LDISTFUNC = True
-except:
-    LDISTFUNC = False
 
-# hack to avoid inconsistencies in results on Windows due to 32/64 bit conversion errors
-import platform
-if 'Windows' in platform.platform():
-    _float = np.float32
-else:
-    _float = np.float64
 
 def project_points(points,x,N_vect):
     """
@@ -55,7 +45,15 @@ def curvature(points):
         x1 = d1[0,1:]; y1 = d1[1,1:]; z1 = d1[2,1:]
         x2 = d2[0,:]; y2 = d2[1,:]; z2 = d2[2,:]
         curv = ((z2*y1 - y2*z1)**2.0 + (x2*z1 - z2*x1)**2.0 + (y2*x1 - x2*y1)**2.0)**0.5/(x1**2.0 + y1**2.0 + z1**2.0+1.e-30)**(3.0/2.0)
-    return curv
+
+    curvt = np.zeros(points.shape[0])
+    try:
+        curvt[1:-1] = curv
+        curvt[0] = curv[0]
+        curvt[-1] = curv[-1]
+    except:
+        pass
+    return curvt
 
 def calculate_angle(v1,v2):
     """
@@ -241,35 +239,3 @@ def dotXC(rot, x, center):
                 for j in range(x.shape[1]):
                     x_rot[i,j,:] = dot(rot, x[i,j,:] - center) + center
     return x_rot
-
-def easy_distfunc(nn):
-    """
-    The function returns a distribution of point according to control points.
-    The function is calling the f2py original fortran file of Niels.
-
-    Parameters:
-    -------------
-    nn : <array-like>
-        The array discribing the distribution function
-        it has to be a [?,3] array containing for each row
-                      - the position of the control point
-                      - the size of the cell
-                      - the index of the cell
-    Returns
-    --------
-    dist: <array-like>
-        A vector containing the distribution
-
-    Example:
-    ---------
-    Ask for a distribution of 128 points starting at 2000 and finishing at 38799.
-    The size of the first cell (1) is left free (-1), while
-    the size of the last cell 128 is set to a value of 50
-    dist = easy_distfunc([ [2000,  -1, 1],
-                           [38799, 50, 128] ])
-    """
-    if LDISTFUNC:
-        nn = np.asarray(nn)
-        return np.asarray(distfunc(nn, nn[-1, -1]) + nn[0, 0], dtype=_float)
-    else:
-        return np.array([])

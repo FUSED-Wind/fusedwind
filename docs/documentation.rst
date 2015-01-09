@@ -12,6 +12,6 @@ codebases in use for this ongoing project.
 .. toctree::
     :maxdepth: 2
 
-    runbatch
     plantflow
     plantcost
+    turbine
