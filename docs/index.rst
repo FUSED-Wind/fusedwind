@@ -4,7 +4,7 @@ Overview
 
 Framework for Unified Systems Engineering and Design of Wind Plants
 (FUSED-Wind) is a free open-source framework for multi-disciplinary optimisation and
-analysis (MDAO) of wind energy systems, developed jointly by the Wind Energy Department at the Technical University of Denmark (DTU Wind Energy) and the National Renewable Laboratory (NREL).
+analysis (MDAO) of wind energy systems, developed jointly by the Wind Energy Department at the Technical University of Denmark (DTU Wind Energy) and the National Renewable Energy Laboratory (NREL).
 The framework is built as an extension to the NASA developed `OpenMDAO <http://openmdao.org/>`_, and
 defines key interfaces, methods and I/O variables necessary for wiring together different
 simulation codes in order to achieve a system level analysis capability of wind
@@ -45,8 +45,8 @@ If you want more information about the platform, please contact the following au
     :maxdepth: 1
 
     news
-    installation
     about_fusedwind
+    installation
     tutorial
     developer_guide
     documentation

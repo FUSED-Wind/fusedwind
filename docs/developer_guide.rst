@@ -4,7 +4,6 @@
 Developer Guide
 ===============
 
-
 Contributing
 ------------
 
@@ -15,9 +14,11 @@ which also explains how to develop an OpenMDAO *plugin*.
 To contribute code into FUSED-Wind you should follow the `fork & pull <https://help.github.com/articles/using-pull-requests/>`_
 approach.
 
-Writing a FUSED-Wind Compatible Model
--------------------------------------
+Adding Models to FUSED-Wind
+---------------------------
 
-This tutorial provides a guide on how to develop a FUSED-Wind compatible model.
-It will introduce you to the *interface decorators* that are used in FUSED-Wind to declare and implement interfaces and give a practical example of how to wrap a code for predicting the aerodynamic loads on a rotor.
-
+In the :ref:`tutorial-label`, you can follow a number of examples on how to develop an interface to your own model.
+It is possible that an interface suitable for your model is not defined in FUSED-Wind, or your model requires inputs or provides outputs which are not defined either.
+In this case, we encourage you to suggest to include these variables or interfaces in FUSED-Wind.
+In general such interfaces and variables will be included if they are needed to couple to other models.
+If they are very specific to your model, we suggest that you define these in your own distribution.

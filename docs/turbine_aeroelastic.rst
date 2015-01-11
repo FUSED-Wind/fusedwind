@@ -26,3 +26,13 @@ aeroelastic_solver.py
    :members:
    :show-inheritance:
 
+.. index:: environment.py
+
+.. _environment.py:
+
+environment.py
+---------------------
+
+.. automodule:: fusedwind.turbine.environment
+   :members:
+   :show-inheritance:

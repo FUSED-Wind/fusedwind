@@ -1,13 +1,14 @@
 
 .. _about-label:
 
-Software Overview
-=================
+Overview
+========
 
 Framework for Unified Systems Engineering and Design of Wind Plants (FUSED-Wind) is a framework for integrated system modeling of wind plants.
 FUSED-Wind was started as a collaboration between DTU Wind Energy and NREL to help standardize the way wind turbine and plant software models are integrated together for holistic systems analysis, design and optimization.
 FUSED-Wind does *not* provide any analysis models or interfaces to specific codes.
 Instead, the aim with FUSED-Wind is to provide a variety of *generalized* interfaces for integrating wind turbine and plant specific software models together so that these models can be mixed and matched for a huge variety of different analyses.
+
 FUSED-Wind is built on `OpenMDAO <http://openmdao.org/>`_ which is an open-source software from NASA Glenn Laboratories for multi-disciplinary design analysis and optimization (MDAO) of complex technical systems. 
 It is designed specifically to support advanced analyses that combine several models of potentially varying levels of complexity together for MDAO, uncertainty quantification, design of experiments, and many more applications! 
 
@@ -32,7 +33,7 @@ The current version of FUSED-Wind is organized into three primary modules:
 * Plant Cost
     Interfaces and configure methods related to wind turbine and plant financial analysis models, such as capital costs, balance of station costs, operational expenditures and finance.
 * Turbine
-    Interfaces related to turbine related analysis codes, such as aerodynamic, aeroelastic and structural codes.
+    Interfaces related to turbine analysis codes, such as aerodynamic, aeroelastic and structural codes.
     The module also contains parameterizations for the turbine geometry suited for conceptual design.
 
 Basic Concepts
@@ -54,4 +55,4 @@ The interfaces defined in the framework consist of three primary parts:
     FUSED-Wind defines a range of commonly used workflows of varying complexity such as AEP calculation of a wind farm, or cost analysis of a wind turbine.
 
 Based on these sets of component interfaces and workflows, users can develop a model that *implements* specific FUSED-Wind interfaces, making this model compatible with the rest of the framework, and other models also interfaced to the framework.
-While adhering to a certain interface may seem very restrictive when developing a stand-alone model, we believe that this restriction is far outweighed by the host of other models that will become available through this effort.
+While adhering to a certain interface may seem very restrictive when developing a stand-alone model, we believe that this restriction is far outweighed by the host of other models and methods that will become available through this effort.
