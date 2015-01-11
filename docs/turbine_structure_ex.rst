@@ -108,14 +108,27 @@ In the example below, we show how to hook up an assembly with a complete lofted 
 The example and data is located in ``src/fusedwind/examples/turbine/turbine_structure_example.py``.
 
 .. literalinclude:: ../src/fusedwind/examples/turbine/turbine_structure_example.py
+    :start-after: # --- 1
+    :end-before: # --- 2
 
-The ``configure_bladestructure`` method associates an FFD spline component to each of the material thickness and angle distributions and *DP* curves that defines the blade structure.
-The starting point of all the splines is zero, so if we add a pertubation to one of the splines, e.g. the spar cap uniax thickness, we can see how that changes the thickness distribution:
+The ``configure_bladestructure`` method associates an FFD spline component to each of the blade planform curves and blade material thickness and angle distributions and *DP* curves that defines the blade structure.
+The starting point of all the splines is zero, so if we add a pertubation to one of the splines, e.g. the blade chord and spar cap uniax thickness, we can see how that changes the two curves:
 
-.. code-block:: python
+.. literalinclude:: ../src/fusedwind/examples/turbine/turbine_structure_example.py
+    :start-after: # --- 2
+    :end-before: # --- 3
 
-    > top.st_splines.r04uniaxT_C[2]+=0.01
-    > top.run()
+.. _bladeplanform_spline-fig:
+
+.. figure:: /images/chord_ffd_spline.*
+    :width: 80 %
+    :align: center
+
+    Blade chord pertubation.
+
+.. literalinclude:: ../src/fusedwind/examples/turbine/turbine_structure_example.py
+    :start-after: # --- 3
+    :end-before: # --- 4
 
 
 .. _bladestructure_spline-fig:
