@@ -19,7 +19,7 @@ def configure_blade():
     configure_bladesurface(top, planform_nC=6)
 
     # load the planform file
-    top.pf_splines.pfIn = read_blade_planform('data/DTU_10MW_RWT_blade_axis_prebend.dat')
+    top.pf_splines.pfIn = read_blade_planform(os.path.join(PATH, 'data/DTU_10MW_RWT_blade_axis_prebend.dat'))
     top.blade_length = 86.366
     top.span_ni = 5
 
@@ -29,11 +29,11 @@ def configure_blade():
     b.chord_ni = 40
 
     # load the airfoil shapes defining the blade
-    for f in ['data/ffaw3241.dat',
-              'data/ffaw3301.dat',
-              'data/ffaw3360.dat',
-              'data/ffaw3480.dat' ,
-              'data/cylinder.dat']:
+    for f in [os.path.join(PATH, 'data/ffaw3241.dat'),
+              os.path.join(PATH, 'data/ffaw3301.dat'),
+              os.path.join(PATH, 'data/ffaw3360.dat'),
+              os.path.join(PATH, 'data/ffaw3480.dat') ,
+              os.path.join(PATH, 'data/cylinder.dat')]:
 
         b.base_airfoils.append(np.loadtxt(f))
 
