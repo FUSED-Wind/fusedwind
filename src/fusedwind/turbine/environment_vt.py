@@ -10,10 +10,10 @@ class TurbineEnvironmentVT(VariableTree):
     density = Float(1.225, desc='air density')
     viscosity = Float(1.78405e-5, desc='air viscosity')
     ti = Float(0., desc='Turbulence intensity in percent')
-    inflow_type = Enum('constant',('constant','log','powerlaw','linear','user'), desc='shear type')
-    shear_exp = Float(0.,iotype='in',desc='Shear exponent (when applicaple)') 
-    kappa = Float(0.4,iotype='in',desc='Von Karman constant')
-    z0 = Float(0.111,iotype='in',desc='Roughness length')
+    inflow_type = Enum('constant', ('constant','log','powerlaw','linear','user'), desc='shear type')
+    shear_exp = Float(0., iotype='in', desc='Shear exponent (when applicaple)') 
+    kappa = Float(0.4, iotype='in', desc='Von Karman constant')
+    z0 = Float(0.111, iotype='in', desc='Roughness length')
 
 
 class OffshoreTurbineEnvironmentVT(TurbineEnvironmentVT):

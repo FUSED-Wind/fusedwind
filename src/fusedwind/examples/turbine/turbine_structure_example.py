@@ -43,3 +43,46 @@ top.st_splines.Cx = [0, 0.2, 0.4, 0.75, 1.]
 top.st_splines.x = np.linspace(0, 1, 12)
 
 top.run()
+
+top.pf_splines.chord_C[3]-=0.008
+
+top.run()
+
+p=top.pf_splines.chord.P-top.pf_splines.chord.Pbase
+
+import matplotlib
+import matplotlib.pylab as plt
+
+font = {'family' : 'normal',
+        'weight' : 'normal',
+        'size'   : 16 }  
+
+matplotlib.rc('font', **font)
+plt.rc('lines', linewidth=3)
+
+plt.plot(top.pf_splines.pfIn.s, top.pf_splines.pfIn.chord, 'r-', label='Original')
+plt.plot(top.pf_splines.pfOut.s, top.pf_splines.pfOut.chord, 'b-',label='New')
+plt.plot(top.pf_splines.chord.Cx,top.pf_splines.chord.C, 'g--o',label='FFD CPs')
+plt.plot(top.pf_splines.chord.x,p, 'b--',label='FFD spline')
+plt.plt.legend(loc='best')
+plt.title('Chord')
+plt.xlabel('r/R [-]')
+plt.ylabel('c/R [-]')
+plt.savefig('chord_ffd_spline.eps')
+plt.savefig('chord_ffd_spline.png')
+
+top.st_splines.r04uniaxT_C[2]+=0.01
+plt.figure()
+plt.plot(top.st_splines.st3dOut.x, top.st_splines.st3dOut.region04.uniax.thickness, 'r-', label='Original')
+top.run()
+plt.plot(top.st_splines.st3dOut.x, top.st_splines.st3dOut.region04.uniax.thickness, 'b-', label='New')
+
+p=top.st_splines.r04uniaxT.P-top.st_splines.r04uniaxT.Pbase
+plt.plot(top.st_splines.r04uniaxT.Cx,top.st_splines.r04uniaxT.C, 'g--o',label='FFD CPs')
+plt.plot(top.st_splines.st3dOut.x, p, 'b--',label='FFD spline')
+plt.plt.legend(loc='best')
+plt.title('Spar cap uniax thickness')
+plt.xlabel('r/R [-]')
+plt.ylabel('Thickness [m]')
+plt.savefig('turbine_structure_uniax_perturb.eps')
+plt.savefig('turbine_structure_uniax_perturb.png')

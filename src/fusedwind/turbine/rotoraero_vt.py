@@ -3,6 +3,10 @@ import numpy as np
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Dict
 
+from fusedwind.interface import base, implement_base
+
+
+@base
 class DistributedLoadsVT(VariableTree):
 
     s = Array(units='m', desc='locations for distributed loads')
@@ -10,6 +14,7 @@ class DistributedLoadsVT(VariableTree):
     Ft = Array(units='N/m', desc='force per unit length in tangential direction to the blade')
 
 
+@base
 class DistributedLoadsExtVT(DistributedLoadsVT):
 
     cn      = Array(units=None, desc='Normal force coefficient along the blade')
@@ -26,6 +31,7 @@ class DistributedLoadsExtVT(DistributedLoadsVT):
     lct     = Array(units=None, desc='Local power coefficient along the blade')
 
 
+@base
 class RotorLoadsVT(VariableTree):
 
     T = Float(units='N', desc='thrust')
@@ -37,6 +43,7 @@ class RotorLoadsVT(VariableTree):
     CP = Float(units='W', desc='power coefficient')
 
 
+@base
 class RotorLoadsArrayVT(VariableTree):
 
     wsp = Array(units='m/s', desc='Wind speeds')
@@ -49,6 +56,7 @@ class RotorLoadsArrayVT(VariableTree):
     CP = Array(units=None, desc='power coefficient')
 
 
+@base
 class DistributedLoadsArrayVT(VariableTree):
     """
     Container for a list of blade loads
@@ -86,6 +94,7 @@ class DistributedLoadsArrayVT(VariableTree):
         return getattr(self, name)
 
 
+@base
 class BeamDisplacementsVT(VariableTree):
     """
     container for beam displacements and rotations
@@ -98,6 +107,7 @@ class BeamDisplacementsVT(VariableTree):
     rot_z = Array(desc='deformed pitch axis z-rotation')
 
 
+@base
 class BeamDisplacementsArrayVT(VariableTree):
     """
     Container for a series of BeamDisplacementsVT's
@@ -140,6 +150,7 @@ class BeamDisplacementsArrayVT(VariableTree):
         return getattr(self, name)
 
 
+@base
 class LoadVector(VariableTree):
     """
     Point load vector containing forces and moments
@@ -173,6 +184,7 @@ class LoadVector(VariableTree):
         self.Mres = d[8]
 
 
+@base
 class LoadVectorCaseList(VariableTree):
     """
     List of load vector cases for a given spanwise position
@@ -180,6 +192,7 @@ class LoadVectorCaseList(VariableTree):
     cases = List(desc='List of load cases')
 
 
+@base
 class LoadVectorArray(VariableTree):
     """
     Load vector case as function of span
@@ -224,6 +237,7 @@ class LoadVectorArray(VariableTree):
         return vt
 
 
+@base
 class LoadVectorArrayCaseList(VariableTree):
     """
     List of load vector cases as function of span
@@ -252,3 +266,17 @@ class LoadVectorArrayCaseList(VariableTree):
         return lc2d
 
 
+@base
+class RotorOperationalData(VariableTree):
+
+    wsp = Float(desc='wind speed')
+    rpm = Float(desc='rotational speed')
+    pitch = Float(desc='blade pitch')
+
+
+@base
+class RotorOperationalDataArray(VariableTree):
+
+    wsp = Array(desc='wind speed')
+    rpm = Array(desc='rotational speed')
+    pitch = Array(desc='blade pitch')

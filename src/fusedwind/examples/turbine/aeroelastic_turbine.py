@@ -8,12 +8,23 @@ from fusedwind.interface import implement_base
 from fusedwind.turbine.aeroelastic_solver import AeroElasticSolverBase
 from fusedwind.turbine.turbine_vt import configure_turbine, AeroelasticHAWTVT
 from fusedwind.turbine.geometry import SplinedBladePlanform, read_blade_planform
+from fusedwind.turbine.environment_vt import TurbineEnvironmentVT
+from fusedwind.turbine.rotoraero_vt import RotorOperationalData, \
+                                           DistributedLoadsExtVT, \
+                                           RotorLoadsVT, \
+                                           BeamDisplacementsVT
 
 
 @implement_base(AeroElasticSolverBase)
 class AEsolver(Component):
 
-    wt = VarTree(AeroelasticHAWTVT(), iotype='in')
+    wt = VarTree(AeroelasticHAWTVT(), iotype='in', desc='Turbine definition')
+    inflow = VarTree(TurbineEnvironmentVT(), iotype='in', desc='Inflow conditions')
+
+    oper = VarTree(RotorOperationalData(), iotype='out', desc='Operational data')
+    rotor_loads = VarTree(RotorLoadsVT(), iotype='out', desc='Rotor torque, power, and thrust')
+    blade_loads = VarTree(DistributedLoadsExtVT(), iotype='out', desc='Spanwise load distributions')
+    blade_disps = VarTree(BeamDisplacementsVT(), iotype='out', desc='Blade deflections and rotations')
 
     def execute(self):
 
