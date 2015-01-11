@@ -7,8 +7,6 @@ This section contains the source documentation for the wind turbine module of FU
 .. toctree::
     :maxdepth: 1
 
-    airfoil_vt
-	airfoil
+    airfoil
     turbine_structure
-    rotoraero_vt
     turbine_aeroelastic

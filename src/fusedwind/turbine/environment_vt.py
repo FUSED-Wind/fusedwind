@@ -2,7 +2,9 @@
 from openmdao.main.api import VariableTree, Component
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot
 
+from fusedwind.interface import base, implement_base
 
+@base
 class TurbineEnvironmentVT(VariableTree):
 
     vhub = Float(desc='Hub-height velocity')
@@ -16,6 +18,7 @@ class TurbineEnvironmentVT(VariableTree):
     z0 = Float(0.111, iotype='in', desc='Roughness length')
 
 
+@base
 class OffshoreTurbineEnvironmentVT(TurbineEnvironmentVT):
 
     Hs = Float(units='m', desc='Significant wave height')
