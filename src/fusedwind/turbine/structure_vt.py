@@ -1,8 +1,9 @@
 
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot, Dict
-from fusedwind.interface import base, implement_base
 
+from fusedwind.interface import base, implement_base
+from fusedwind.turbine.geometry_vt import AirfoilShape
 
 
 # too aeroelastic code specific?!
@@ -155,7 +156,7 @@ class CrossSectionStructureVT(VariableTree):
     regions = List(desc='List of names of regions in the cross section')
     webs = List(desc='List of names of regions in the cross section')
     materials = Dict(desc='Dictionary of MaterialProps vartrees')
-    airfoil = Array(desc='Cross sectional shape')
+    airfoil = VarTree(AirfoilShape(), desc='Cross sectional shape')
     DPs = List(desc='Region division points (nregion + 1)')
 
     def add_region(self, name):
