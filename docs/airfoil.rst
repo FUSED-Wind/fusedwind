@@ -4,14 +4,14 @@ Airfoil Aerodynamics Definition
 
 .. _sec_airfoilaero_label:
 
-.. index:: airfoil_vt.py
+.. index:: airfoilaero_vt.py
 
-.. _airfoil_vt.py:
+.. _airfoilaero_vt.py:
 
-airfoil_vt.py
---------------
+airfoilaero_vt.py
+-----------------
 
-.. automodule:: fusedwind.turbine.airfoil_vt
+.. automodule:: fusedwind.turbine.airfoilaero_vt
    :members:
    :show-inheritance:
 
@@ -20,7 +20,7 @@ airfoil_vt.py
 .. _airfoil.py:
 
 airfoil.py
---------------
+----------
 
 .. automodule:: fusedwind.turbine.airfoil
    :members:

@@ -1,6 +1,6 @@
 
 Aero-Elastic Turbine Definition
-++++++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++
 
 .. _sec_turbine_aeroelastic_label:
 
@@ -9,7 +9,7 @@ Aero-Elastic Turbine Definition
 .. _rotoraero_vt.py:
 
 rotoraero_vt.py
---------------
+---------------
 
 .. automodule:: fusedwind.turbine.rotoraero_vt
    :members:
@@ -20,7 +20,7 @@ rotoraero_vt.py
 .. _turbine_vt.py:
 
 turbine_vt.py
---------------
+-------------
 
 .. automodule:: fusedwind.turbine.turbine_vt
    :members:
@@ -42,8 +42,9 @@ aeroelastic_solver.py
 .. _environment_vt.py:
 
 environment_vt.py
----------------------
+-----------------
 
 .. automodule:: fusedwind.turbine.environment_vt
    :members:
    :show-inheritance:
+
