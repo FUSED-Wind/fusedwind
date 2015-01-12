@@ -5,7 +5,9 @@ import numpy as np
 from openmdao.main.api import VariableTree
 from openmdao.main.datatypes.api import Str, Float, Array, List
 
+from fusedwind.interface import base
 
+@base
 class AirfoilDataVT(VariableTree):
     """
     airfoil data at a specific Reynolds number over of range of angles of attack
@@ -19,6 +21,7 @@ class AirfoilDataVT(VariableTree):
     cm = Array(desc='corresponding pitching moment coefficients')
 
 
+@base
 class AirfoilDatasetVT(VariableTree):
     """
     List of AirfoilDataVT datasets
@@ -32,6 +35,8 @@ class AirfoilDatasetVT(VariableTree):
     interpolator = Array(desc='The interpolator could characterize e.g. TE flap angle, roughness ratio etc')
     polars = List(AirfoilDataVT, desc='List of AirfoilDataVT')
 
+
+@base
 class AirfoilDataExtVT(AirfoilDataVT):
     """
     Extended airfoil polar data
@@ -45,6 +50,7 @@ class AirfoilDataExtVT(AirfoilDataVT):
     xsep_p = Array(desc='chordwise pressure side transition points')
 
 
+@base
 class AirfoilBLdata(VariableTree):
     """
     Airfoil boundary layer parameters
