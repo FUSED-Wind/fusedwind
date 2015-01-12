@@ -3,7 +3,7 @@ from openmdao.main.api import Component
 from openmdao.main.datatypes.api import Slot, Str, Float, Array, VarTree
 
 from fusedwind.interface import base
-from fusedwind.turbine.airfoil_vt import AirfoilDataVT
+from fusedwind.turbine.airfoilaero_vt import AirfoilDataVT
 
 
 @base
