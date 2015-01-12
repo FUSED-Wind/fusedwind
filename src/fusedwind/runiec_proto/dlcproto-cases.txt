@@ -1,0 +1,62 @@
+# This is an example of a way to implement the IEC load case from 88_329 using a quite
+# generic probabalistic language.  Syntax is implementing the general idea that each case
+# is simply defining a joint probability distribution on several environment variables like
+# wind speed, wave height, directionality, etc.
+# That is, the general thing that we need is
+#
+# <var> ~ <distribution>(<params>), ie
+#
+# {v_i} = D_k ({p_j}), where
+# v_i are variables like wind speed, D_k are distributions like "normal", "uniform", etc, and
+# where p_j are parameters that define the given distribution, like mean, variance, etc.
+# We also need for the parameters to be functions of the variables (so distribution of wave height
+# can depend on wind speed, for example).
+# We also need to be able to specify _joint_ distributions.
+
+# So the syntax I've implemented so far allows for
+# <val> = number | var_name
+# <expr> = <val> <op> <val>
+# var_name = <expr> | or {<expr1>,...,<exprn>}
+# <var>
+# TODO: more description... see below for examples.
+# Basically:
+# var = value, or
+# var = {set of values}
+# var = Dist(params) 
+# distns so far: N=normal, N2=2d normal, U=uniform
+# a "value" or "param" can always be a reference to a _previously defined_ var
+# and can also always be "val +-*/ val" (but not recursively, so 1+2+3 is an error so far)
+
+
+#--DLC1.1--
+#Vhub = {10, 15, 20}
+#Hs = N(Vhub/10,1)  # Wave height normally distributed, say
+#Hs = Vhub/4  # DLC1.1 says Hs = E[Hs|Vhub], which means it is a function of Vhub
+#TStart = 0
+#AnalTime = 2
+#NumSamples = 1
+
+#--DLC1.2--
+#Vhub = {12, 18}
+#Hs.Tp = N2(Vhub , 10, Vhub / 20, Vhub / 10, 0.5)
+#TStart = 0
+#AnalTime = 2
+#NumSamples = 3
+
+#YawMis = N(0, 1.2)
+
+--DLC.UQproto--
+#Vhub = {1, 6, 11, 16, 21, 26}
+Vhub = {1, 6, 11, 16, 21, 26}
+Tp = {0,2,4,6}
+TStart = 0
+AnalTime = 2
+NumSamples = 1
+WaveDir = { -3,  -2, -1, 0.000000, 1 , 2 , 3}
+#WaveDir = {  0.000000}
+#WaveDir = { -3.139847,  -2.617994,  -2.094395,  -1.570796,  -1.047198,  -0.523599,  0.000000,  0.523599,  1.047198,  1.570796,  2.094395,  2.617994,  3.139847}
+#WaveDir = { -3.139847,  -3.054326,  -2.967060,  -2.879793,  -2.792527,  -2.705260,  -2.617994,  -2.530727,  -2.443461,  -2.356194,  -2.268928,  -2.181662,  -2.094395,  -2.007129,  -1.919862,  -1.832596,  -1.745329,  -1.658063,  -1.570796,  -1.483530,  -1.396263,  -1.308997,  -1.221730,  -1.134464,  -1.047198,  -0.959931,  -0.872665,  -0.785398,  -0.698132,  -0.610865,  -0.523599,  -0.436332,  -0.349066,  -0.261799,  -0.174533,  -0.087266,  0.000000,  0.087266,  0.174533,  0.261799,  0.349066,  0.436332,  0.523599,  0.610865,  0.698132,  0.785398,  0.872665,  0.959931,  1.047198,  1.134464,  1.221730,  1.308997,  1.396263,  1.483530,  1.570796,  1.658063,  1.745329,  1.832596,  1.919862,  2.007129,  2.094395,  2.181662,  2.268928,  2.356194,  2.443461,  2.530727,  2.617994,  2.705260,  2.792527,  2.879793,  2.967060,  3.054326,  3.139847}
+#WaveDir = {-179.9,-170,-160,-150,-140,-130,-120,-110,-100,-90,-80,-70,-60,-50,-40,-30,-20,-10,0,10,20,30,40,50,60,70,80,90,100,110,120,130,140,150,160,170,179.9}
+#WaveDir = {0 , 5 , 10 , 15 , 20 , 25 , 30 , 35 , 40 , 45 , 50 , 55 , 60 , 65 , 70 , 75 , 80 , 85 , 90 , 95 , 100 , 105 , 110 , 115 , 120 , 125 , 130 , 135 , 140 , 145 , 150 , 155 , 160 , 165 , 170 , 175 , 180}
+#WaveDir = {-20, 0}
+Hs = {0,2,4,6}

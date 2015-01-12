@@ -1,0 +1,7 @@
+# this is a comment
+# this is input for python based dlc runner shell
+DLC,   @WindSpeeds,   NumSeeds,  NumWavePer, TotProbReq, TStart, AnalTime
+DLC1.1,  12.3 14.5  ,  1   ,     1  , 	     N/A, 	 20.0 ,  60.0
+DLC1.2,  14.3 19.5  ,  1   ,     1  ,	     0.54321,    20.0 ,  60.0
+DLC1.3,  13.1 13.2  ,  1   ,     1  ,	     N/A,           0 ,  60.0
+

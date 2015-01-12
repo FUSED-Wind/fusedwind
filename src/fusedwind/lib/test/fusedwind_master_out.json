@@ -1,0 +1,132 @@
+{
+    "rotor": {
+        "type": "RotorVT", 
+        "parameters": {
+            "diameter": 178.332, 
+            "tilt_angle": 5.0, 
+            "nb": 3, 
+            "cone_angle": 2.5, 
+            "hub_height": 119.0, 
+            "mass": 227962.0, 
+            "overhang": 7.1
+        }
+    }, 
+    "blade": {
+        "type": "BladeVT", 
+        "parameters": {
+            "max_chord": 6.203, 
+            "tip_chord": 1.23, 
+            "length": 89.166, 
+            "mass": 0.0, 
+            "airfoils": [
+                "cylinder", 
+                "FFA-W3-480GF", 
+                "FFA-W3-360GF", 
+                "FFA-W3-301", 
+                "FFA-W3-241"
+            ], 
+            "I_y": 0.0, 
+            "I_x": 0.0, 
+            "root_chord": 5.38
+        }
+    }, 
+    "airfoil_data": {
+        "type": "AirfoilDataArrayVT", 
+        "parameters": {
+            "Re": [], 
+            "polars": [
+                {
+                    "type": "AirfoilDataVT", 
+                    "parameters": {
+                        "Re": [], 
+                        "alpha": [
+                            0.0, 
+                            2.0, 
+                            4.0, 
+                            6.0, 
+                            8.0, 
+                            10.0, 
+                            12.0, 
+                            14.0, 
+                            16.0, 
+                            18.0, 
+                            20.0
+                        ], 
+                        "cd": [], 
+                        "cm": [], 
+                        "cl": [
+                            0.0, 
+                            0.21932454224643017, 
+                            0.43864908449286033, 
+                            0.6579736267392905, 
+                            0.87729816898572066, 
+                            1.0966227112321507, 
+                            1.315947253478581, 
+                            1.5352717957250113, 
+                            1.7545963379714413, 
+                            1.9739208802178716, 
+                            2.1932454224643014
+                        ]
+                    }
+                }
+            ]
+        }
+    }, 
+    "hub": {
+        "type": "HubVT", 
+        "parameters": {
+            "diameter": 5.6, 
+            "mass": 0.0, 
+            "I_y": 0.0, 
+            "CM": [
+                0.0, 
+                0.0, 
+                0.0
+            ], 
+            "I_x": 0.0
+        }
+    }, 
+    "nacelle": {
+        "type": "NacelleVT", 
+        "parameters": {
+            "mass": 446036.0, 
+            "I_y": 0.0, 
+            "CM": [
+                0.0, 
+                0.0, 
+                0.0
+            ], 
+            "I_x": 0.0
+        }
+    }, 
+    "wt": {
+        "type": "WindTurbineDescriptionVT", 
+        "parameters": {
+            "docs": "", 
+            "turbine_name": "DTU 10MW RWT"
+        }
+    }, 
+    "machine_type": {
+        "type": "VarSpeedVarPitch", 
+        "parameters": {
+            "orientation": "upwind", 
+            "Vout": 25.0, 
+            "maxOmega": 9.6, 
+            "Vin": 4.0, 
+            "wind_class": "IEC Class 1A", 
+            "varPitch": true, 
+            "ratedPower": 100000000.0, 
+            "varSpeed": true, 
+            "minOmega": 6.0
+        }
+    }, 
+    "tower": {
+        "type": "TowerVT", 
+        "parameters": {
+            "top_diameter": 5.5, 
+            "bottom_diameter": 8.3, 
+            "mass": 628442.0, 
+            "height": 115.63
+        }
+    }
+}

@@ -1,0 +1,8 @@
+# key = value file of locations of various files to read and
+# to write
+
+main_output_file = "dlcproto.out"
+
+output_keys =  RootMxc1  RootMyc1 LSSGagMya LSSGagMza YawBrMxp  YawBrMyp   TwrBsMxt   TwrBsMyt  Fair1Ten  Fair2Ten  Fair3Ten Anch1Ten  Anch2Ten  Anch3Ten
+
+
