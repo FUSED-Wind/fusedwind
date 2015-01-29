@@ -2,6 +2,8 @@ FUSED-Wind
 ==========
 [![Stories in Ready](https://badge.waffle.io/FUSED-Wind/fusedwind.svg?label=ready&title=Ready)](http://waffle.io/FUSED-Wind/fusedwind)
 
+# Releases
+**v0.1.0**: [![DOI](https://zenodo.org/badge/6567/FUSED-Wind/fusedwind.svg)](http://dx.doi.org/10.5281/zenodo.13899)
 
 # Overview
 
