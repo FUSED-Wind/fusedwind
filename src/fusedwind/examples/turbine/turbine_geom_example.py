@@ -94,9 +94,9 @@ def lofted_blade_shape_example():
     for i in range(b.span_ni):
         plt.plot(b.surfout.surface[:, i, 0], b.surfout.surface[:, i, 1])
     plt.savefig('lofted_blade.eps')
+    plt.savefig('lofted_blade.png')
 
     return top
-
 
 
 # --- 3 -----

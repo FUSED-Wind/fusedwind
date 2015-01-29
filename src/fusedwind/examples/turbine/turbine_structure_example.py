@@ -1,4 +1,6 @@
 
+# --- 1 -----
+
 import numpy as np
 
 from openmdao.lib.datatypes.api import VarTree
@@ -44,6 +46,8 @@ top.st_splines.x = np.linspace(0, 1, 12)
 
 top.run()
 
+# --- 2 -----
+
 top.pf_splines.chord_C[3]-=0.008
 
 top.run()
@@ -71,6 +75,8 @@ plt.ylabel('c/R [-]')
 plt.savefig('chord_ffd_spline.eps')
 plt.savefig('chord_ffd_spline.png')
 
+# --- 3 -----
+
 top.st_splines.r04uniaxT_C[2]+=0.01
 plt.figure()
 plt.plot(top.st_splines.st3dOut.x, top.st_splines.st3dOut.region04.uniax.thickness, 'r-', label='Original')
@@ -86,3 +92,5 @@ plt.xlabel('r/R [-]')
 plt.ylabel('Thickness [m]')
 plt.savefig('turbine_structure_uniax_perturb.eps')
 plt.savefig('turbine_structure_uniax_perturb.png')
+
+# --- 4 -----
