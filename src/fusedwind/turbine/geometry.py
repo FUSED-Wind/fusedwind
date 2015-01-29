@@ -241,6 +241,7 @@ class RedistributedBladePlanform(Component):
     def execute(self):
 
         self.pfOut.s = self.x.copy()
+        self.pfOut.blade_length = self.pfIn.blade_length
         self.pfIn._compute_s()
         for name in self.pfIn.list_vars():
             var = getattr(self.pfIn, name)
@@ -286,6 +287,7 @@ def read_blade_planform(filename):
     pf.p_le = data[:, 8]
 
     return pf
+
 
 @implement_base(ModifyBladePlanformBase)
 class SplinedBladePlanform(Assembly):

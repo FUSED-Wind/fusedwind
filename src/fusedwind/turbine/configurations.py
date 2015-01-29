@@ -2,6 +2,28 @@
 from fusedwind.interface import base, implement_base
 
 
+def configure_planform(cls, planform_nC):
+    """
+    method that adds a ``SplinedBladePlanform`` instance to the assembly
+
+    Parameters
+    ----------
+    cls: class instance
+        Instance of an OpenMDAO Assembly that the analysis is run from
+    planform_nC: int
+        number of spline control points for the planform variables  
+    """
+
+    from fusedwind.turbine.geometry import SplinedBladePlanform
+
+    cls.add('pf_splines', SplinedBladePlanform())
+    cls.driver.workflow.add('pf_splines')
+    cls.pf_splines.nC = planform_nC
+
+    cls.create_passthrough('pf_splines.blade_length')
+    cls.create_passthrough('pf_splines.span_ni')
+
+
 def configure_bladesurface(cls, planform_nC):
     """
     method that adds a ``LoftedBladeSurface`` instance to the assembly
@@ -14,19 +36,17 @@ def configure_bladesurface(cls, planform_nC):
         number of spline control points for the planform variables
     """
 
-    from fusedwind.turbine.geometry import SplinedBladePlanform, LoftedBladeSurface
+    from fusedwind.turbine.geometry import LoftedBladeSurface
 
-    cls.add('pf_splines', SplinedBladePlanform())
+    if not hasattr(cls, 'pf_splines'):
+        configure_planform(cls, planform_nC)
+
     cls.add('blade_surface', LoftedBladeSurface())
-
-    cls.driver.workflow.add(['pf_splines','blade_surface'])
-
-    cls.create_passthrough('pf_splines.blade_length')
-    cls.create_passthrough('pf_splines.span_ni')
+    cls.driver.workflow.add('blade_surface')
 
     cls.connect('pf_splines.pfOut', 'blade_surface.pf')
     cls.connect('span_ni', 'blade_surface.span_ni')
-    cls.pf_splines.nC = planform_nC
+
 
 def configure_bladestructure(cls, file_base, planform_nC=8, structure_nC=8):
     """

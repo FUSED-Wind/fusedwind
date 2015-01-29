@@ -38,7 +38,9 @@ class Curve(VariableTree):
         """
         s = calculate_length(self.points)
         self.length = s[-1]
+        self.ds = np.diff(s)
         self.s = s/s[-1]
+
 
     def _compute_dp(self):
         """compute the unit direction vectors along the curve"""
@@ -62,6 +64,7 @@ class AirfoilShape(Curve):
     LE = Array(desc='Leading edge coordinates')
     TE = Array(desc='Trailing edge coordinates')
     sLE = Float(desc='Leading edge curve fraction')
+    chord = Float(desc='chord length')
 
     def __init__(self, points=None):
         super(AirfoilShape, self).__init__(points)
@@ -101,6 +104,7 @@ class AirfoilShape(Curve):
         yLE = self.spline[1](self.sLE)
         self.LE = np.array([xLE, yLE])
         self.curvLE = NaturalCubicSpline(self.s, curvature(self.points))(self.sLE)
+        self.chord = np.linalg.norm(self.LE-self.TE)
 
     def _sdist(self, s):
 
