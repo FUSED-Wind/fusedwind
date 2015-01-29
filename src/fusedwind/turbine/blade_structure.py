@@ -6,9 +6,10 @@ from string import digits
 from openmdao.main.api import Component, Assembly
 from openmdao.lib.datatypes.api import VarTree, Float, Array, Bool, Str, List, Int
 
-from fusedwind.turbine.geometry_vt import BladeSurfaceVT
+from fusedwind.turbine.geometry_vt import BladeSurfaceVT, BladePlanformVT
 from fusedwind.turbine.geometry import RedistributedBladePlanform, SplineComponentBase, FFDSplineComponentBase
 from fusedwind.turbine.structure_vt import BladeStructureVT3D, CrossSectionStructureVT, BeamStructureVT
+from fusedwind.turbine.rotoraero_vt import LoadVectorCaseList
 from fusedwind.interface import base, implement_base
 
 
@@ -458,7 +459,7 @@ class SplinedBladeStructure(Assembly):
         self.add('pf', RedistributedBladePlanform())
         self.driver.workflow.add('pf')
         self.create_passthrough('pf.pfIn')
-        self.create_passthrough('pf.pfOut.blade_length')
+        self.create_passthrough('pf.pfOut')
         self.connect('x', 'pf.x')
 
     def configure_bladestructure(self):
@@ -573,7 +574,7 @@ class SplinedBladeStructure(Assembly):
                     width[ix] *= -1.
                     self._logger.warning('switching DPs %i %i for section %i' %
                                          (i, i + 1, ix))
-            region.width = width * self.pf.pfOut.chord * self.blade_length
+            region.width = width * self.pf.pfOut.chord * self.pfOut.blade_length
             region.thickness = np.zeros(self.st3dOut.x.shape)
             for layer in region.layers:
                 region.thickness += np.maximum(0., getattr(region, layer).thickness)
@@ -716,3 +717,43 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
                             l.angle = 0.
 
             self.cs2d.append(st2d)
+
+
+@base
+class BeamStructureCSCode(Component):
+    """
+    Base class for computing beam structural properties using a cross-sectional
+    code such as PreComp, BECAS or VABS.
+
+    The analysis assumes that the list of CrossSectionStructureVT's and the
+    BladePlanformVT are interpolated onto the structural grid, and that
+    the code itself is responsible for the meshing of the cross sections.
+    """
+
+    cs2d = List(CrossSectionStructureVT, iotype='in', desc='Blade cross sectional structure geometry')
+    pf = VarTree(BladePlanformVT(), iotype='in', desc='Blade planform discretized according to'
+                                                      'the structural resolution')
+
+    beam_structure = VarTree(BeamStructureVT(), iotype='out', desc='Structural beam properties')
+
+
+@base
+class StressRecoveryCSCode(Component):
+    """
+    Base class for performing cross sectional failure analysis
+    using codes like BECAS and VABS.
+
+    This analysis will typically be in a workflow preceeded by
+    a call to a BeamStructureCSCode. It is assumed that the list of
+    LoadVectorCaseList vartrees are interpolated onto the structural grid.
+
+    Note that the failure criterium and material safety factors are specified
+    for each individual material in the MaterialProps variable tree.
+    """
+
+    load_cases = List(LoadVectorCaseList, iotype='in', 
+                           desc='List of lists of section load vectors for each radial section'
+                                'used to perform failure analysis')
+
+    failure = Array(iotype='out', desc='Failure parameter. Shape: ((len(load_cases), n_radial_sections))')
+

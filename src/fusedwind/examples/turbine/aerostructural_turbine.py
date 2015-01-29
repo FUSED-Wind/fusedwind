@@ -8,13 +8,14 @@ from openmdao.lib.datatypes.api import List, VarTree
 
 from fusedwind.interface import implement_base
 from fusedwind.turbine.geometry import read_blade_planform
+from fusedwind.turbine.geometry_vt import BladePlanformVT
 from fusedwind.turbine.configurations import configure_bladestructure
 from fusedwind.turbine.blade_structure import SplinedBladeStructure
-from fusedwind.turbine.structure_vt import BladeStructureVT3D, BeamStructureVT
+from fusedwind.turbine.structure_vt import CrossSectionStructureVT, BeamStructureVT
 from fusedwind.turbine.turbine_vt import AeroelasticHAWTVT, configure_turbine
 
 from fusedwind.turbine.aeroelastic_solver import AeroElasticSolverBase
-from fusedwind.turbine.structural_props_solver import StructuralCSPropsSolver
+from fusedwind.turbine.blade_structure import BeamStructureCSCode
 
 from fusedwind.turbine.environment_vt import TurbineEnvironmentVT
 from fusedwind.turbine.rotoraero_vt import RotorOperationalData, \
@@ -40,11 +41,14 @@ class AEsolver(Component):
         print 'running aeroelastic analysis ...'
 
 
-@implement_base(StructuralCSPropsSolver)
+@implement_base(BeamStructureCSCode)
 class CS2Dsolver(Component):
 
-    cs2d = List(iotype='in')
-    beam_structure = VarTree(BeamStructureVT(), iotype='out')
+    cs2d = List(CrossSectionStructureVT, iotype='in', desc='Blade cross sectional structure geometry')
+    pf = VarTree(BladePlanformVT(), iotype='in', desc='Blade planform discretized according to'
+                                                      'the structural resolution')
+
+    beam_structure = VarTree(BeamStructureVT(), iotype='out', desc='Structural beam properties')
 
     def execute(self):
 
