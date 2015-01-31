@@ -184,6 +184,9 @@ class BladeStructureReader(Component):
 
                 s = cldata[:, 0]
                 r.thickness = np.zeros(self.st3d.x.shape[0])
+                DP0 = getattr(self.st3d, 'DP%02d' % i)
+                DP1 = getattr(self.st3d, 'DP%02d' % (i + 1))
+                r.width =  DP1 - DP0
                 for il, lname in enumerate(layers):
                     self._logger.info('    adding layer %s' % lname)
                     l = r.add_layer(lname)
@@ -209,6 +212,7 @@ class BladeStructureReader(Component):
                 nl = len(lheader)
 
                 r.thickness = np.zeros(self.st3d.x.shape[0])
+                r.width = np.zeros(self.st3d.x.shape[0])
                 # assert len(lheader) == cldata.shape[1]
 
                 s = cldata[:, 0]
@@ -398,7 +402,7 @@ class BeamStructureReader(Component):
                 raise RuntimeError('Error reading file %s, %s'% (self.st_filename))
 
         if st_data.shape[1] < 19:
-            raise RuntimeError('Blade planform data: expected dim = 10, got dim = %i,%s'%(st_data.shape[1]))
+            raise RuntimeError('Blade planform data: expected dim = 19, got dim = %i,%s'%(st_data.shape[1]))
 
         self.beamprops.s = st_data[:, 0]
         self.beamprops.dm = st_data[:, 1]
