@@ -79,7 +79,7 @@ class pchipSpline(SplineBase):
         xp: array
             array with x-coordinates of spline control points
         yp: array
-            array with y-coordinates of splinecontrol points
+            array with y-coordinates of spline control points
 
         returns
         ---------
@@ -297,6 +297,7 @@ class SplinedBladePlanform(Assembly):
     Cx = Array(iotype='in', desc='spanwise distribution of spline control points')
 
     blade_length = Float(iotype='in')
+    blade_length_ref = Float(iotype='in')
 
     span_ni = Int(50, iotype='in')
 
@@ -352,16 +353,15 @@ class SplinedBladePlanform(Assembly):
                 self.connect('Cx', sname + '.Cx')
                 spl.xinit = self.get('pfIn.s')
                 spl.Pinit = cIn
-                self.connect(sname + '.P', 'pfOut.' + vname)
+                if vname == 'chord':
+                    self.connect(sname + '.P'+
+                        '*blade_length/blade_length_ref', 'pfOut.' + vname)
+                else:
+                    self.connect(sname + '.P', 'pfOut.' + vname)
                 self.create_passthrough(sname + '.C', alias=sname + '_C')
                 self.create_passthrough(sname + '.dPds', alias=sname + '_dPds')
 
-
-    def _post_execute(self):
-        super(SplinedBladePlanform, self)._post_execute()
-
-        self.pfOut.chord *= self.blade_length / self.blade_length_ref
-        self.pfOut.athick = self.pfOut.chord * self.pfOut.rthick
+        self.connect('chord.P*rthick.P', 'pfOut.athick')
 
 
 @base
