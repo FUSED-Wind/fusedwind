@@ -42,10 +42,9 @@ def lofted_blade_shape_example():
 
     top = Assembly()
 
-    configure_bladesurface(top, planform_nC=6)
+    configure_bladesurface(top, 'data/DTU_10MW_RWT_blade_axis_prebend.dat', planform_nC=6)
 
     # load the planform file
-    top.pf_splines.pfIn = read_blade_planform('data/DTU_10MW_RWT_blade_axis_prebend.dat')
     top.blade_length = 86.366
     top.span_ni = 50
 

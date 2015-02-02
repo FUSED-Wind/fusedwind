@@ -8,19 +8,19 @@ from openmdao.main.api import Assembly, Component
 
 from fusedwind.interface import implement_base
 from fusedwind.turbine.geometry import read_blade_planform, redistribute_blade_planform
-from fusedwind.turbine.configurations import configure_bladestructure
+from fusedwind.turbine.configurations import configure_bladestructure, configure_bladesurface
 from fusedwind.turbine.blade_structure import SplinedBladeStructure
 from fusedwind.turbine.structure_vt import BladeStructureVT3D
 
 top = Assembly()
 
-configure_bladestructure(top, 'data/DTU10MW', planform_nC=6, structure_nC=5)
+configure_bladesurface(top, 'data/DTU_10MW_RWT_blade_axis_prebend.dat', planform_nC=6)
+configure_bladestructure(top, 'data/DTU10MW', structure_nC=5)
 
 top.st_writer.filebase = 'st_test'
 
 top.blade_length = 86.366
-
-top.pf_splines.pfIn = read_blade_planform('data/DTU_10MW_RWT_blade_axis_prebend.dat')
+top.span_ni = 30
 top.blade_surface.chord_ni = 300
 
 for f in ['data/ffaw3241.dat',

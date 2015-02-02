@@ -289,6 +289,50 @@ def read_blade_planform(filename):
     return pf
 
 
+class ComputeDist(Component):
+    """
+    simple redistribution function that clusters cells towards one end
+    """
+
+    span_ni = Int(iotype='in')
+    x = Array(iotype='out')
+
+    def execute(self):
+
+        self.x = distfunc([[0., -1, 1], [1., 0.2 * 1./self.span_ni, self.span_ni]])
+
+
+class ScaleChord(Component):
+    """
+    component to replace
+    connect(sname + '.P'+
+        '*blade_length/blade_length_ref', 'pfOut.' + vname)
+    """
+
+    scaler = Float(iotype='in')
+    cIn = Array(iotype='in')
+    cOut = Array(iotype='out')
+
+    def execute(self):
+
+        self.cOut = self.scaler * self.cIn
+
+
+class ComputeAthick(Component):
+    """
+    component to replace connection:
+    connect('chord.P*rthick.P', 'pfOut.athick')
+    """
+    
+    chord = Array(iotype='in')
+    rthick = Array(iotype='in')
+    athick = Array(iotype='out')
+
+    def execute(self):
+
+        self.athick = self.chord * self.rthick
+
+
 @implement_base(ModifyBladePlanformBase)
 class SplinedBladePlanform(Assembly):
 
@@ -316,13 +360,6 @@ class SplinedBladePlanform(Assembly):
         if self.blade_length_ref == 0.:
             self.blade_length_ref = self.blade_length
 
-        self.configure_splines()
-
-    def compute_x(self):
-
-        # simple distfunc for now
-        self.x_dist = distfunc([[0., -1, 1], [1., 0.2 * 1./self.span_ni, self.span_ni]])
-
     def configure_splines(self):
 
 
@@ -333,8 +370,10 @@ class SplinedBladePlanform(Assembly):
         else:
             self.nC = self.Cx.shape[0]
 
-        self.compute_x()
-        self.pfOut = self.pfIn.copy()
+        self.add('compute_x', ComputeDist())
+        self.driver.workflow.add('compute_x')
+        self.connect('span_ni', 'compute_x.span_ni')
+
         for vname in self.pfIn.list_vars():
             if vname in ['athick', 'blade_length']:
                 continue
@@ -344,24 +383,34 @@ class SplinedBladePlanform(Assembly):
             sname = vname.replace('.','_')
 
             if vname == 's':
-                self.connect('x_dist', 'pfOut.s')
+                self.connect('compute_x.x', 'pfOut.s')
             else:
                 spl = self.add(sname, FFDSplineComponentBase(self.nC))
                 self.driver.workflow.add(sname)
                 # spl.log_level = logging.DEBUG
-                self.connect('x_dist', sname + '.x')
+                self.connect('compute_x.x', sname + '.x')
                 self.connect('Cx', sname + '.Cx')
                 spl.xinit = self.get('pfIn.s')
                 spl.Pinit = cIn
                 if vname == 'chord':
-                    self.connect(sname + '.P'+
-                        '*blade_length/blade_length_ref', 'pfOut.' + vname)
+                    self.add('scaleC', ScaleChord())
+                    self.driver.workflow.add('scaleC')
+                    self.connect('chord.P', 'scaleC.cIn')
+                    self.connect('blade_length/blade_length_ref', 'scaleC.scaler')
+                    self.connect('scaleC.cOut', 'pfOut.chord')
+                    # self.connect(sname + '.P'+
+                    #     '*blade_length/blade_length_ref', 'pfOut.' + vname)
                 else:
                     self.connect(sname + '.P', 'pfOut.' + vname)
                 self.create_passthrough(sname + '.C', alias=sname + '_C')
                 self.create_passthrough(sname + '.dPds', alias=sname + '_dPds')
 
-        self.connect('chord.P*rthick.P', 'pfOut.athick')
+        self.add('athick', ComputeAthick())
+        self.driver.workflow.add('athick')
+        self.connect('chord.P', 'athick.chord')
+        self.connect('rthick.P', 'athick.rthick')
+        self.connect('athick.athick', 'pfOut.athick')
+        # self.connect('chord.P*rthick.P', 'pfOut.athick')
 
 
 @base
