@@ -370,6 +370,9 @@ class SplinedBladePlanform(Assembly):
         else:
             self.nC = self.Cx.shape[0]
 
+
+        self.connect('blade_length', 'pfOut.blade_length')
+
         self.add('compute_x', ComputeDist())
         self.driver.workflow.add('compute_x')
         self.connect('span_ni', 'compute_x.span_ni')
