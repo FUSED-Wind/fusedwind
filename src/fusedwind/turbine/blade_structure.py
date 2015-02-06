@@ -374,7 +374,14 @@ class BladeStructureWriter(Component):
 @base
 class BeamStructureReaderBase(Component):
 
-    beamprops = VarTree(BeamStructureVT(), iotype='out')
+    beam_structure = VarTree(BeamStructureVT(), iotype='out')
+
+
+@base
+class BeamStructureWriterBase(Component):
+
+    beam_structure = VarTree(BeamStructureVT(), iotype='in')
+
 
 
 @implement_base(BeamStructureReaderBase)
@@ -383,8 +390,8 @@ class BeamStructureReader(Component):
     Default reader for a beam structure file.
     """
 
-    st_filename = Str(iotype='in')
-    beamprops = VarTree(BeamStructureVT(), iotype='out')
+    filename = Str(iotype='in')
+    beam_structure = VarTree(BeamStructureVT(), iotype='out')
 
     def execute(self):
         """  
@@ -395,34 +402,83 @@ class BeamStructureReader(Component):
         Sub-classes can overwrite this function to change the reader's behaviour.
         """
         print 'reading blade structure'
-        if self.st_filename is not '':
+        if self.filename is not '':
             try: 
-                st_data = np.loadtxt(self.st_filename)
+                st_data = np.loadtxt(self.filename)
             except:
                 raise RuntimeError('Error reading file %s, %s'% (self.st_filename))
 
         if st_data.shape[1] < 19:
             raise RuntimeError('Blade planform data: expected dim = 19, got dim = %i,%s'%(st_data.shape[1]))
 
-        self.beamprops.s = st_data[:, 0]
-        self.beamprops.dm = st_data[:, 1]
-        self.beamprops.x_cg = st_data[:, 2]
-        self.beamprops.y_cg = st_data[:, 3]
-        self.beamprops.ri_x = st_data[:, 4]
-        self.beamprops.ri_y = st_data[:, 5]
-        self.beamprops.x_sh = st_data[:, 6]
-        self.beamprops.y_sh = st_data[:, 7]
-        self.beamprops.E = st_data[:, 8]
-        self.beamprops.G = st_data[:, 9]
-        self.beamprops.I_x = st_data[:, 10]
-        self.beamprops.I_y = st_data[:, 11]
-        self.beamprops.J = st_data[:, 12]
-        self.beamprops.k_x = st_data[:, 13]
-        self.beamprops.k_y = st_data[:, 14]
-        self.beamprops.A = st_data[:, 15]
-        self.beamprops.pitch = st_data[:, 16]
-        self.beamprops.x_e = st_data[:, 17]
-        self.beamprops.y_e = st_data[:, 18]
+        self.beam_structure.s = st_data[:, 0]
+        self.beam_structure.dm = st_data[:, 1]
+        self.beam_structure.x_cg = st_data[:, 2]
+        self.beam_structure.y_cg = st_data[:, 3]
+        self.beam_structure.ri_x = st_data[:, 4]
+        self.beam_structure.ri_y = st_data[:, 5]
+        self.beam_structure.x_sh = st_data[:, 6]
+        self.beam_structure.y_sh = st_data[:, 7]
+        self.beam_structure.E = st_data[:, 8]
+        self.beam_structure.G = st_data[:, 9]
+        self.beam_structure.I_x = st_data[:, 10]
+        self.beam_structure.I_y = st_data[:, 11]
+        self.beam_structure.J = st_data[:, 12]
+        self.beam_structure.k_x = st_data[:, 13]
+        self.beam_structure.k_y = st_data[:, 14]
+        self.beam_structure.A = st_data[:, 15]
+        self.beam_structure.pitch = st_data[:, 16]
+        self.beam_structure.x_e = st_data[:, 17]
+        self.beam_structure.y_e = st_data[:, 18]
+
+
+@implement_base(BeamStructureWriterBase)
+class BeamStructureWriter(Component):
+    """
+    Default writer for a beam structure file.
+    """
+
+    filename = Str(iotype='in')
+    beam_structure = VarTree(BeamStructureVT(), iotype='in',
+                                         desc='Vartree containing beam definition of blade structure')
+
+
+    def execute(self):
+
+        fid = open(self.filename, 'w')
+
+        # generate header
+        header = ['r', 'm', 'x_cg', 'y_cg', 'ri_x', 'ri_y', 'x_sh', 'y_sh', 'E',
+                  'G', 'I_x', 'I_y', 'J', 'k_x', 'k_y', 'A', 'pitch', 'x_e', 'y_e']
+        exp_prec = 10             # exponential precesion
+        col_width = exp_prec + 8  # column width required for exp precision
+        header_full = '# ' + ''.join([(hh + ' [%i]').center(col_width+1)%i for i, hh in enumerate(header)])+'\n'
+
+        fid.write(header_full)
+
+        # convert to array
+        st = self.beam_structure
+        data = np.array([st.s,
+                         st.dm,
+                         st.x_cg,
+                         st.y_cg,
+                         st.ri_x,
+                         st.ri_y,
+                         st.x_sh,
+                         st.y_sh,
+                         st.E,
+                         st.G,
+                         st.I_x,
+                         st.I_y,
+                         st.J,
+                         st.k_x,
+                         st.k_y,
+                         st.A,
+                         st.pitch,
+                         st.x_e,
+                         st.y_e]).T
+        np.savetxt(fid, data, fmt='%'+' %i.%ie' % (col_width, exp_prec) )
+        fid.close()
 
 
 @implement_base(ModifyBladeStructureBase)
