@@ -289,6 +289,42 @@ def read_blade_planform(filename):
     return pf
 
 
+@base
+class BladePlanformWriter(Component):
+
+    filebase = Str('blade')
+    pf = VarTree(BladePlanformVT(), iotype='in')
+
+    def execute(self):
+
+        name = self.filebase + self.itername + '.pfd'
+
+        try:
+            if '-fd' in self.itername or '-fd' in self.parent.itername:
+               name = self.filebase + '.pfd'
+        except:
+            pass
+
+        data = np.array([self.pf.x,
+                         self.pf.y,
+                         self.pf.z,
+                         self.pf.rot_x,
+                         self.pf.rot_y,
+                         self.pf.rot_z,
+                         self.pf.chord,
+                         self.pf.rthick,
+                         self.pf.p_le]).T
+        fid = open(name, 'w')
+        header = ['main_axis_x',  'main_axis_y', 'main_axis_z', 'rot_x', 'rot_y', 'rot_z', 'chord', 'rthick', 'p_le']
+
+        exp_prec = 10             # exponential precesion
+        col_width = exp_prec + 8  # column width required for exp precision
+        header_full = '# ' + ''.join([(hh + ' [%i]').center(col_width + 2)%i for i, hh in enumerate(header)])+'\n'
+
+        fid.write(header_full)
+        np.savetxt(fid, data, fmt='%'+' %i.%ie' % (col_width, exp_prec))
+        fid.close()
+
 class ComputeDist(Component):
     """
     simple redistribution function that clusters cells towards one end
