@@ -231,8 +231,8 @@ class aep_weibull_assembly(Assembly):
         self.connect('cdf.F', 'aep.CDF_V')
 
         # outputs
-        self.connect('aep.gross_aep', 'gross_aep')
-        self.connect('aep.net_aep', 'net_aep')
+        self.connect('aep.gross_aep / 1000.0', 'gross_aep') #TODO: change aep outputs to Watts at this level
+        self.connect('aep.net_aep / 1000.0', 'net_aep')
         self.connect('aep.capacity_factor','capacity_factor')
 
 @implement_base(BaseAEPAggregator_NoFlow)
@@ -251,8 +251,8 @@ class aep_component(Component):
     turbine_number = Int(100, iotype='in', desc='total number of wind turbines at the plant')
 
     # outputs
-    gross_aep = Float(iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', unit='kWh')
-    net_aep = Float(iotype='out', desc='Net Annual Energy Production after availability and loss impacts', unit='kWh')
+    gross_aep = Float(iotype='out', desc='Gross Annual Energy Production before availability and loss impacts', units='kW*h')
+    net_aep = Float(iotype='out', desc='Net Annual Energy Production after availability and loss impacts', units='kW*h')
     capacity_factor = Float(iotype='out', desc='plant capacity factor')
 
     def __init__(self):
