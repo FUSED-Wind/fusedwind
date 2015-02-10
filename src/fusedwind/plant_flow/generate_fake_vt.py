@@ -1,6 +1,6 @@
 from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, \
     ExtendedWindTurbinePowerCurveVT, WeibullWindRoseVT, GenericWindRoseVT, GenericWindFarmTurbineLayout, WTPC
-from fusedwind.plant_flow.comp import WeibullWindRose
+#from fusedwind.plant_flow.comp import WeibullWindRose
 from fusedwind.fused_helper import init_container
 
 from random import random

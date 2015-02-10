@@ -1,11 +1,15 @@
-from numpy import interp, ndarray, array, loadtxt, log, zeros, cos, arccos, sin, \
-    nonzero, argsort, NaN, mean, ones, vstack, linspace, exp, \
-    arctan, arange, pi, sqrt, dot, hstack
+from numpy import interp, ndarray, array, loadtxt, log, zeros, cos, arccos, sin,\
+     nonzero, argsort, NaN, isnan, mean, ones, vstack, linspace, exp, arctan, \
+     arange, pi, sqrt, dot, hstack, sum, prod, asfarray, meshgrid, zeros_like, \
+     atleast_2d
 from numpy.linalg.linalg import norm
+from numpy.polynomial.legendre import leggauss
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
+import matplotlib.pylab as plt
 
-from openmdao.lib.datatypes.api import VarTree, Float, Instance, Slot, Array, List, Int, Str, Dict
+from openmdao.lib.datatypes.api import VarTree, Float, Instance, Slot, Array, \
+     List, Int, Str, Dict
 from openmdao.main.api import Driver
 # , IOInterface
 from openmdao.main.api import Component, Assembly, VariableTree, Container
@@ -13,9 +17,10 @@ from openmdao.main.interfaces import implements, ICaseRecorder, ICaseIterator
 from openmdao.main.case import Case
 
 # KLD - 8/29/13 separated vt and assembly into separate file
-from vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, \
+from fusedwind.plant_flow.vt import GenericWindTurbineVT, GenericWindTurbinePowerCurveVT, \
     ExtendedWindTurbinePowerCurveVT, GenericWindFarmTurbineLayout, \
     GenericWindRoseVT
+from fusedwind.plant_flow.generate_fake_vt import generate_a_valid_wt
 
 from fusedwind.interface import base, implement_base, InterfaceInstance
 from fusedwind.fused_helper import *
@@ -425,11 +430,11 @@ class GenericWSPosition(Component):
 
     """Calculate the positions where we should calculate the wind speed on the rotor"""
     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
-    ws_positions = Array([], iotype='out', units='m',
-        desc='the position [n,3] of the ws_array')
     wt_xy = List([0.0, 0.0], iotype='in', units='m',
         desc='The x,y position of the wind turbine')
 
+    ws_positions = Array([], iotype='out', units='m',
+        desc='the position [n,3] of the ws_array')
 
 @implement_base(GenericWSPosition)
 class HubCenterWSPosition(Component):
@@ -438,28 +443,55 @@ class HubCenterWSPosition(Component):
     Generate the positions at the center of the wind turbine rotor
     """
     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
-    ws_positions = Array([], iotype='out', units='m',
-        desc='the position [n,3] of the ws_array')
     wt_xy = List([0.0, 0.0], iotype='in', units='m',
         desc='The x,y position of the wind turbine')
+
+    ws_positions = Array([], iotype='out', units='m',
+        desc='the position [n,3] of the ws_array')
 
     def execute(self):
         self.ws_positions = array([[self.wt_xy[0], self.wt_xy[1], self.wt_desc.hub_height]])
 
-
-@base
-class GenericWakeSum(Component):
-
+@implement_base(HubCenterWSPosition)
+class GaussLegendreQuadratureWSPosition(Component):
     """
-    Generic class for calculating the wake accumulation
+    Generate the positions around center of the wind turbine rotor based on
+    the Gauss-Legendre quadrature rules for integration. It also return the
+    weights for integration
     """
-    wakes = List(iotype='in',
-        desc='wake contributions to rotor wind speed [nwake][n]')
-    ws_array_inflow = Array(iotype='in', units='m/s',
-        desc='inflow contributions to rotor wind speed [n]')
+    wt_desc = VarTree(GenericWindTurbineVT(), iotype='in')
+    wt_xy = List([0.0, 0.0], iotype='in', units='m',
+        desc='The x,y position of the wind turbine')
+    degree = Int(4, iotype='in',
+        desc='degree of the quadrature rule')
 
-    ws_array = Array(iotype='out', units='m/s',
-        desc='the rotor wind speed [n]')
+    ws_positions = Array([], iotype='out', units='m',
+        desc='the position [n,3] of the ws_array')
+    weights = Array([], iotype='out',
+        desc='the quadrature weights of the ws_array')
+
+    def execute(self):
+        R = self.wt_desc.rotor_diameter/2.
+
+        r_GLQ,w_GLQ = leggauss(self.degree)
+        w_j,w_i = meshgrid(w_GLQ,w_GLQ)
+        t_j,r_i = meshgrid(r_GLQ,r_GLQ)
+
+        w_j = w_j.reshape((self.degree**2))
+        t_j = t_j.reshape((self.degree**2))
+        w_i = w_i.reshape((self.degree**2))
+        r_i = r_i.reshape((self.degree**2))
+
+        R_eval  = R*(r_i+1.0)/2.0
+        Th_eval = pi*(t_j+1.0)
+
+        x_eval = zeros_like(R_eval)  + self.wt_xy[0]
+        y_eval = R_eval*cos(Th_eval) + self.wt_xy[1]
+        z_eval = R_eval*sin(Th_eval) + self.wt_desc.hub_height
+
+        self.ws_positions = vstack([x_eval, y_eval, z_eval]).T
+        self.weights = w_i*w_j*(r_i+1.)/4. #atleast_2d().T
+
 
 @base
 class GenericHubWindSpeed(Component):
@@ -474,6 +506,173 @@ class GenericHubWindSpeed(Component):
     hub_wind_speed = Float(0.0, iotype='out', units='m/s',
         desc='hub wind speed')
 
+@implement_base(GenericHubWindSpeed)
+class AreaAveragedWindSpeed(Component):
+
+    """
+    Class for calculating the averaged wind turbine hub wind speed.
+    Typically used as an input to a wind turbine power curve / thrust coefficient curve.
+    """
+    ws_array = Array([], iotype='in', units='m/s',
+        desc='an array of wind speed on the rotor')
+    weights = Array([], iotype='in',
+        desc='the quadrature weights of the ws_array')
+
+    hub_wind_speed = Float(0.0, iotype='out', units='m/s',
+        desc='averaged wind speed over rotor area')
+
+    def execute(self):
+        self.hub_wind_speed = sum(self.weights*self.ws_array)
+
+@implement_base(GenericHubWindSpeed)
+class ThrustEquivalentWindSpeed(Component):
+
+    """
+    Class for calculating the equivalent wind turbine hub wind speed based on
+    the rotor thrust, therefore it is an equivalent kinetic energy wind speed.
+    T = C_T*0.5 * rho * int(u**2,dA) = C_T * A * 0.5 * rho * u_eqT**2
+
+    Used as an input for a modified wind turbine thrust coefficient curve
+    C_T vs u_eqT
+    """
+    ws_array = Array([], iotype='in', units='m/s',
+        desc='an array of wind speed on the rotor')
+    weights = Array([], iotype='in',
+        desc='the quadrature weights of the ws_array')
+
+    hub_wind_speed = Float(0.0, iotype='out', units='m/s',
+        desc='equivalent wind speed over rotor area for thrust force')
+
+    def execute(self):
+        self.hub_wind_speed = sum(self.weights*(self.ws_array**2.))**0.5
+
+#
+# JP: Is it too much to include this type of power equivalent wind speed?
+#     I think it might be interesting to see if these corrections further
+#     reduce the uncertainty under partial wake operation
+
+@implement_base(GenericHubWindSpeed)
+class PowerEquivalentWindSpeed(Component):
+
+    """
+    Class for calculating the equivalent wind turbine hub wind speed based on
+    the rotor power.
+    P = C_P * 0.5 * rho * int(u(y,z)**3,dA) = C_P * A * 0.5 * rho * u_eqP**3
+
+    Used as an input for a modified wind turbine power curve P vs u_eqP
+    """
+    ws_array = Array([], iotype='in', units='m/s',
+        desc='an array of wind speed on the rotor')
+    weights = Array([], iotype='in',
+        desc='the quadrature weights of the ws_array')
+
+    hub_wind_speed = Float(0.0, iotype='out', units='m/s',
+        desc='equivalent wind speed over rotor area for thrust force')
+
+    def execute(self):
+        self.hub_wind_speed = sum(self.weights*(self.ws_array**3.))**(1./3.)
+
+@base
+class GenericWakeSum(Component):
+
+    """
+    Generic class for calculating the wake accumulation
+    """
+    wakes = List(iotype='in',
+        desc='wake contributions to rotor wind speed [nwake][n] @ws_positions')
+    ws_array_inflow = Array(iotype='in', units='m/s',
+        desc='inflow contributions to rotor wind speed [n] @ws_positions')
+
+    ws_array = Array(iotype='out', units='m/s',
+        desc='the rotor wind speed [n]')
+
+@implement_base(GenericWakeSum)
+class LinearWakeSum(Component):
+
+    """
+    Class for calculating the linear wake accumulation
+    """
+    wakes = List(iotype='in',
+        desc='wake contributions to rotor wind speed [nwake][n] @ws_positions')
+    ws_array_inflow = Array(iotype='in', units='m/s',
+        desc='inflow contributions to rotor wind speed [n] @ws_positions')
+
+    ws_array = Array(iotype='out', units='m/s',
+        desc='the rotor wind speed [n]')
+
+    def execute(self):
+        self.ws_array = self.ws_array_inflow + sum(asfarray(self.wakes),0)
+
+@implement_base(GenericWakeSum)
+class QuadraticWakeSum(Component):
+
+    """
+    Class for calculating the quadratic wake accumulation
+    """
+    wakes = List(iotype='in',
+        desc='wake contributions to rotor wind speed [nwake][n] @ws_positions')
+    ws_array_inflow = Array(iotype='in', units='m/s',
+        desc='inflow contributions to rotor wind speed [n] @ws_positions')
+
+    ws_array = Array(iotype='out', units='m/s',
+        desc='the rotor wind speed [n]')
+
+    def execute(self):
+        self.ws_array = self.ws_array_inflow+sum(asfarray(self.wakes)**2.,0)**0.5
+
+@implement_base(GenericWakeSum)
+class ARLWakeSum(Component):
+
+    """
+    Class for calculating the ARL wake accumulation.
+    Average between linear and quadratic accumulations.
+    """
+    wakes = List(iotype='in',
+        desc='wake contributions to rotor wind speed [nwake][n] @ws_positions')
+    ws_array_inflow = Array(iotype='in', units='m/s',
+        desc='inflow contributions to rotor wind speed [n] @ws_positions')
+
+    ws_array = Array(iotype='out', units='m/s',
+        desc='the rotor wind speed [n]')
+
+    def execute(self):
+        self.ws_array = self.ws_array_inflow+0.5*sum(asfarray(self.wakes),0) + \
+                        0.5*(sum(asfarray(self.wakes)**2.,0)**0.5)
+
+@implement_base(GenericWakeSum)
+class MaxWakeSum(Component):
+
+    """
+    Class for calculating the maximum wake accumulation
+    """
+    wakes = List(iotype='in',
+        desc='wake contributions to rotor wind speed [nwake][n] @ws_positions')
+    ws_array_inflow = Array(iotype='in', units='m/s',
+        desc='inflow contributions to rotor wind speed [n] @ws_positions')
+
+    ws_array = Array(iotype='out', units='m/s',
+        desc='the rotor wind speed [n]')
+
+    def execute(self):
+        self.ws_array = self.ws_array_inflow + max(asfarray(self.wakes),0)
+
+@implement_base(GenericWakeSum)
+class GeometricWakeSum(Component):
+
+    """
+    Class for calculating the geometric average wake accumulation
+    """
+    wakes = List(iotype='in',
+        desc='wake contributions to rotor wind speed [nwake][n] @ws_positions')
+    ws_array_inflow = Array(iotype='in', units='m/s',
+        desc='inflow contributions to rotor wind speed [n] @ws_positions')
+
+    ws_array = Array(iotype='out', units='m/s',
+        desc='the rotor wind speed [n]')
+
+    def execute(self):
+        nwake = shape(asfarray(self.wakes))[0]
+        self.ws_array = self.ws_array_inflow+prod(asfarray(self.wakes),0)**(1./nwake)
 
 @base
 class GenericFlowModel(Component):
@@ -481,10 +680,10 @@ class GenericFlowModel(Component):
     """
     Framework for a flow model
     """
-    ws_positions = Array([], iotype='in',
+    ws_positions = Array([], iotype='in',units='m',
         desc='the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)')
-    ws_array = Array([], iotype='out',
-        desc='an array of wind speed to find wind speed')
+    ws_array = Array([], iotype='out', units='m/s',
+        desc='array of wind speed at ws_positions')
 
 
 @implement_base(GenericFlowModel)
@@ -493,12 +692,11 @@ class GenericWakeModel(Component):
     """
     Framework for a wake model
     """
+    # Inputs
     wt_desc = VarTree(GenericWindTurbineVT(), iotype='in',
         desc='the geometrical description of the current turbine')
-    ws_positions = Array([], iotype='in',
+    ws_positions = Array([], iotype='in', units='m',
         desc='the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)')
-    ws_array = Array([], iotype='out',
-        desc='an array of wind speed to find wind speed')
     wt_xy = List([0.0, 0.0], iotype='in', units='m',
         desc='The x,y position of the current wind turbine')
     c_t = Float(0.0, iotype='in',
@@ -507,7 +705,9 @@ class GenericWakeModel(Component):
         desc='The inflow velocity at the ws_positions')
     wind_direction = Float(0.0, iotype='in', units='deg',
         desc='The inflow wind direction')
-
+    # Outputs
+    ws_array = Array([], iotype='out', units='m/s',
+        desc='array of wind speed at ws_positions')
     du_array = Array([], iotype='out', units='m/s',
         desc='The deficit in m/s. Empty if only zeros')
 
@@ -520,10 +720,129 @@ class GenericInflowGenerator(Component):
     """
     wind_speed = Float(0.0, iotype='in', units='m/s',
         desc='the reference wind speed')
-    ws_positions = Array([], iotype='in',
+    ws_positions = Array([], iotype='in',units='m',
         desc='the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)')
-    ws_array = Array([], iotype='out',
-        desc='an array of wind speed to find wind speed')
+    ws_array = Array([], iotype='out', units='m/s',
+        desc='array of wind speed at ws_positions')
+
+@implement_base(GenericInflowGenerator)
+class PowerLawInflowGenerator(Component):
+
+    """
+    Framework for an inflow Power law inflow flow model
+    """
+    # Inputs
+    wind_speed = Float(0.0, iotype='in', units='m/s',
+        desc='the reference wind speed')
+    ws_positions = Array([], iotype='in',units='m',
+        desc='the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)')
+    z_ref = Float(100., iotype='in',units='m',
+        desc='the reference height above ground level')
+    shear_coef =  Float(0.11, iotype='in',
+        desc='vertical wind speed profile shear coefficient')
+
+    # Outputs
+    ws_array = Array([], iotype='out', units='m/s',
+        desc='array of wind speed at ws_positions')
+
+    def execute(self):
+        self.ws_array = (self.wind_speed)*((self.ws_positions[:,2]/self.z_ref)** \
+                        self.shear_coef)
+
+@implement_base(GenericInflowGenerator)
+class LogLawInflowGenerator(Component):
+
+    """
+    Framework for an inflow Log law inflow flow model
+    """
+    # Inputs
+    wind_speed = Float(0.0, iotype='in', units='m/s',
+        desc='the reference wind speed')
+    z_ref = Float(100., iotype='in',units='m',
+        desc='the reference height above ground level')
+    ws_positions = Array([], iotype='in',units='m',
+        desc='the positions of the wind speeds in the global frame of reference [n,3] (x,y,z)')
+    z_0 = Float(0.0002, iotype='in',units='m',
+        desc='the surface roughness length')
+    displacement_0 = Float(0., iotype='in',units='m',
+        desc='the zero height displacement length')
+    L = Float(NaN, iotype='in',units='m',
+        desc='the Monin-Obukhov stability parameter length')
+    z_i = Float(400., iotype='in',units='m',
+        desc='boundary layer height')
+    stab_term = Int(0, iotype='in',units='m',
+        desc='the universal stability function (psi) selector')
+    # Outputs
+    ws_array = Array([], iotype='out', units='m/s',
+        desc='array of wind speed at ws_positions')
+
+    def execute(self):
+        ws_ref = self.wind_speed
+        z = self.ws_positions[:,2]
+        d = self.displacement_0
+        z_ref = self.z_ref
+        L = self.L
+        z_0 = self.z_0
+
+        if  isnan(L): # Neutral case
+            self.ws_array = ws_ref*log((z-d)/z_0)/log((z_ref-d)/z_0)
+
+        elif self.stab_term == 0:
+            '''
+            Pena formulation:
+
+            A. Pena, T. Mikkelsen, S.-E. Gryning, C.B. Hasager, A.N. Hahmann,
+            M. Badger, et al.,
+            Offshore vertical wind shear, DTU Wind Energy-E-Report-0005(EN),
+            Technical University of Denmark, 2012.
+            '''
+            aux = L/max(z)
+            #Test the consistency of the inputs.
+            assert (1.-12.*max(z)/L) > 0,\
+            'Too high Monin-Obukhov Length. L must be larger than 12*max(z): '+ repr(aux)
+
+            x = (1.-12.*z/L)**(1./3.)
+            psi_m = (z/L>=0)*(-4.7*z/L)+(z/L<0)*(3./2.*log((1+x+x**2.)/3.) - \
+                    sqrt(3.)*arctan((2.*x+1.)/sqrt(3.)) + pi/sqrt(3.) )
+
+            x_ref = (1.-12.*z_ref/L)**(1./3.)
+            psi_m_ref = (z_ref/L>=0)*(-4.7*z_ref/L)+\
+                        (z_ref/L<0)*(3./2.*log((1+x_ref+x_ref**2.)/3.) - \
+                        sqrt(3.)*arctan((2.*x_ref+1.)/sqrt(3.)) + pi/sqrt(3.))
+
+            self.ws_array = ws_ref*(log((z-d)/z_0)    - psi_m)/ \
+                                   (log((z_ref-d)/z_0)- psi_m_ref)
+
+        elif self.stab_term == 1:
+            '''
+            Businger-Dyer formulation:
+
+            J. A. Businger, J. C. Wyngaard, Y. Izumi, and E. F. Bradley, 1971:
+            Flux-Profile Relationships in the Atmospheric Surface Layer.
+            J. Atmos. Sci., 28, 181-189
+            '''
+            kappa = 0.4  # Von Karman Constant
+            gamma = 19.3 # Empirical parameter from Kansas measurements
+            beta  = 4.8  # Empirical parameter from Kansas measurements
+                         # 5.0 in Fuga
+
+            aux = L/max(z)
+            #Test the consistency of the inputs.
+            assert (1.-gamma*max(z)/L) > 0,\
+            'Too low Monin-Obukhov Length. L must be larger than '+repr(gamma)+'*max(z): '+ repr(aux)
+
+            phi_m = (z/L<0) * (1.-gamma*z/L)**0.25
+            psi_m = (z/L<0)*(2.*log((1.+phi_m**2.)/2.)-2.*arctan(phi_m)+pi/2.) + \
+                    (z/L>=0)*(-beta*z/L)
+
+            phi_m_ref = (z_ref/L<0) * (1.-gamma*z_ref/L)**0.25
+            psi_m_ref = (z_ref/L<0)*(2.*log((1.+phi_m_ref**2.)/2.) - \
+                         2.*arctan(phi_m_ref) + pi/2. ) + \
+                         (z_ref/L>=0)*(-beta*z_ref/L)
+
+
+            self.ws_array = ws_ref*(log((z-d)/z_0)    - psi_m)/ \
+                                   (log((z_ref-d)/z_0)- psi_m_ref)
 
 
 @base
@@ -587,3 +906,44 @@ class WindTurbinePowerCurve(Component):
         self.thrust = self.c_t * self.density * self.hub_wind_speed ** 2.0 * \
             self.wt_desc.rotor_diameter ** 2.0 * pi / 4.0
 
+
+if __name__ == '__main__':
+
+    GLQ = GaussLegendreQuadratureWSPosition()
+    GLQ.wt_desc = generate_a_valid_wt()
+    GLQ.degree = 7
+    GLQ.run()
+
+    R = GLQ.wt_desc.rotor_diameter/2.
+    H = GLQ.wt_desc.hub_height
+
+    plt.plot(GLQ.ws_positions[:,1],GLQ.ws_positions[:,2],'.k')
+    plt.plot(GLQ.wt_xy[1] ,H,'xr')
+    circle=plt.Circle((GLQ.wt_xy[1],H),R,color='r')
+    fig = plt.gcf()
+    fig.gca().add_artist(circle)
+    fig.gca().set_xlim([-2.*R,2.*R])
+    fig.gca().set_ylim([H-2.*R,H+2.*R])
+    plt.draw()
+
+    in_log2.ws_positions = GLQ.ws_positions
+    in_log2.run()
+    plt.plot(in_log2.ws_array,GLQ.ws_positions[:,2],'-k')
+
+    AvgWS = AreaAveragedWindSpeed()
+    AvgWS.ws_array = in_log2.ws_array
+    AvgWS.weights = GLQ.weights
+    AvgWS.run()
+
+    eqT_WS = ThrustEquivalentWindSpeed()
+    eqT_WS.ws_array = in_log2.ws_array
+    eqT_WS.weights = GLQ.weights
+    eqT_WS.run()
+
+    eqP_WS = PowerEquivalentWindSpeed()
+    eqP_WS.ws_array = in_log2.ws_array
+    eqP_WS.weights = GLQ.weights
+    eqP_WS.run()
+
+    print AvgWS.hub_wind_speed, eqT_WS.hub_wind_speed, eqP_WS.hub_wind_speed
+    plt.show()
