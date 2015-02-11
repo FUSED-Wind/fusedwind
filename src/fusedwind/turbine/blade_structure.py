@@ -246,7 +246,6 @@ class BladeStructureWriter(Component):
                 self.fbase = self.filebase + '_' + str(self.exec_count)
         except:
             self.fbase = self.filebase
-        self.fbase = self.filebase
 
         self.write_layup_data()
         self.write_materials()
