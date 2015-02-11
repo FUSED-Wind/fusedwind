@@ -18,6 +18,8 @@ class Curve(VariableTree):
     length = Float(desc='Total curve length')
     s = Array(desc='Curve accumulated curve length')
     points = Array(desc='coordinates of curve')
+    ni = Int(desc='Number of points')
+
 
     def __init__(self, points=None):
         super(Curve, self).__init__()
@@ -28,9 +30,11 @@ class Curve(VariableTree):
     def initialize(self, points):
 
             self.points = points
+            self.ni = points.shape[0]
 
             self._compute_s()
             self._compute_dp()
+            self._build_splines()
 
     def _compute_s(self):
         """
@@ -48,6 +52,26 @@ class Curve(VariableTree):
         t1 = np.gradient(self.points[:,:])[0]
         self.dp = np.array([t1[i, :] / np.linalg.norm(t1[i, :]) for i in range(t1.shape[0])])
 
+    def _build_splines(self):
+
+        self._splines = []
+
+        for j in range(self.points.shape[1]):
+            self._splines.append(NaturalCubicSpline(self.s, self.points[:, j]))
+
+    def redistribute(self, dist=None, s=None):
+
+        if dist is not None:
+            self.s = distfunc(dist)
+        else:
+            self.s = s
+
+        self.ni = self.s.shape[0]
+        points = np.zeros((self.ni, self.points.shape[1]))
+        for i in range(points.shape[1]):
+            points[:, i] = self._splines[i](self.s)
+
+        self.initialize(points)
 
 @base
 class AirfoilShape(Curve):
@@ -60,32 +84,15 @@ class AirfoilShape(Curve):
     TE pressure side ending at the TE suction side.
     """
 
-    ni = Int(desc='Number of points')
     LE = Array(desc='Leading edge coordinates')
     TE = Array(desc='Trailing edge coordinates')
     sLE = Float(desc='Leading edge curve fraction')
     chord = Float(desc='chord length')
 
-    def __init__(self, points=None):
-        super(AirfoilShape, self).__init__(points)
-
-        if points is not None:
-            self.initialize(points)
-
     def initialize(self, points):
 
-            self.points = points
-
-            self._compute_s()
-            self._compute_dp()
-
-            self.ni = points.shape[0]
-
-            self.spline = []
-            self.spline.append(NaturalCubicSpline(self.s, points[:, 0]))
-            self.spline.append(NaturalCubicSpline(self.s, points[:, 1]))
-
-            self.computeLETE()
+        super(AirfoilShape, self).initialize(points)
+        self.computeLETE()
 
     def computeLETE(self):
         """
@@ -100,16 +107,16 @@ class AirfoilShape(Curve):
 
         res = minimize(self._sdist, (0.5), method='SLSQP', bounds=[(0, 1)])
         self.sLE = res['x'][0]
-        xLE = self.spline[0](self.sLE)
-        yLE = self.spline[1](self.sLE)
+        xLE = self._splines[0](self.sLE)
+        yLE = self._splines[1](self.sLE)
         self.LE = np.array([xLE, yLE])
         self.curvLE = NaturalCubicSpline(self.s, curvature(self.points))(self.sLE)
         self.chord = np.linalg.norm(self.LE-self.TE)
 
     def _sdist(self, s):
 
-        x = self.spline[0](s)
-        y = self.spline[1](s)
+        x = self._splines[0](s)
+        y = self._splines[1](s)
         return -((x - self.TE[0])**2 + (y - self.TE[1])**2)**0.5
 
     def leading_edge_dist(self, ni):
@@ -153,13 +160,9 @@ class AirfoilShape(Curve):
         elif dLE:
             dist = [[0., dTE, 1], [self.sLE, self.leading_edge_dist(ni), ni / 2], [1., dTE, ni]]
 
-        s = distfunc(dist)
+        super(AirfoilShape, self).redistribute(dist)
 
-        points = np.zeros((ni, 2))
-        for i in range(2):
-            points[:, i] = self.spline[i](s)
-
-        return AirfoilShape(points)
+        return self
 
     def s_to_11(self, s):
         """  
@@ -205,7 +208,7 @@ class AirfoilShape(Curve):
 
         p = np.zeros(2)
         for i in range(2):
-            p[i] = self.spline[i](s)
+            p[i] = self._splines[i](s)
 
         return p
 
