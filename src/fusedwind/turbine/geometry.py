@@ -7,6 +7,7 @@ from openmdao.lib.datatypes.api import Instance, Array, VarTree, Enum, Int, List
 
 from fusedwind.lib.distfunc import distfunc
 from fusedwind.lib.geom_tools import RotMat, dotXC, calculate_length, curvature
+from fusedwind.lib.bezier import BezierCurve
 from fusedwind.turbine.geometry_vt import Curve, BladePlanformVT, BladeSurfaceVT, BlendAirfoilShapes
 from fusedwind.interface import base, implement_base
 
@@ -91,7 +92,52 @@ class pchipSpline(SplineBase):
         return spl(x)
 
 
-spline_dict = {'pchip': pchipSpline}
+class BezierSpline(SplineBase):
+
+    def initialize(self, x, xp, yp):
+        """
+        params:
+        ----------
+        x: array
+            array with new x-distribution
+        xp: array
+            array with original x-distribution
+        yp: array
+            array with original y-distribution
+
+        returns
+        ---------
+        ynew: array
+            resampled points
+        """
+        self.B = BezierCurve()
+        self.B.CPs = np.array([xp, yp]).T
+        return self.__call__(x, xp, yp)
+
+    def __call__(self, x, Cx, C):
+        """
+        params:
+        ----------
+        x: array
+            array with new x-distribution
+        xp: array
+            array with x-coordinates of spline control points
+        yp: array
+            array with y-coordinates of spline control points
+
+        returns
+        ---------
+        ynew: array
+            resampled points
+        """
+        self.B.CPs = np.array([Cx, C]).T
+        self.B.update()
+        self.B.redistribute(s=x)
+        return self.B.points[:, 1]
+
+
+spline_dict = {'pchip': pchipSpline,
+               'bezier': BezierSpline}
 
 
 @base
@@ -201,7 +247,7 @@ class FFDSplineComponentBase(Component):
         self.base_spline = spline_dict[self.base_spline_type]()
         self.set_spline(self.spline_type)
         self.Pbase = self.base_spline(self.x, self.xinit, self.Pinit)
-        # self.spline(self.x, np.zeros(self.x.shape[0]), Cx=self.Cx)
+        self.spline.initialize(self.x, self.Cx, self.C)
 
     def execute(self):
         """
@@ -376,7 +422,7 @@ class SplinedBladePlanform(Assembly):
     nC = Int(8, iotype='in', desc='Number of spline control points along span')
     Cx = Array(iotype='in', desc='spanwise distribution of spline control points')
 
-    blade_length = Float(iotype='in')
+    blade_length = Float(1., iotype='in')
     blade_length_ref = Float(iotype='in')
 
     span_ni = Int(50, iotype='in')
@@ -396,7 +442,7 @@ class SplinedBladePlanform(Assembly):
         if self.blade_length_ref == 0.:
             self.blade_length_ref = self.blade_length
 
-    def configure_splines(self):
+    def configure_splines(self, spline_type='pchip'):
 
 
         if hasattr(self, 'chord_C'):
@@ -427,6 +473,7 @@ class SplinedBladePlanform(Assembly):
                 spl = self.add(sname, FFDSplineComponentBase(self.nC))
                 self.driver.workflow.add(sname)
                 # spl.log_level = logging.DEBUG
+                spl.set_spline(spline_type)
                 self.connect('compute_x.x', sname + '.x')
                 self.connect('Cx', sname + '.Cx')
                 spl.xinit = self.get('pfIn.s')
