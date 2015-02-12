@@ -521,7 +521,7 @@ class SplinedBladeStructure(Assembly):
         self.create_passthrough('pf.pfOut')
         self.connect('x', 'pf.x')
 
-    def configure_bladestructure(self):
+    def configure_bladestructure(self, spline_type='pchip'):
         """
         method for trawling through the st3dIn vartree
         and initializing all spline curves in the assembly
@@ -547,6 +547,7 @@ class SplinedBladeStructure(Assembly):
             DPc = self.add(dpname, FFDSplineComponentBase(self.nC))
             self.driver.workflow.add(dpname)
             # DPc.log_level = logging.DEBUG
+            DPc.set_spline(spline_type)
             x = getattr(sec, 'x')
             DP = getattr(sec, dpname)
             self.connect('x', '%s.x' % dpname)
@@ -566,6 +567,7 @@ class SplinedBladeStructure(Assembly):
                     lcomp = self.add(lcname+'T', FFDSplineComponentBase(self.nC))
                     self.driver.workflow.add(lcname+'T')
                     # lcomp.log_level = logging.DEBUG
+                    lcomp.set_spline(spline_type)
                     self.connect('x', '%s.x' % (lcname + 'T'))
                     lcomp.xinit = sec.x
                     lcomp.Pinit = layer.thickness
