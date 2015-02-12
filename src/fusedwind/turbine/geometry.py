@@ -553,13 +553,16 @@ class LoftedBladeSurface(Component):
                 points = self.interpolator(s)
 
             points *= chord
-            points[:, 0] += pos_x - chord * p_le
+            points[:, 0] -= chord * p_le
 
             # x-coordinate needs to be inverted for clockwise rotating blades
             x[:, i, :] = (np.array([-points[:,0], points[:,1], x.shape[0] * [pos_z]]).T)
 
-        # save non-rotated blade (only really applicable for straight blades)
+        # save blade without sweep and prebend
         x_norm = x.copy()
+
+        # add translation and rotation
+        x[:, :, 0] += self.pf.x
         x[:, :, 1] += self.pf.y
         x = self.rotate(x)
 
