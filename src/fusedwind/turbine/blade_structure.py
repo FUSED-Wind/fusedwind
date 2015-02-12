@@ -577,6 +577,7 @@ class SplinedBladeStructure(Assembly):
                     lcomp = self.add(lcname+'A', FFDSplineComponentBase(self.nC))
                     self.driver.workflow.add(lcname+'A')
                     # lcomp.log_level = logging.DEBUG
+                    lcomp.set_spline(spline_type)
                     self.connect('x', '%s.x' % (lcname + 'A'))
                     self.create_passthrough(lcname+'T' + '.C', alias=lcname+'T' + '_C')
                     lcomp.xinit = sec.x
@@ -594,6 +595,7 @@ class SplinedBladeStructure(Assembly):
                 lcomp = self.add(lcname+'T', FFDSplineComponentBase(self.nC))
                 # lcomp.log_level = logging.DEBUG
                 self.driver.workflow.add(lcname+'T')
+                lcomp.set_spline(spline_type)
                 self.connect('x', '%s.x' % (lcname + 'T'))
                 lcomp.xinit = sec.x
                 lcomp.Pinit = layer.thickness
@@ -604,6 +606,7 @@ class SplinedBladeStructure(Assembly):
                 lcomp = self.add(lcname+'A', FFDSplineComponentBase(self.nC))
                 # lcomp.log_level = logging.DEBUG
                 self.driver.workflow.add(lcname+'A')
+                lcomp.set_spline(spline_type)
                 self.connect('x', '%s.x' % (lcname + 'A'))
                 lcomp.xinit = sec.x
                 lcomp.Pinit = layer.angle
