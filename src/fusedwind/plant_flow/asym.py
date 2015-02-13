@@ -16,8 +16,6 @@ from comp import *
 from fusedwind.interface import base, implement_base, InterfaceSlot, \
     FUSEDAssembly, configure_base
 
-from fusedwind.fused_helper import fused_autodoc
-
 # ------------------------------------------------------------
 # Assembly Base Classes
 
