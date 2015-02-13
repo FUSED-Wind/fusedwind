@@ -48,6 +48,7 @@ Table of Contents
     :maxdepth: 2
 
     news
+    related_publications
     installation
     tutorial
     documentation
