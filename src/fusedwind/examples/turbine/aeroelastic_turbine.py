@@ -5,15 +5,27 @@ from openmdao.main.api import Assembly, Component
 from openmdao.lib.datatypes.api import VarTree
 
 from fusedwind.interface import implement_base
+from fusedwind.turbine.configurations import configure_planform
 from fusedwind.turbine.aeroelastic_solver import AeroElasticSolverBase
 from fusedwind.turbine.turbine_vt import configure_turbine, AeroelasticHAWTVT
 from fusedwind.turbine.geometry import SplinedBladePlanform, read_blade_planform
+from fusedwind.turbine.environment_vt import TurbineEnvironmentVT
+from fusedwind.turbine.rotoraero_vt import RotorOperationalData, \
+                                           DistributedLoadsExtVT, \
+                                           RotorLoadsVT, \
+                                           BeamDisplacementsVT
 
 
 @implement_base(AeroElasticSolverBase)
 class AEsolver(Component):
 
-    wt = VarTree(AeroelasticHAWTVT(), iotype='in')
+    wt = VarTree(AeroelasticHAWTVT(), iotype='in', desc='Turbine definition')
+    inflow = VarTree(TurbineEnvironmentVT(), iotype='in', desc='Inflow conditions')
+
+    oper = VarTree(RotorOperationalData(), iotype='out', desc='Operational data')
+    rotor_loads = VarTree(RotorLoadsVT(), iotype='out', desc='Rotor torque, power, and thrust')
+    blade_loads = VarTree(DistributedLoadsExtVT(), iotype='out', desc='Spanwise load distributions')
+    blade_disps = VarTree(BeamDisplacementsVT(), iotype='out', desc='Blade deflections and rotations')
 
     def execute(self):
 
@@ -24,11 +36,10 @@ class AEsolver(Component):
 top = Assembly()
 
 # add splined planform description
-top.add('pf_splines', SplinedBladePlanform())
-top.driver.workflow.add('pf_splines')
 
-top.pf_splines.blade_length = 86.366
-top.pf_splines.pfIn = read_blade_planform('data/DTU_10MW_RWT_blade_axis_prebend.dat')
+configure_planform(top, 'data/DTU_10MW_RWT_blade_axis_prebend.dat')
+top.blade_length = 86.366
+top.span_ni = 30
 
 # add aeroelastic solver
 top.add('ae', AEsolver())

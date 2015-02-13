@@ -11,7 +11,7 @@ kwargs = {'author': 'DTU WInd Energy and NREL NWTC',
  'classifiers': ['Intended Audience :: Science/Research',
                  'Topic :: Scientific/Engineering'],
  'description': 'Framework for Unified Systems Engineering and Design of Wind Plants',
- 'download_url': 'http://github.com/FUSED-Wind/FUSED-WInd',
+ 'download_url': 'http://github.com/FUSED-Wind/fusedwind',
  'include_package_data': True,
  'install_requires': ['openmdao.main'],
  'keywords': ['openmdao'],
@@ -23,7 +23,7 @@ kwargs = {'author': 'DTU WInd Energy and NREL NWTC',
  'package_dir': {'': 'src'},
  'packages': ['fusedwind', 'fusedwind.plant_cost', 'fusedwind.plant_flow', 'fusedwind.turbine', 'fusedwind.lib', 'fusedwind.runSuite'],
  #'url': '',
- 'version': '0.1',
+ 'version': '0.1.0',
  'zip_safe': False}
 
 

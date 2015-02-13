@@ -3,7 +3,7 @@
 Aero-elastic Turbine Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This example shows the basics of how to connect a parameterized geometric definition of a wind turbine blade planform to the inputs of an aeroelastic solver.
+This example shows the basics of how to define a wind turbine geometry and connect a parameterized geometric definition of its blade planform to the inputs of an aeroelastic solver.
 The example is located in ``src/fusedwind/examples/turbine/aeroelastic_turbine.py``.
 
 The overall turbine geometry and beam properties are defined in the ``fusedwind.turbine.turbine_vt.AeroelasticHAWTVT`` variable tree.
@@ -45,7 +45,7 @@ And all that remains is to run the assembly which in this case is not so eventfu
 Coupled Structural Aero-elastic Turbine Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-In this example, we extend the above example to also interface to to a structural model capable of computing the mass and stiffness beam properties of the blade, that is a required input to most aeroelastic solvers, e.g. FAST and HAWC2.
+In this example, we extend the above example to also interface to a structural model capable of computing the mass and stiffness beam properties of the blade, that is a required input to most aeroelastic solvers, e.g. FAST and HAWC2.
 The aim with this is to have the capability of *simultaneously* optimize the structural and aerodynamic design of a blade.
 
 The example combines the example explaining the blade structural parameterization with the above example of interfacing an aeroelastic solver.

@@ -8,19 +8,33 @@ from openmdao.lib.datatypes.api import List, VarTree
 
 from fusedwind.interface import implement_base
 from fusedwind.turbine.geometry import read_blade_planform
-from fusedwind.turbine.configurations import configure_bladestructure
+from fusedwind.turbine.geometry_vt import BladePlanformVT
+from fusedwind.turbine.configurations import configure_bladestructure,\
+                                             configure_bladesurface
 from fusedwind.turbine.blade_structure import SplinedBladeStructure
-from fusedwind.turbine.structure_vt import BladeStructureVT3D, BeamStructureVT
+from fusedwind.turbine.structure_vt import CrossSectionStructureVT, BeamStructureVT
 from fusedwind.turbine.turbine_vt import AeroelasticHAWTVT, configure_turbine
 
 from fusedwind.turbine.aeroelastic_solver import AeroElasticSolverBase
-from fusedwind.turbine.structural_props_solver import StructuralCSPropsSolver
+from fusedwind.turbine.blade_structure import BeamStructureCSCode
+
+from fusedwind.turbine.environment_vt import TurbineEnvironmentVT
+from fusedwind.turbine.rotoraero_vt import RotorOperationalData, \
+                                           DistributedLoadsExtVT, \
+                                           RotorLoadsVT, \
+                                           BeamDisplacementsVT
 
 
 @implement_base(AeroElasticSolverBase)
 class AEsolver(Component):
 
-    wt = VarTree(AeroelasticHAWTVT(), iotype='in')
+    wt = VarTree(AeroelasticHAWTVT(), iotype='in', desc='Turbine definition')
+    inflow = VarTree(TurbineEnvironmentVT(), iotype='in', desc='Inflow conditions')
+
+    oper = VarTree(RotorOperationalData(), iotype='out', desc='Operational data')
+    rotor_loads = VarTree(RotorLoadsVT(), iotype='out', desc='Rotor torque, power, and thrust')
+    blade_loads = VarTree(DistributedLoadsExtVT(), iotype='out', desc='Spanwise load distributions')
+    blade_disps = VarTree(BeamDisplacementsVT(), iotype='out', desc='Blade deflections and rotations')
 
     def execute(self):
 
@@ -28,11 +42,14 @@ class AEsolver(Component):
         print 'running aeroelastic analysis ...'
 
 
-@implement_base(StructuralCSPropsSolver)
+@implement_base(BeamStructureCSCode)
 class CS2Dsolver(Component):
 
-    cs2d = List(iotype='in')
-    beam_structure = VarTree(BeamStructureVT(), iotype='out')
+    cs2d = List(CrossSectionStructureVT, iotype='in', desc='Blade cross sectional structure geometry')
+    pf = VarTree(BladePlanformVT(), iotype='in', desc='Blade planform discretized according to'
+                                                      'the structural resolution')
+
+    beam_structure = VarTree(BeamStructureVT(), iotype='out', desc='Structural beam properties')
 
     def execute(self):
 
@@ -44,13 +61,13 @@ class CS2Dsolver(Component):
 
 top = Assembly()
 
-configure_bladestructure(top, 'data/DTU10MW', planform_nC=6, structure_nC=5)
+configure_bladesurface(top, 'data/DTU_10MW_RWT_blade_axis_prebend.dat', planform_nC=6)
+configure_bladestructure(top, 'data/DTU10MW', structure_nC=5)
 
 top.st_writer.filebase = 'st_test'
 
 top.blade_length = 86.366
-
-top.pf_splines.pfIn = read_blade_planform('data/DTU_10MW_RWT_blade_axis_prebend.dat')
+top.span_ni = 30
 top.blade_surface.chord_ni = 300
 
 for f in ['data/ffaw3241.dat',
