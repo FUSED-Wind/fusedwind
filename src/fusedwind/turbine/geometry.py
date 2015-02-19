@@ -260,7 +260,7 @@ class FFDSplineComponentBase(Component):
             self.initialize()
 
         self.P = self.Pbase + self.spline(self.x, self.Cx, self.C)
-        self.dTds = curvature(np.array([self.x, self.P]).T)
+        self.dPds = curvature(np.array([self.x, self.P]).T)
 
 
 @base
