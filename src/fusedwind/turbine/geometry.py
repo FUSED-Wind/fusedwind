@@ -6,6 +6,7 @@ from openmdao.main.api import Component, Assembly
 from openmdao.lib.datatypes.api import Instance, Array, VarTree, Enum, Int, List, Str, Float, Bool
 
 from fusedwind.lib.distfunc import distfunc
+from fusedwind.lib.cubicspline import NaturalCubicSpline
 from fusedwind.lib.geom_tools import RotMat, dotXC, calculate_length, curvature
 from fusedwind.lib.bezier import BezierCurve
 from fusedwind.turbine.geometry_vt import Curve, BladePlanformVT, BladeSurfaceVT, BlendAirfoilShapes
@@ -132,8 +133,8 @@ class BezierSpline(SplineBase):
         """
         self.B.CPs = np.array([Cx, C]).T
         self.B.update()
-        self.B.redistribute(s=x)
-        return self.B.points[:, 1]
+        spl = NaturalCubicSpline(self.B.points[:, 0], self.B.points[:, 1])
+        return spl(x)
 
 
 spline_dict = {'pchip': pchipSpline,
