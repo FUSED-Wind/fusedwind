@@ -287,7 +287,6 @@ class RedistributedBladePlanform(Component):
 
     def execute(self):
 
-        self.pfOut.s = self.x.copy()
         self.pfOut.blade_length = self.pfIn.blade_length
         self.pfIn._compute_s()
         for name in self.pfIn.list_vars():
@@ -296,7 +295,7 @@ class RedistributedBladePlanform(Component):
             tck = pchip(self.pfIn.s, var)
             newvar = tck(self.x) 
             setattr(self.pfOut, name, newvar)
-
+        self.pfOut._compute_s()
 
 def redistribute_blade_planform(pfIn, x):
 
@@ -321,6 +320,7 @@ def read_blade_planform(filename):
     pf = BladePlanformVT()
     pf.blade_length = data[-1, 2]
     pf.s = s / s[-1]
+    pf.smax = s[-1]
     pf.x = data[:, 0] / data[-1, 2]
     pf.y = data[:, 1] / data[-1, 2]
     pf.z = data[:, 2] / data[-1, 2]
@@ -416,6 +416,21 @@ class ComputeAthick(Component):
         self.athick = self.chord * self.rthick
 
 
+class ComputeSmax(Component):
+
+    x = Array(iotype='in')
+    y = Array(iotype='in')
+    z = Array(iotype='in')
+    smax = Float(iotype='in')
+
+    def execute(self):
+
+        s = calculate_length(np.array([self.x,
+                                       self.y,
+                                       self.z]).T)
+        self.smax = s[-1]
+
+
 @implement_base(ModifyBladePlanformBase)
 class SplinedBladePlanform(Assembly):
 
@@ -497,8 +512,12 @@ class SplinedBladePlanform(Assembly):
         self.connect('chord.P', 'athick.chord')
         self.connect('rthick.P', 'athick.rthick')
         self.connect('athick.athick', 'pfOut.athick')
-        # self.connect('chord.P*rthick.P', 'pfOut.athick')
-
+        self.add('smax', ComputeSmax())
+        self.driver.workflow.add('smax')
+        self.connect('x.P', 'smax.x')
+        self.connect('y.P', 'smax.y')
+        self.connect('z.P', 'smax.z')
+        self.connect('smax.smax', 'pfOut.smax')
 
 @base
 class LoftedBladeSurfaceBase(Component):

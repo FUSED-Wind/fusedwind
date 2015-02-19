@@ -323,7 +323,8 @@ class BlendAirfoilShapes(object):
 @base
 class BeamGeometryVT(VariableTree):
 
-    s = Array(desc='x-coordinates of beam')
+    smax = Float(desc='Total accumulated length of beam')
+    s = Array(desc='Curve fraction')
     x = Array(desc='x-coordinates of beam')
     y = Array(desc='y-coordinates of beam')
     z = Array(desc='z-coordinates of beam')
@@ -347,7 +348,7 @@ class BeamGeometryVT(VariableTree):
 @base
 class BladePlanformVT(BeamGeometryVT):
 
-    blade_length = Float(units='m', desc='Blade length')
+    blade_length = Float(units='m', desc='Blade radial length')
     chord = Array(units=None, desc='Chord length at each section')
     rthick = Array(units=None, desc='Relative thickness at each section, t/c')
     athick = Array(units=None, desc='Relative thickness at each section, t/c')
