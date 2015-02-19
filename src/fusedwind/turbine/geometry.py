@@ -378,11 +378,15 @@ class ComputeDist(Component):
     """
 
     span_ni = Int(iotype='in')
+    x_dist = Array(iotype='in')
     x = Array(iotype='out')
 
     def execute(self):
 
-        self.x = distfunc([[0., -1, 1], [1., 0.2 * 1./self.span_ni, self.span_ni]])
+        if self.x_dist.shape[0] > 0:
+            self.x = self.x_dist
+        else:
+            self.x = distfunc([[0., -1, 1], [1., 0.2 * 1./self.span_ni, self.span_ni]])
 
 
 class ScaleChord(Component):
@@ -434,7 +438,7 @@ class ComputeSmax(Component):
 @implement_base(ModifyBladePlanformBase)
 class SplinedBladePlanform(Assembly):
 
-    x_dist = Array(iotype='in', desc='spanwise resolution of blade')
+
     nC = Int(8, iotype='in', desc='Number of spline control points along span')
     Cx = Array(iotype='in', desc='spanwise distribution of spline control points')
 
@@ -450,6 +454,12 @@ class SplinedBladePlanform(Assembly):
         super(SplinedBladePlanform, self).__init__()
         
         self.blade_length_ref = 0.
+
+        self.add('compute_x', ComputeDist())
+        self.driver.workflow.add('compute_x')
+        self.connect('span_ni', 'compute_x.span_ni')
+        self.connect('compute_x.x', 'pfOut.s')
+        self.create_passthrough('compute_x.x_dist')
 
     def _pre_execute(self):
         super(SplinedBladePlanform, self)._pre_execute()
@@ -471,41 +481,36 @@ class SplinedBladePlanform(Assembly):
 
         self.connect('blade_length', 'pfOut.blade_length')
 
-        self.add('compute_x', ComputeDist())
-        self.driver.workflow.add('compute_x')
-        self.connect('span_ni', 'compute_x.span_ni')
+
 
         for vname in self.pfIn.list_vars():
-            if vname in ['athick', 'blade_length']:
+            if vname in ['s', 'smax', 'athick', 'blade_length']:
                 continue
 
             cIn = self.get('pfIn.' + vname)
             cOut = self.get('pfOut.' + vname)
             sname = vname.replace('.','_')
-
-            if vname == 's':
-                self.connect('compute_x.x', 'pfOut.s')
+                
+            spl = self.add(sname, FFDSplineComponentBase(self.nC))
+            self.driver.workflow.add(sname)
+            # spl.log_level = logging.DEBUG
+            spl.set_spline(spline_type)
+            self.connect('compute_x.x', sname + '.x')
+            self.connect('Cx', sname + '.Cx')
+            spl.xinit = self.get('pfIn.s')
+            spl.Pinit = cIn
+            if vname == 'chord':
+                self.add('scaleC', ScaleChord())
+                self.driver.workflow.add('scaleC')
+                self.connect('chord.P', 'scaleC.cIn')
+                self.connect('blade_length/blade_length_ref', 'scaleC.scaler')
+                self.connect('scaleC.cOut', 'pfOut.chord')
+                # self.connect(sname + '.P'+
+                #     '*blade_length/blade_length_ref', 'pfOut.' + vname)
             else:
-                spl = self.add(sname, FFDSplineComponentBase(self.nC))
-                self.driver.workflow.add(sname)
-                # spl.log_level = logging.DEBUG
-                spl.set_spline(spline_type)
-                self.connect('compute_x.x', sname + '.x')
-                self.connect('Cx', sname + '.Cx')
-                spl.xinit = self.get('pfIn.s')
-                spl.Pinit = cIn
-                if vname == 'chord':
-                    self.add('scaleC', ScaleChord())
-                    self.driver.workflow.add('scaleC')
-                    self.connect('chord.P', 'scaleC.cIn')
-                    self.connect('blade_length/blade_length_ref', 'scaleC.scaler')
-                    self.connect('scaleC.cOut', 'pfOut.chord')
-                    # self.connect(sname + '.P'+
-                    #     '*blade_length/blade_length_ref', 'pfOut.' + vname)
-                else:
-                    self.connect(sname + '.P', 'pfOut.' + vname)
-                self.create_passthrough(sname + '.C', alias=sname + '_C')
-                self.create_passthrough(sname + '.dPds', alias=sname + '_dPds')
+                self.connect(sname + '.P', 'pfOut.' + vname)
+            self.create_passthrough(sname + '.C', alias=sname + '_C')
+            self.create_passthrough(sname + '.dPds', alias=sname + '_dPds')
 
         self.add('athick', ComputeAthick())
         self.driver.workflow.add('athick')
