@@ -9,7 +9,7 @@ from fusedwind.lib.distfunc import distfunc
 from fusedwind.lib.cubicspline import NaturalCubicSpline
 from fusedwind.lib.geom_tools import RotMat, dotXC, calculate_length, curvature
 from fusedwind.lib.bezier import BezierCurve
-from fusedwind.turbine.geometry_vt import Curve, BladePlanformVT, BladeSurfaceVT, BlendAirfoilShapes
+from fusedwind.turbine.geometry_vt import Curve, BladePlanformVT, BladeSurfaceVT, BlendAirfoilShapes, AirfoilShape
 from fusedwind.interface import base, implement_base
 
 
@@ -539,6 +539,8 @@ class LoftedBladeSurface(Component):
     blend_var = Array(iotype='in')
     chord_ni = Int(300, iotype='in')
     span_ni = Int(300, iotype='in')
+    redistribute_flag = Bool(False, desc='redistribute points chordwise')
+    x_chordwise = Array(iotype='in', desc='user specified chordwise distribution')
 
     interp_type = Enum('rthick', ('rthick', 's'), iotype='in')
     surface_spline = Str('akima', iotype='in', desc='Spline')
@@ -576,6 +578,8 @@ class LoftedBladeSurface(Component):
                 points = self.interpolator(rthick)
             else:
                 points = self.interpolator(s)
+
+            points = self.redistribute(points, pos_z)
 
             points *= chord
             points[:, 0] -= chord * p_le
@@ -645,3 +649,39 @@ class LoftedBladeSurface(Component):
             x_rot[:, i, :] = dotXC(rotation_matrix, points, rot_center)
 
         return x_rot
+
+    def redistribute(self, points, pos_z):
+
+        if self.redistribute_flag == False:
+            return points
+
+        airfoil = AirfoilShape(points=points)
+        try:
+            dist_LE = np.interp(pos_z, self.dist_LE[:, 0], self.dist_LE[:, 1])
+        except:
+            dist_LE = None
+        # pass airfoil to user defined routine to allow for additional configuration
+        airfoil = self.set_airfoil(airfoil, pos_z)
+        if self.x_chordwise.shape[0] > 0:
+            airfoil = airfoil.redistribute_chordwise(self.x_chordwise)
+        else:
+            airfoil = airfoil.redistribute(ni=self.chord_ni, dLE=dist_LE)
+
+        return airfoil.points
+
+    def set_airfoil(self, airfoil, pos_z):
+
+        if hasattr(self, 'gf_height'):
+            height = self.gf_height(pos_z)
+            length_factor = self.gf_length_factor(pos_z)
+            print 'gf', pos_z, height, length_factor
+            if height > 0.:
+                airfoil = airfoil.gurneyflap(height, length_factor)
+
+        return airfoil
+
+    def add_gurney_flap(self, s, gf_heights, gf_length_factor):
+        """spline the gurney flap height and length factor curves"""
+
+        self.gf_height = pchip(s, gf_heights)
+        self.gf_length_factor = pchip(s, gf_length_factor)

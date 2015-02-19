@@ -164,6 +164,30 @@ class AirfoilShape(Curve):
 
         return self
 
+    def redistribute_chordwise(self, dist):
+        """
+        redistribute the airfoil according to a chordwise distribution
+        """
+        
+        # self.redistribute(self.ni, even=True)
+        iLE = np.argmin(self.points[:,0])
+        ni = dist.shape[0]
+        dist = np.asarray(dist)
+        points = np.zeros((dist.shape[0] * 2 - 1, self.points.shape[1]))
+
+        # interpolate pressure side coordinates
+        yps = NaturalCubicSpline(self.points[:iLE+1, 0][::-1],
+                                 self.points[:iLE+1, 1][::-1])
+        ps = yps(dist)
+        # interpolate suction side coordinates
+        yss = NaturalCubicSpline(self.points[iLE:,0],
+                                 self.points[iLE:,1])
+        ss = yss(dist)
+        points[:ni-1, 0] = dist[::-1][:-1]
+        points[ni-1:, 0] = dist
+        points[:, 1] = np.append(ps[::-1][:-1], ss, axis=0)
+        return AirfoilShape(points)
+
     def s_to_11(self, s):
         """  
         Transform the s coordinates from AirfoilShape format:
@@ -212,6 +236,31 @@ class AirfoilShape(Curve):
 
         return p
 
+    def gurneyflap(self, gf_height, gf_length_factor):
+        """add a Gurney flap shaped using a tanh function"""
+
+        if gf_height == 0.: return
+        # if the length is not specified it is set to 3 x gf_height
+        gf_length = gf_length_factor * gf_height
+
+        # identify starting point of the gf along the chord
+        x_gf = 1. - gf_length
+        id1 = (np.abs(x_gf - self.points[0:self.ni / 2, 0])).argmin() + 1
+        s = np.linspace(x_gf, self.points[0, 0], 100)
+        smax = s[-1] - s[0]
+        h = np.zeros(100)
+        for i in range(100):
+            h[i] = (min(.90 * gf_height, gf_height*(-np.tanh((s[i] - s[0])/smax*3)+1.)))/0.90
+        h = h[::-1]
+        self.gfs = s
+        self.gfh = h
+
+        # add the gf shape to the airfoil
+        points = self.points.copy()
+        for i in range(0,id1):
+            points[i,1] = points[i,1] - np.interp(points[i, 0], s, h)
+
+        return AirfoilShape(points)
 
 class BlendAirfoilShapes(object):
     """
