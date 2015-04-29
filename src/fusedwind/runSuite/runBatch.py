@@ -16,10 +16,6 @@ from openmdao.main.api import Assembly, Component, FileMetadata
 from openmdao.main.resource import ResourceAllocationManager as RAM
 from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.api import Case, Component
-#from openmdao.lib.drivers.api import ConnectableCaseIteratorDriver
-#from openmdao.lib.drivers.api import CaseIteratorDriver  ## brings in cobyla driver, which has bug on Peter's intel mac
-#from openmdao.lib.drivers.caseiterdriver import ConnectableCaseIteratorDriver
-from openmdao.lib.drivers.caseiterdriver import CaseIteratorDriver
 
 from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator, CSVCaseRecorder
 from openmdao.lib.datatypes.api import Str, Int, List, Bool, Slot, Instance
@@ -91,7 +87,7 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
 
         self._logger.info("configuring dispatcher")
 
-        self.add('case_driver', ConnectableCaseIteratorDriver())
+        self.add('case_driver', CaseIteratorDriver())
         self.driver.workflow.add(['case_driver'])
 
         self.add('runner', FUSEDIECBase())
@@ -101,12 +97,12 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
 
         # Boolean for running sequentially or in parallel
         self.create_passthrough('case_driver.sequential')
-        self.case_driver.recorders.append(ListCaseRecorder())
+        self.recorders.append(ListCaseRecorder())
 
-        # component for postprocessing results
-        self.add('post', PostprocessIECCasesBase())
-        self.driver.workflow.add('post')
-        self.connect('case_driver.evaluated', 'post.cases')
+        # component for postprocessing results # 4/28/2015 kld: recorders not seen in graph - won't connect, should be an attribute of assembly
+        #self.add('post', PostprocessIECCasesBase())
+        #self.driver.workflow.add('post')
+        #self.connect('cases', 'post.cases') 
 
         self._logger.info("dispatcher configured")
 
