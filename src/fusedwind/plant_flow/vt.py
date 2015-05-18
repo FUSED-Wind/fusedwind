@@ -554,6 +554,9 @@ class GenericWindFarmTurbineLayout(VariableTree):
             wt: WTPC
                 Wind turbine object
         """
+        if wt.name == '':
+            wt.name = 'wt_'+str(len(self.wt_names))
+
         wt.name = wt.name.replace('-','_')
         self.add(wt.name, VarTree(wt))
         self.wt_names.append(wt.name)
