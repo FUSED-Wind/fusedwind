@@ -1,7 +1,7 @@
 
 from fusedwind.interface import base, implement_base
 
-def configure_planform(cls, file_base, planform_nC=6):
+def configure_planform(cls, file_base, planform_nC=6, spline_type='pchip'):
     """
     method that adds a ``SplinedBladePlanform`` instance to the assembly
 
@@ -20,13 +20,13 @@ def configure_planform(cls, file_base, planform_nC=6):
     cls.driver.workflow.add('pf_splines')
     cls.pf_splines.nC = planform_nC
     cls.pf_splines.pfIn = read_blade_planform(file_base)
-    cls.pf_splines.configure_splines()
+    cls.pf_splines.configure_splines(spline_type=spline_type)
 
     cls.create_passthrough('pf_splines.blade_length')
     cls.create_passthrough('pf_splines.span_ni')
 
 
-def configure_bladesurface(cls, file_base, planform_nC=6):
+def configure_bladesurface(cls, file_base, planform_nC=6, spline_type='pchip'):
     """
     method that adds a ``LoftedBladeSurface`` instance to the assembly
 
@@ -41,7 +41,7 @@ def configure_bladesurface(cls, file_base, planform_nC=6):
     from fusedwind.turbine.geometry import LoftedBladeSurface
 
     if not hasattr(cls, 'pf_splines'):
-        configure_planform(cls, file_base, planform_nC)
+        configure_planform(cls, file_base, planform_nC, spline_type=spline_type)
 
     cls.add('blade_surface', LoftedBladeSurface())
     cls.driver.workflow.add('blade_surface')
@@ -50,7 +50,7 @@ def configure_bladesurface(cls, file_base, planform_nC=6):
     cls.connect('span_ni', 'blade_surface.span_ni')
 
 
-def configure_bladestructure(cls, file_base, structure_nC=8):
+def configure_bladestructure(cls, file_base, structure_nC=8, spline_type='pchip'):
     """
     method for configuring an assembly with 
     blade geometry and structural parameterization
@@ -97,4 +97,4 @@ def configure_bladestructure(cls, file_base, structure_nC=8):
 
     cls.st_splines.st3dIn = cls.st_reader.st3d.copy()
     cls.st_splines.nC = structure_nC
-    cls.st_splines.configure_bladestructure()
+    cls.st_splines.configure_bladestructure(spline_type=spline_type)
