@@ -723,18 +723,19 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
                 pass
             for ir, rname in enumerate(self.st3d.regions):
                 reg = getattr(self.st3d, rname)
-                if reg.thickness[i] == 0.:
+                if reg.thickness[i] < 1.e-5:
                     print 'zero thickness region!', rname
-                    # continue
+                    continue
                 DP0 = getattr(self.st3d, 'DP%02d' % ir)
                 DP1 = getattr(self.st3d, 'DP%02d' % (ir + 1))
                 r = st2d.add_region(rname.upper())
                 st2d.DPs.append(DP0[i])
                 r.s0 = DP0[i]
                 r.s1 = DP1[i]
+                r.thickness = reg.thickness[i]
                 for lname in reg.layers:
                     lay = getattr(reg, lname)
-                    if lay.thickness[i] > 1.e-5: 
+                    if lay.thickness[i] > 0.: 
                         l = r.add_layer(lname)
                         # try:
                         lnamebase = lname.translate(None, digits)
@@ -751,7 +752,7 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
             st2d.DPs.append(DP1[i])
             for ir, rname in enumerate(self.st3d.webs):
                 reg = getattr(self.st3d, rname)
-                if reg.thickness[i] == 0.:
+                if reg.thickness[i] < 1.e-5:
                     continue
                 r = st2d.add_web(rname.upper())
                 try:
@@ -762,8 +763,9 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
                     DP1 = getattr(self.st3d, 'DP%02d' % self.st3d.iwebs[ir][1])
                 except:
                     DP1 = getattr(self.st3d, 'DP%02d' % (len(self.st3d.regions) + self.st3d.iwebs[ir][1] + 1))
-                r.s0 = DP0[i] 
+                r.s0 = DP0[i]
                 r.s1 = DP1[i]
+                r.thickness = reg.thickness[i]
                 for lname in reg.layers:
                     lay = getattr(reg, lname)
                     if lay.thickness[i] > 1.e-5:
