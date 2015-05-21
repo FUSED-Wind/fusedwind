@@ -73,6 +73,17 @@ class Curve(VariableTree):
 
         self.initialize(points)
 
+    def interp_s(self, s):
+        """
+        interpolate (x,y) at some curve fraction s
+        """
+
+        p = np.zeros(self.points.shape[1])
+        for i in range(self.points.shape[1]):
+            p[i] = self._splines[i](s)
+
+        return p
+
 @base
 class AirfoilShape(Curve):
     """
