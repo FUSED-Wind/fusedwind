@@ -663,6 +663,16 @@ class BladeStructureProperties(Component):
     pacc_l = Array(iotype='out', desc='lower side pitch axis aft cap center')
     pacc_u_curv = Array(iotype='out', desc='upper side pitch axis aft cap center curvature')
     pacc_l_curv = Array(iotype='out', desc='lower side pitch axis aft cap center curvature')
+    
+
+
+    def __init__(self, nW=2):
+        super(BladeStructureProperties, self).__init__()
+
+        for w in range(nW):
+            self.add('alphaW%i' % w, Array(iotype='out', desc='Web%02d angle' % w))
+            self.add('dW%i' % w, Array(iotype='out', desc='Web%02d offset' % w))
+
 
     def execute(self):
 
@@ -686,22 +696,29 @@ class BladeStructureProperties(Component):
                 xx = af.interp_s(af.s_to_01(s_chord))
                 self.dp_curves[j][i, :] = xx
 
-        self.pacc_l = self.dp_curves[self.cap_ids[0][0]]
-        self.pacc_u = self.dp_curves[self.cap_ids[1][0]]
+        self.pacc_l = self.dp_curves[self.cap_ids[0][0]].copy()
+        self.pacc_u = self.dp_curves[self.cap_ids[1][0]].copy()
         self.pacc_l[:, [0, 1]] = (self.dp_curves[self.cap_ids[0][0]][:, [0,1]] + \
                                   self.dp_curves[self.cap_ids[0][1]][:, [0,1]]) / 2.
         self.pacc_u[:, [0, 1]] = (self.dp_curves[self.cap_ids[1][0]][:, [0,1]] + \
                                   self.dp_curves[self.cap_ids[1][1]][:, [0,1]]) / 2.
-        # self.pacc_l[:, 0] /= self.pf.chord
-        # self.pacc_l[:, 1] /= self.pf.chord
-        # self.pacc_u[:, 0] /= self.pf.chord
-        # self.pacc_u[:, 1] /= self.pf.chord
+
         self.pacc_l_curv = np.zeros((ni, 2))
         self.pacc_u_curv = np.zeros((ni, 2))
         self.pacc_l_curv[:, 0] = self.pacc_l[:, 2]
         self.pacc_u_curv[:, 0] = self.pacc_u[:, 2]
         self.pacc_l_curv[:, 1] = curvature(self.pacc_l)
         self.pacc_u_curv[:, 1] = curvature(self.pacc_u)
+
+        self.dW0 = self.dp_curves[self.cap_ids[0][0]].copy()
+        self.dW1 = self.dp_curves[self.cap_ids[0][1]].copy()
+        self.dW0[:, [0, 1]] = self.dp_curves[self.cap_ids[0][0]][:, [0,1]] -\
+                              self.dp_curves[self.cap_ids[1][0]][:, [0,1]]
+        self.dW1[:, [0, 1]] = self.dp_curves[self.cap_ids[0][1]][:, [0,1]] -\
+                              self.dp_curves[self.cap_ids[1][1]][:, [0,1]]
+        self.alphaW0 = np.array([np.arctan(a) for a in self.dW0[:, 0]/self.dW0[:, 1]]) * 180. / np.pi
+        self.alphaW1 = np.array([np.arctan(a) for a in self.dW1[:, 0]/self.dW1[:, 1]]) * 180. / np.pi
+
 
 
 @base
