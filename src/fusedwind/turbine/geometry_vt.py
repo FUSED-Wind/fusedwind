@@ -236,17 +236,6 @@ class AirfoilShape(Curve):
         else:
             return (1.0+s)*self.sLE
 
-    def interp_s(self, s):
-        """
-        interpolate (x,y) at some curve fraction s
-        """
-
-        p = np.zeros(2)
-        for i in range(2):
-            p[i] = self._splines[i](s)
-
-        return p
-
     def gurneyflap(self, gf_height, gf_length_factor):
         """add a Gurney flap shaped using a tanh function"""
 
