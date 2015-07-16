@@ -18,7 +18,7 @@ from openmdao.lib.components.external_code import ExternalCode
 from openmdao.main.api import Case, Component
 
 from openmdao.lib.casehandlers.api import ListCaseRecorder, ListCaseIterator, CSVCaseRecorder
-from openmdao.lib.datatypes.api import Str, Int, List, Bool, Slot, Instance
+from openmdao.lib.datatypes.api import Str, Int, List, Bool, Slot, Instance, Float
 from openmdao.main.interfaces import ICaseIterator
 from openmdao.main.pbs import PBS_Allocator as PBS
 from openmdao.main.resource import ResourceAllocationManager as RAM
@@ -87,20 +87,21 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
 
         self._logger.info("configuring dispatcher")
 
-        self.add('case_driver', CaseIteratorDriver())
-        self.driver.workflow.add(['case_driver'])
+        cid = CaseIteratorDriver()
+        self.add('driver', cid)
 
-        self.add('runner', FUSEDIECBase())
-#        self.add('runner', openAeroCode())
-#       self.add('runner', FUSEDAssembly())
-        self.case_driver.workflow.add('runner')
-
-        # Boolean for running sequentially or in parallel
-        self.create_passthrough('case_driver.sequential')
+        self.add('runner', FUSEDIECBase())  ## is meant to be "replace()"ed later by your specific runner assembly
+        #self.add('runner', PGrafSubComponent())
+        #        self.add('runner', openAeroCode())
+        #       self.add('runner', FUSEDAssembly())
+        cid.workflow.add(['runner'])
+        
+            # Boolean for running sequentially or in parallel
+        self.create_passthrough('driver.sequential')
         self.recorders.append(ListCaseRecorder())
-
+        
         # component for postprocessing results # 4/28/2015 kld: recorders not seen in graph - won't connect, should be an attribute of assembly
-        #self.add('post', PostprocessIECCasesBase())
+            #self.add('post', PostprocessIECCasesBase())
         #self.driver.workflow.add('post')
         #self.connect('cases', 'post.cases') 
 
@@ -114,12 +115,17 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
         list has been set.
         """
 
-        self.runcases = []
-        for case in self.cases:
-            self._logger.info('Adding case %s'% case.case_name)
-            self.runcases.append(Case(inputs= [('runner.inputs', case)], outputs=['runner.outputs']))
+#        self.runcases = []
+#        for case in self.cases:
+#            self._logger.info('Adding case %s'% case.case_name)
+#            self.runcases.append(Case(inputs= [('runner.inputs', case)], outputs=['runner.outputs']))
 
-        self.case_driver.iterator = ListCaseIterator(self.runcases)
+#        self.case_driver.iterator = ListCaseIterator(self.runcases)
+
+        self.driver.add_parameter('runner.inputs')
+        self.driver.case_inputs.runner.inputs = self.cases
+#        for x in self.cases:
+#            print "case: ", x
 
 
 ################# from openmdao "test" code
@@ -130,19 +136,23 @@ class FUSEDIECCaseIterator(FUSEDAssembly):
 
 class PGrafComponent(Assembly):
     num = Int(iotype='in')
-    inputs = Slot(PGrafObject)
-    result = Int(iotype='out')
+#    inputs = Slot(PGrafObject)
+    inputs = Instance(IECRunCaseBaseVT, iotype="in")
+    result = Float(iotype='out')
 
     def execute(self):
         print "comp execute"
-        self.result = self.inputs.num + self.inputs.num
 
+#        self.result = self.inputs.num + self.inputs.num
+        self.result = self.inputs.environment.vhub ** 2
 
 class PGrafSubComponent(PGrafComponent):
 
     def execute(self):
-        print "subcomp execute"
-        self.result = self.inputs.num * self.inputs.num
+#        self.result = self.inputs.num * self.inputs.num
+        self.result = self.inputs.environment.vhub ** 2
+        print "subcomp execute, in -> out" ,self.inputs.environment.vhub, self.result
+        
 
 
 class PGrafAssembly(Assembly):

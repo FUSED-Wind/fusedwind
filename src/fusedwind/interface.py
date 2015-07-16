@@ -3,8 +3,81 @@ from openmdao.main.interfaces import Interface, implements
 from zope.interface import implementer
 from openmdao.main.api import Component, Assembly, VariableTree
 from openmdao.lib.datatypes.api import Slot, Instance
-from fused_helper import fused_autodoc
+from numpy import ndarray, array, sort
+#from fused_helper import fused_autodoc
 
+
+
+
+
+def fused_autodoc(cls):
+    """Decorator to automatically document the inputs and outputs of an Assembly / Component
+
+    """
+
+    clsname = cls.__name__
+    if not cls.__doc__:
+        cls.__doc__ = '**TODO**: fill in this doc\n\n'
+
+    inputs = [k for k, v in cls.__class_traits__.iteritems() if v.iotype == 'in'
+              and k not in Component.__class_traits__
+              and k not in Assembly.__class_traits__
+              and k.find('_items') == -1]
+    outputs = [k for k, v in cls.__class_traits__.iteritems() if v.iotype == 'out'
+              and k not in Component.__class_traits__
+              and k not in Assembly.__class_traits__
+              and k.find('_items') == -1]
+
+    variables = [k for k, v in cls.__class_traits__.iteritems()
+                    if k not in VariableTree.__class_traits__
+                    and k.find('_items') == -1]
+    variables = sort(variables)
+    #print inputs
+    el = '\n    '
+    def addl(x=''):
+        cls.__doc__+=x+el
+    addl()
+    addl()
+
+    if issubclass(cls, Component):
+        if len(inputs) > 0:
+            addl('Parameters')
+            addl('----------')
+            addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
+                          ', default=' + cls.__class_traits__[i].default.__str__() +
+                          ', [%s]'%(cls.__class_traits__[i].units) +
+                          el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
+                          for i in inputs]))
+            addl('')
+
+    if issubclass(cls, VariableTree):
+        if len(variables) > 0:
+            addl('Parameters')
+            addl('----------')
+            addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
+                              ', default=' + cls.__class_traits__[i].default.__str__() +
+                              ', [%s]'%(cls.__class_traits__[i].units) +
+                              el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
+                              for i in variables]))
+            addl('')
+
+    if issubclass(cls, Component) and len(outputs) > 0:
+        addl('Returns')
+        addl('-------')
+        addl(el.join([i + ':    ' + cls.__class_traits__[i].trait_type.__class__.__name__ +
+                          ', [%s]'%(cls.__class_traits__[i].units) +
+                          el+'   ' + cls.__class_traits__[i].desc.__str__()+'.'+el
+                          for i in outputs]))
+
+    # Check if the class has some base:
+    if hasattr(cls, '_fused_base'):
+        addl('')
+        addl('Notes')
+        addl('-----')
+        addl('``%s``'%(clsname) + ' implements the following interfaces: ' + ', '.join(['``%s``'%(c.__name__) for c in cls._fused_base]))
+        addl('')
+
+    return cls
 
 # FUSED Framework ----------------------------------
 def interface(comp_cls):
