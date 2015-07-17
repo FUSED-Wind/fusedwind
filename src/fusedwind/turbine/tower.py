@@ -63,10 +63,10 @@ class TowerFromCSProps(Component):
     Mzz = Array(iotype='in', units='N*m', desc='point moment about z-axis')
 
     # distributed loads
-    Px = Array(iotype='in', units='N/m', desc='force per unit length in x-direction')
-    Py = Array(iotype='in', units='N/m', desc='force per unit length in y-direction')
-    Pz = Array(iotype='in', units='N/m', desc='force per unit length in z-direction')
-    q = Array(iotype='in', units='N/m**2', desc='dynamic pressure')
+    Px   = Array(iotype='in', units='N/m', desc='force per unit length in x-direction')
+    Py   = Array(iotype='in', units='N/m', desc='force per unit length in y-direction')
+    Pz   = Array(iotype='in', units='N/m', desc='force per unit length in z-direction')
+    qdyn = Array(iotype='in', units='N/m**2', desc='dynamic pressure')
 
     # safety factors
     gamma_f = Float(1.35, iotype='in', desc='safety factor on loads')
