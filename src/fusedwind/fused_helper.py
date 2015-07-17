@@ -277,7 +277,7 @@ def draw_graph(self, name='Graph', value=False):
     return self.make_graph(name, value).svg
 
 
-from IPython.html.widgets import interact, interactive, fixed
+#from IPython.html.widgets import interactive, fixed #interact, 
 from IPython.html import widgets
 from IPython.display import clear_output, display, HTML
 
