@@ -15,7 +15,7 @@ from openmdao.main.case import Case
 import matplotlib.pylab as plt
 
 from fusedwind.interface import base, implement_base
-import pandas as pd
+#import pandas as pd
 
 # ---------------------------------------------------------
 # Variable Tree Containers
@@ -240,10 +240,20 @@ class WeibullWindRoseVT(VariableTree):
     A = List(desc='Weibull parameter A [n_wd]', units='m/s')
     frequency = List(desc='Frequency of wind direction [n_wd]', units='deg')
 
-    def df(self):
-        """Returns a pandas.DataFrame object"""
-        return pd.DataFrame(self.to_weibull_array(),
-                            columns=['wind_direction', 'frequency', 'A', 'k'])
+    def __init__(self, weibull_array=None):
+        """
+
+        :param weibull_array:   ndarray[n,4]
+                                the array describing the wind rose [wd, freq, A, k] (optional)
+        """
+        super(WeibullWindRoseVT, self).__init__()
+        if weibull_array is not None:
+            self.wind_directions, self.frequency, self.A, self.k = weibull_array.T
+
+    #
+    # def df(self):
+    #     """Returns a pandas.DataFrame object"""
+    #     return pd.DataFrame(self.to_weibull_array(), columns=['wind_directions', 'frequency', 'A', 'k'])
 
     def to_weibull_array(self):
         """Returns a weibull array [wind_direction, frequency, A, k]"""
@@ -363,21 +373,21 @@ class GenericWindRoseVT(VariableTree):
         return array([[wd, ws, self.frequency_array[iwd, iws]] for iwd, wd in enumerate(self.wind_direction)
                                                                 for iws, ws in enumerate(self.wind_speed)])
 
-    def df(self):
-        """
-        Returns a pandas.DataFrame containing the flatten array (using self.flatten() function)
-
-        Parameters
-        ----------
-
-        self        GenericWindRoseVT
-
-        Returns
-        -------
-        df          pandas.DataFrame([n_wd*n_ws,3])
-                    dataframe containing the [wind direction, wind speed, frequency]
-        """
-        return pd.DataFrame(self.flatten(), columns=['wind_direction', 'wind_speed', 'frequency'])
+    # def df(self):
+    #     """
+    #     Returns a pandas.DataFrame containing the flatten array (using self.flatten() function)
+    #
+    #     Parameters
+    #     ----------
+    #
+    #     self        GenericWindRoseVT
+    #
+    #     Returns
+    #     -------
+    #     df          pandas.DataFrame([n_wd*n_ws,3])
+    #                 dataframe containing the [wind direction, wind speed, frequency]
+    #     """
+    #     return pd.DataFrame(self.flatten(), columns=['wind_direction', 'wind_speed', 'frequency'])
 
 
 # @base
@@ -482,7 +492,8 @@ class GenericWindRoseVT(VariableTree):
 #     wind_turbine = VarTree(ExtendedWindTurbinePowerCurveVT(), desc='wind turbine power curve')
 
 
-implement_base(GenericWindTurbineVT, GenericWindTurbinePowerCurveVT)
+# TODO: Reorganize WTPC so that it's more consistent with the rest of the GenericWindTurbinePowerCurveVT
+@implement_base(GenericWindTurbineVT, GenericWindTurbinePowerCurveVT)
 class WTPC(GenericWindTurbinePowerCurveVT):
     """ A GenericWindTurbinePowerCurveVT with a name, position and wind rose
     """
@@ -505,9 +516,18 @@ class WTPC(GenericWindTurbinePowerCurveVT):
     position = Array(shape=(2,), desc='The UTM position of the turbine', units='m')
     wind_rose = VarTree(GenericWindRoseVT(), desc='The wind turbine wind rose')
 
-    def __init__(self, **kwargs):
-        """Initialise the variable tree with the right inputs"""
+    def __init__(self, wt_desc=None, **kwargs):
+        """Initialise the variable tree with the right inputs
+
+        :param wt_desc  GenericWindTurbineVT or GenericWindTurbinePowerCurveVT
+                        A wind turbine description
+        """
         super(WTPC, self).__init__()
+        if wt_desc is not None:
+            for k in wt_desc.list_vars():
+                if k in self.list_vars():
+                    setattr(self, k, getattr(wt_desc, k))
+
         for k,v in kwargs.iteritems():
             if k in self.list_vars():
                 setattr(self, k, v)
@@ -534,6 +554,9 @@ class GenericWindFarmTurbineLayout(VariableTree):
             wt: WTPC
                 Wind turbine object
         """
+        if wt.name == '':
+            wt.name = 'wt_'+str(len(self.wt_names))
+
         wt.name = wt.name.replace('-','_')
         self.add(wt.name, VarTree(wt))
         self.wt_names.append(wt.name)
@@ -665,18 +688,18 @@ class GenericWindFarmTurbineLayout(VariableTree):
 
         return di
 
-    @property
-    def df(self):
-        """
-        create a pandas dataframe containing all the information flatten, using the `create_dict` function
-
-        :rtype : pandas.DataFrame
-
-        Example:
-        --------
-        >>> df = generate_random_wt_layout().df
-        >>> scatter(df.x, df.y, s=df.hub_height, c=df.power_rating)
-        >>> colorbar()
-        """
-
-        return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])
+    # @property
+    # def df(self):
+    #     """
+    #     create a pandas dataframe containing all the information flatten, using the `create_dict` function
+    #
+    #     :rtype : pandas.DataFrame
+    #
+    #     Example:
+    #     --------
+    #     >>> df = generate_random_wt_layout().df
+    #     >>> scatter(df.x, df.y, s=df.hub_height, c=df.power_rating)
+    #     >>> colorbar()
+    #     """
+    #
+    #     return pd.DataFrame([self.create_dict(n) for n in range(self.n_wt)])

@@ -245,6 +245,8 @@ class LoadVectorCaseList(VariableTree):
     """
     List of load vector cases for a given spanwise position
     """
+
+    s = Float(desc='spanwise position')
     cases = List(desc='List of load cases')
 
 
@@ -289,6 +291,7 @@ class LoadVectorArray(VariableTree):
             cn[i] = np.interp(s, self.s, arr[:, i])
 
         vt = LoadVector()
+        vt.case_id = self.case_id
         vt._fromarray(cn)
         return vt
 

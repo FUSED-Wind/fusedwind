@@ -1,6 +1,5 @@
 
 import numpy as np
-import ipdb
 from openmdao.main.api import Component
 from openmdao.lib.datatypes.api import List, Array, VarTree, Float, Str
 

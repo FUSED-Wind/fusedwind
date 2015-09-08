@@ -2,15 +2,17 @@
 import glob
 import numpy as np
 from string import digits
+from scipy.interpolate import pchip, Akima1DInterpolator
 
 from openmdao.main.api import Component, Assembly
 from openmdao.lib.datatypes.api import VarTree, Float, Array, Bool, Str, List, Int
 
-from fusedwind.turbine.geometry_vt import BladeSurfaceVT, BladePlanformVT
+from fusedwind.turbine.geometry_vt import BladeSurfaceVT, BladePlanformVT, Curve, AirfoilShape
 from fusedwind.turbine.geometry import RedistributedBladePlanform, SplineComponentBase, FFDSplineComponentBase
 from fusedwind.turbine.structure_vt import BladeStructureVT3D, CrossSectionStructureVT, BeamStructureVT
 from fusedwind.turbine.rotoraero_vt import LoadVectorCaseList
 from fusedwind.interface import base, implement_base
+from fusedwind.lib.geom_tools import curvature
 
 
 @base
@@ -132,9 +134,9 @@ class BladeStructureReader(Component):
         .       .       .       .       .       .       .\n
         """
 
-        self.dp_files = glob.glob(self.filebase + '*.dp3d')
+        self.dp_files = glob.glob(self.filebase + '.dp3d')
 
-        self.layup_files = glob.glob(self.filebase + '*.st3d')
+        self.layup_files = glob.glob(self.filebase + '.st3d')
 
         for dpfile in self.dp_files:
             self._logger.info('reading dp_file: %s' % dpfile)
@@ -246,7 +248,6 @@ class BladeStructureWriter(Component):
                 self.fbase = self.filebase + '_' + str(self.exec_count)
         except:
             self.fbase = self.filebase
-        self.fbase = self.filebase
 
         self.write_layup_data()
         self.write_materials()
@@ -522,7 +523,7 @@ class SplinedBladeStructure(Assembly):
         self.create_passthrough('pf.pfOut')
         self.connect('x', 'pf.x')
 
-    def configure_bladestructure(self):
+    def configure_bladestructure(self, spline_type='pchip'):
         """
         method for trawling through the st3dIn vartree
         and initializing all spline curves in the assembly
@@ -548,6 +549,7 @@ class SplinedBladeStructure(Assembly):
             DPc = self.add(dpname, FFDSplineComponentBase(self.nC))
             self.driver.workflow.add(dpname)
             # DPc.log_level = logging.DEBUG
+            DPc.set_spline(spline_type)
             x = getattr(sec, 'x')
             DP = getattr(sec, dpname)
             self.connect('x', '%s.x' % dpname)
@@ -567,6 +569,7 @@ class SplinedBladeStructure(Assembly):
                     lcomp = self.add(lcname+'T', FFDSplineComponentBase(self.nC))
                     self.driver.workflow.add(lcname+'T')
                     # lcomp.log_level = logging.DEBUG
+                    lcomp.set_spline(spline_type)
                     self.connect('x', '%s.x' % (lcname + 'T'))
                     lcomp.xinit = sec.x
                     lcomp.Pinit = layer.thickness
@@ -576,6 +579,7 @@ class SplinedBladeStructure(Assembly):
                     lcomp = self.add(lcname+'A', FFDSplineComponentBase(self.nC))
                     self.driver.workflow.add(lcname+'A')
                     # lcomp.log_level = logging.DEBUG
+                    lcomp.set_spline(spline_type)
                     self.connect('x', '%s.x' % (lcname + 'A'))
                     self.create_passthrough(lcname+'T' + '.C', alias=lcname+'T' + '_C')
                     lcomp.xinit = sec.x
@@ -593,6 +597,7 @@ class SplinedBladeStructure(Assembly):
                 lcomp = self.add(lcname+'T', FFDSplineComponentBase(self.nC))
                 # lcomp.log_level = logging.DEBUG
                 self.driver.workflow.add(lcname+'T')
+                lcomp.set_spline(spline_type)
                 self.connect('x', '%s.x' % (lcname + 'T'))
                 lcomp.xinit = sec.x
                 lcomp.Pinit = layer.thickness
@@ -603,6 +608,7 @@ class SplinedBladeStructure(Assembly):
                 lcomp = self.add(lcname+'A', FFDSplineComponentBase(self.nC))
                 # lcomp.log_level = logging.DEBUG
                 self.driver.workflow.add(lcname+'A')
+                lcomp.set_spline(spline_type)
                 self.connect('x', '%s.x' % (lcname + 'A'))
                 lcomp.xinit = sec.x
                 lcomp.Pinit = layer.angle
@@ -644,6 +650,75 @@ class SplinedBladeStructure(Assembly):
             region.thickness = np.zeros(self.st3dOut.x.shape)
             for layer in region.layers:
                 region.thickness += np.maximum(0., getattr(region, layer).thickness)
+
+
+class BladeStructureProperties(Component):
+
+    surface = VarTree(BladeSurfaceVT(), iotype='in', desc='Stacked blade surface object')
+    pf = VarTree(BladePlanformVT(), iotype='in', desc='planform')
+    st3d = VarTree(BladeStructureVT3D(), iotype='in', desc='Blade structure definition')
+    cap_ids = List([[0,0], [0,0]], iotype='in', desc='indices of cap DPs'
+                                                     '[[capL0, capL1], [capU0, capU1]]')
+    pacc_u = Array(iotype='out', desc='upper side pitch axis aft cap center')
+    pacc_l = Array(iotype='out', desc='lower side pitch axis aft cap center')
+    pacc_u_curv = Array(iotype='out', desc='upper side pitch axis aft cap center curvature')
+    pacc_l_curv = Array(iotype='out', desc='lower side pitch axis aft cap center curvature')
+    
+
+
+    def __init__(self, nW=2):
+        super(BladeStructureProperties, self).__init__()
+
+        for w in range(nW):
+            self.add('alphaW%i' % w, Array(iotype='out', desc='Web%02d angle' % w))
+            self.add('dW%i' % w, Array(iotype='out', desc='Web%02d offset' % w))
+
+
+    def execute(self):
+
+        self.dp_curves = [] 
+        self.scurves = []
+        ni = self.pf.chord.shape[0]
+        nDP = len(self.st3d.DPs)
+        for i in range(nDP):
+            name = 'DP%02d' % i
+            c = getattr(self.st3d, name)
+            self.scurves.append(Akima1DInterpolator(self.st3d.x, c))
+            dp = np.zeros([self.surface.surface.shape[1], self.surface.surface.shape[2]])
+            self.dp_curves.append(dp)
+
+        for i in range(self.surface.surface.shape[1]):
+            x = self.surface.surface[:, i, :]
+            span = self.pf.s[i]
+            af = AirfoilShape(points=x)
+            for j in range(nDP):
+                s_chord = self.scurves[j](span)
+                xx = af.interp_s(af.s_to_01(s_chord))
+                self.dp_curves[j][i, :] = xx
+
+        self.pacc_l = self.dp_curves[self.cap_ids[0][0]].copy()
+        self.pacc_u = self.dp_curves[self.cap_ids[1][0]].copy()
+        self.pacc_l[:, [0, 1]] = (self.dp_curves[self.cap_ids[0][0]][:, [0,1]] + \
+                                  self.dp_curves[self.cap_ids[0][1]][:, [0,1]]) / 2.
+        self.pacc_u[:, [0, 1]] = (self.dp_curves[self.cap_ids[1][0]][:, [0,1]] + \
+                                  self.dp_curves[self.cap_ids[1][1]][:, [0,1]]) / 2.
+
+        self.pacc_l_curv = np.zeros((ni, 2))
+        self.pacc_u_curv = np.zeros((ni, 2))
+        self.pacc_l_curv[:, 0] = self.pacc_l[:, 2]
+        self.pacc_u_curv[:, 0] = self.pacc_u[:, 2]
+        self.pacc_l_curv[:, 1] = curvature(self.pacc_l)
+        self.pacc_u_curv[:, 1] = curvature(self.pacc_u)
+
+        self.dW0 = self.dp_curves[self.cap_ids[0][0]].copy()
+        self.dW1 = self.dp_curves[self.cap_ids[0][1]].copy()
+        self.dW0[:, [0, 1]] = self.dp_curves[self.cap_ids[0][0]][:, [0,1]] -\
+                              self.dp_curves[self.cap_ids[1][0]][:, [0,1]]
+        self.dW1[:, [0, 1]] = self.dp_curves[self.cap_ids[0][1]][:, [0,1]] -\
+                              self.dp_curves[self.cap_ids[1][1]][:, [0,1]]
+        self.alphaW0 = np.array([np.arctan(a) for a in self.dW0[:, 0]/self.dW0[:, 1]]) * 180. / np.pi
+        self.alphaW1 = np.array([np.arctan(a) for a in self.dW1[:, 0]/self.dW1[:, 1]]) * 180. / np.pi
+
 
 
 @base
@@ -719,18 +794,19 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
                 pass
             for ir, rname in enumerate(self.st3d.regions):
                 reg = getattr(self.st3d, rname)
-                if reg.thickness[i] == 0.:
+                if reg.thickness[i] < 1.e-5:
                     print 'zero thickness region!', rname
-                    # continue
+                    continue
                 DP0 = getattr(self.st3d, 'DP%02d' % ir)
                 DP1 = getattr(self.st3d, 'DP%02d' % (ir + 1))
                 r = st2d.add_region(rname.upper())
                 st2d.DPs.append(DP0[i])
                 r.s0 = DP0[i]
                 r.s1 = DP1[i]
+                r.thickness = reg.thickness[i]
                 for lname in reg.layers:
                     lay = getattr(reg, lname)
-                    if lay.thickness[i] > 1.e-5: 
+                    if lay.thickness[i] > 0.: 
                         l = r.add_layer(lname)
                         # try:
                         lnamebase = lname.translate(None, digits)
@@ -747,7 +823,7 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
             st2d.DPs.append(DP1[i])
             for ir, rname in enumerate(self.st3d.webs):
                 reg = getattr(self.st3d, rname)
-                if reg.thickness[i] == 0.:
+                if reg.thickness[i] < 1.e-5:
                     continue
                 r = st2d.add_web(rname.upper())
                 try:
@@ -758,8 +834,9 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
                     DP1 = getattr(self.st3d, 'DP%02d' % self.st3d.iwebs[ir][1])
                 except:
                     DP1 = getattr(self.st3d, 'DP%02d' % (len(self.st3d.regions) + self.st3d.iwebs[ir][1] + 1))
-                r.s0 = DP0[i] 
+                r.s0 = DP0[i]
                 r.s1 = DP1[i]
+                r.thickness = reg.thickness[i]
                 for lname in reg.layers:
                     lay = getattr(reg, lname)
                     if lay.thickness[i] > 1.e-5:

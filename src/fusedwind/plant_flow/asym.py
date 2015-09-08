@@ -16,8 +16,6 @@ from comp import *
 from fusedwind.interface import base, implement_base, InterfaceSlot, \
     FUSEDAssembly, configure_base
 
-from fusedwind.fused_helper import fused_autodoc
-
 # ------------------------------------------------------------
 # Assembly Base Classes
 
@@ -67,12 +65,12 @@ class AEPWindRose(Assembly):
     """Base class to calculate Annual Energy Production (AEP) of a wind farm.
     Implement the same interface as `BaseAEPModel`
     """
-    wf = InterfaceSlot(GenericWindFarm,
-        desc='A wind farm assembly or component')
-    postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose,
-        desc='The component taking care of postprocessing the wind rose')
-    case_gen = InterfaceSlot(GenericWindRoseCaseGenerator,
-        desc='Generate the cases from the inputs')
+    #wf = InterfaceSlot(GenericWindFarm,
+    #    desc='A wind farm assembly or component')
+    #postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose,
+    #    desc='The component taking care of postprocessing the wind rose')
+    #case_gen = InterfaceSlot(GenericWindRoseCaseGenerator,
+    #    desc='Generate the cases from the inputs')
 
     # Inputs
     wind_speeds = List([], iotype='in', units='m/s',
@@ -164,12 +162,12 @@ class AEPSingleWindRose(FUSEDAssembly):
     """Base class to calculate Annual Energy Production (AEP) of a wind farm.
     Implement the same interface as `BaseAEPModel`
     """
-    wf = InterfaceSlot(GenericWindFarm,
-        desc='A wind farm assembly or component')
-    postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose,
-        desc='The component taking care of postprocessing the wind rose')
-    case_gen = InterfaceSlot(GenericWindRoseCaseGenerator,
-        desc='Generate the cases from the inputs')
+    #wf = InterfaceSlot(GenericWindFarm,
+    #    desc='A wind farm assembly or component')
+    #postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose,
+    #    desc='The component taking care of postprocessing the wind rose')
+    #case_gen = InterfaceSlot(GenericWindRoseCaseGenerator,
+    #    desc='Generate the cases from the inputs')
 
     # Inputs
     wind_speeds = List([], iotype='in', units='m/s',
@@ -204,12 +202,12 @@ class AEPMultipleWindRoses(FUSEDAssembly):
     """Base class to calculate Annual Energy Production (AEP) of a wind farm.
     Implement the same interface as `BaseAEPModel` and `AEPWindRose`
     """
-    wf = InterfaceSlot(GenericWindFarm,
-        desc='A wind farm assembly or component')
-    postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose,
-        desc='The component taking care of postprocessing the wind rose')
-    case_gen = InterfaceSlot(GenericWindRoseCaseGenerator,
-        desc='Generate the cases from the inputs')
+    #wf = InterfaceSlot(GenericWindFarm,
+    #    desc='A wind farm assembly or component')
+    #postprocess_wind_rose = InterfaceSlot(GenericPostProcessWindRose,
+    #    desc='The component taking care of postprocessing the wind rose')
+    #case_gen = InterfaceSlot(GenericWindRoseCaseGenerator,
+    #    desc='Generate the cases from the inputs')
 
     # Inputs
     wind_speeds = List([], iotype='in', units='m/s',

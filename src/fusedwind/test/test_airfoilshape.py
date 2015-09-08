@@ -142,10 +142,10 @@ class BlendAirfoilTest(unittest.TestCase):
     def test_airfoilshape(self):
 
         af = AirfoilShape(afs[0])
-        aff = af.redistribute(20, even=True)
 
         self.assertEqual(np.testing.assert_array_almost_equal(af.LE, np.array([ -1.76645007e-05,  -2.90461132e-04]), decimal=6), None)
         self.assertAlmostEqual(af.sLE, 0.49898457668804924, places=6)
+        aff = af.redistribute(20, even=True)
         self.assertEqual(np.testing.assert_array_almost_equal(aff.points, aff_data, decimal=6), None)
 
     def test_pchip(self):

@@ -148,7 +148,7 @@ class BladeStructureSetup(Assembly):
 
         self.writer.st3d = self.stbase
         self.writer.filebase = 'testST'
-        self.reader.filebase = 'testST'
+        self.reader.filebase = 'testST_1'
 
 
 class BladeSurfaceTestCase(unittest.TestCase):
@@ -159,7 +159,7 @@ class BladeSurfaceTestCase(unittest.TestCase):
         self.top.run()
 
     def tearDown(self):
-        
+
         files = glob.glob('testST*')
         for name in files:
             os.remove(name)

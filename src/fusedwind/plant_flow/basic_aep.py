@@ -29,7 +29,7 @@ class aep_assembly(Assembly):
     # parameters
     array_losses = Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant')
     other_losses = Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc')
-    availability = Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant')
+    availability = Float(0.94, iotype='in', desc='average annual availability of wind turbines at plant')
     turbine_number = Int(100, iotype='in', desc='total number of wind turbines at the plant')
     machine_rating = Float(5000.0, iotype='in', desc='machine rating of turbine')
 
@@ -68,7 +68,7 @@ class BasicAEP(Component):
     # parameters
     array_losses = Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant')
     other_losses = Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc')
-    availability = Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant')
+    availability = Float(0.94, iotype='in', desc='average annual availability of wind turbines at plant')
     turbine_number = Int(100, iotype='in', desc='total number of wind turbines at the plant')
     machine_rating = Float(5000.0, iotype='in', desc='machine rating of turbine')
 
@@ -199,7 +199,7 @@ class aep_weibull_assembly(Assembly):
     # parameters
     array_losses = Float(0.059, iotype='in', desc = 'energy losses due to turbine interactions - across entire plant')
     other_losses = Float(0.0, iotype='in', desc = 'energy losses due to blade soiling, electrical, etc')
-    availability = Float(0.94, iotype='in', desc = 'average annual availbility of wind turbines at plant')
+    availability = Float(0.94, iotype='in', desc = 'average annual availability of wind turbines at plant')
     turbine_number = Int(100, iotype='in', desc = 'total number of wind turbines at the plant')
 
     # outputs
@@ -247,7 +247,7 @@ class aep_component(Component):
     # parameters
     array_losses = Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant')
     other_losses = Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc')
-    availability = Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant')
+    availability = Float(0.94, iotype='in', desc='average annual availability of wind turbines at plant')
     turbine_number = Int(100, iotype='in', desc='total number of wind turbines at the plant')
 
     # outputs

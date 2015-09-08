@@ -48,13 +48,14 @@ class BaseAEPAggregator(Component):
 @implement_base(BaseAEPAggregator)
 class BaseAEPAggregator_NoFlow(Component):
     """
-    Assumes implementing component takes individual turbine output and combines with loss factors and turbine number to get plant energy output.
+    Assumes implementing component takes individual turbine output and combines with loss factors and turbine number to
+    get plant energy output.
     """
 
     # parameters
     array_losses = Float(0.059, iotype='in', desc='energy losses due to turbine interactions - across entire plant')
     other_losses = Float(0.0, iotype='in', desc='energy losses due to blade soiling, electrical, etc')
-    availability = Float(0.94, iotype='in', desc='average annual availbility of wind turbines at plant')
+    availability = Float(0.94, iotype='in', desc='average annual availability of wind turbines at plant')
     turbine_number = Int(100, iotype='in', desc='total number of wind turbines at the plant')
     machine_rating = Float(5000.0, iotype='in', desc='machine rating of turbine')
 
@@ -63,11 +64,11 @@ class BaseAEPAggregator_NoFlow(Component):
         desc='Gross Annual Energy Production before availability and loss impacts')
     net_aep = Float(0.0, iotype='out', units='kW*h',
         desc='Net Annual Energy Production after availability and loss impacts')
-    capacity_factor = Float(0.0, iotype='out', desc='Capacity factor for wind plant') # ??? generic or specific? will be easy to calculate, #
+    capacity_factor = Float(0.0, iotype='out', desc='Capacity factor for wind plant')
 
 
-#####################
-
+####################
+#
 # wind rose based components
 
 class WeibullWindRose(Component):
@@ -183,7 +184,7 @@ class WeibullWindRose(Component):
                 P_dir = cdf_wd(wd0, 359.99) + cdf_wd(0.0, wd1)
             else:
                 P_dir = cdf_wd(wd0, wd1)
-            # print 'between', wd0, wd1, P_dir
+
             for iws, ws in enumerate(self.wind_speeds):
                 if iws == 0:  # We include all the cases from cut_in
                     ws0 = self.cut_in
@@ -196,8 +197,7 @@ class WeibullWindRose(Component):
                 ws0 = min(self.cut_out, max(self.cut_in, ws0))
                 ws1 = min(self.cut_out, max(self.cut_in, ws1))
 
-                self.wind_rose.frequency_array[
-                    iwd, iws] = P_dir * cdf_ws(A, k, ws0, ws1)
+                self.wind_rose.frequency_array[iwd, iws] = P_dir * cdf_ws(A, k, ws0, ws1)
 
         self.test_consistency_outputs()
 
