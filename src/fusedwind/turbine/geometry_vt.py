@@ -73,6 +73,17 @@ class Curve(VariableTree):
 
         self.initialize(points)
 
+    def interp_s(self, s):
+        """
+        interpolate (x,y) at some curve fraction s
+        """
+
+        p = np.zeros(self.points.shape[1])
+        for i in range(self.points.shape[1]):
+            p[i] = self._splines[i](s)
+
+        return p
+
 @base
 class AirfoilShape(Curve):
     """
@@ -225,17 +236,6 @@ class AirfoilShape(Curve):
         else:
             return (1.0+s)*self.sLE
 
-    def interp_s(self, s):
-        """
-        interpolate (x,y) at some curve fraction s
-        """
-
-        p = np.zeros(2)
-        for i in range(2):
-            p[i] = self._splines[i](s)
-
-        return p
-
     def gurneyflap(self, gf_height, gf_length_factor):
         """add a Gurney flap shaped using a tanh function"""
 
@@ -261,6 +261,30 @@ class AirfoilShape(Curve):
             points[i,1] = points[i,1] - np.interp(points[i, 0], s, h)
 
         return AirfoilShape(points)
+
+    def open_trailing_edge(self, t):
+        """
+        add thickness to airfoil
+        """
+
+        t0 = np.abs(self.points[-1, 1] - self.points[0, 1])
+        dt = (t - t0) / 2.
+        print 'dt', dt
+        # linearly add thickness from LE to TE
+        iLE = np.argmin(self.points[:,0])
+        xLE = self.points[iLE, 0]
+        tlin = np.array([np.linspace(xLE, self.TE[0], 100),
+                        np.linspace(0., dt, 100)]).T
+
+        tspline = NaturalCubicSpline(tlin[:, 0], tlin[:, 1])
+
+        ys = tspline(self.points[iLE:, 0]) + self.points[iLE:, 1]
+        yp = -tspline(self.points[:iLE, 0][::-1])[::-1] + self.points[:iLE, 1]
+
+        self.points[iLE:, 1] = ys
+        self.points[:iLE, 1] = yp
+        self.initialize(self.points)
+
 
 class BlendAirfoilShapes(object):
     """

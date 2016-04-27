@@ -3,15 +3,20 @@ from math import pi
 import copy
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Str, VarTree, Float
-#from fusedwind.turbine.turbine_vt import AeroElasticSimulationSetup, TurbineEnvironmentVT, OffshoreTurbineEnvironmentVT
 from fusedwind.turbine.environment_vt import  TurbineEnvironmentVT, OffshoreTurbineEnvironmentVT
 from fusedwind.lib.base import CaseInputsBase, CaseOutputsBase
+
+# 4/28/2015 - adding simulation back in for now and putting it here
+class AeroElasticSimulationSetup(VariableTree):
+
+    time_start = Float(0., desc='Starting time of sampled output')
+    time_stop = Float(0., desc='Ending time of sampled output')
+    time_step = Float(0.001, desc='Sampling time step for simulation')
 
 class IECRunCaseBaseVT(VariableTree):
 
     case_name = Str('IEC_case', desc='Name of the specific case passed to the aeroelastic code')
-# This appears to be broken
-#    simulation = VarTree(AeroElasticSimulationSetup(), desc='Basic simulation input settings')
+    simulation = VarTree(AeroElasticSimulationSetup(), desc='Basic simulation input settings') # 4/28/2015 kld: should move elsewhere but leaving in for debugging
     environment = VarTree(TurbineEnvironmentVT(), desc='Inflow conditions to the turbine simulation')
 
 class IECOutputsBaseVT(VariableTree):

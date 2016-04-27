@@ -91,7 +91,7 @@ class Test_aep_component(unittest.TestCase):
 
     def test_gradient(self):
 
-        check_gradient_unit_test(self, self.aep, step_size=1.0, display=False)
+        check_gradient_unit_test(self, self.aep, step_size=1.0, tol=1e-5, display=False)
 
 class TestBasicAEP(unittest.TestCase):
 

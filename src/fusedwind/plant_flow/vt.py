@@ -492,9 +492,8 @@ class GenericWindRoseVT(VariableTree):
 #     wind_turbine = VarTree(ExtendedWindTurbinePowerCurveVT(), desc='wind turbine power curve')
 
 
-
 # TODO: Reorganize WTPC so that it's more consistent with the rest of the GenericWindTurbinePowerCurveVT
-implement_base(GenericWindTurbineVT, GenericWindTurbinePowerCurveVT)
+@implement_base(GenericWindTurbineVT, GenericWindTurbinePowerCurveVT)
 class WTPC(GenericWindTurbinePowerCurveVT):
     """ A GenericWindTurbinePowerCurveVT with a name, position and wind rose
     """
@@ -510,6 +509,7 @@ class WTPC(GenericWindTurbinePowerCurveVT):
     cut_out_wind_speed = Float(25., desc='The cut-out wind speed of the wind turbine', units='m/s')
     rated_wind_speed = Float(desc='The rated wind speed of the wind turbine', units='m/s')
     air_density = Float(desc='The air density the power curve are valid for', units='kg/(m*m*m)')
+    c_t_idle =  Float(0.053, desc='turbine drag coefficient when idle')
 
     # WTPC
     name = Str(desc='The wind turbine name')
