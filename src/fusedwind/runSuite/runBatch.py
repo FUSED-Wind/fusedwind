@@ -320,36 +320,41 @@ class CaseAnalyzer(Assembly):
             fout.write("   ")
             results_dir = os.path.join(self.aerocode.basedir, case.case_name)
             print "collecting from ", results_dir
-            for opstr in output_ops:                
-                ## we have a system where the function we do the postprocessing with can be specified in the control
-                ## input file via: "output_operations" tag.
-                try:
-                    if (":" in opstr):
-                        mod = opstr.split(":")[0]
-                        opstr2 = opstr.split(":")[1]
-                        op =getattr( __import__(mod, globals(), locals(), [opstr2], -1), opstr2)
-                    else:
-                        op = eval(opstr)  ## this gives us the "python function object" described by opstr (e.g. string "np.std"  something we can call)
-                   # op is called  as op(col):R^n -> R. i.e. gets passed an array (output vs time) and produces a scalar.
-                except:
-                    print "ERROR: Failed to find use specified postprocessing function ", opstr
-
-                try:
-                    result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
-                    for val in result:
-                        if (val == None):
-                            fout.write("nan ")
+            if ("name" in output_ops):
+                ## user just wants name of raw FAST output file saved, for later access
+                fout.write("%s\n" % results_dir)
+            else:
+                ## op is a function with input = vector of values, output=a single scalar
+                for opstr in output_ops:                
+                    ## we have a system where the function we do the postprocessing with can be specified in the control
+                    ## input file via: "output_operations" tag.
+                    try:
+                        if (":" in opstr):
+                            mod = opstr.split(":")[0]
+                            opstr2 = opstr.split(":")[1]
+                            op =getattr( __import__(mod, globals(), locals(), [opstr2], -1), opstr2)
                         else:
-                            fout.write("%.16e " % val)
-                except:
-                    print "DIRECTORY FAILED: ", results_dir
-                    for p in parms:
-                        val = case.sample[p]
-                        fres.write("%.16e " % val)
-                    fres.write( "   %s \n" % ( results_dir))
-                    break   # breaks out of "for opstr ..." so we don't repeat this message
+                            op = eval(opstr)  ## this gives us the "python function object" described by opstr (e.g. string "np.std"  something we can call)
+                       # op is called  as op(col):R^n -> R. i.e. gets passed an array (output vs time) and produces a scalar.
+                    except:
+                        print "ERROR: Failed to find/use specified postprocessing function ", opstr
 
-            fout.write("\n")
+                    try:
+                        result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
+                        for val in result:
+                            if (val == None):
+                                fout.write("nan ")
+                            else:
+                                fout.write("%.16e " % val)
+                    except:
+                        print "DIRECTORY FAILED: ", results_dir
+                        for p in parms:
+                            val = case.sample[p]
+                            fres.write("%.16e " % val)
+                        fres.write( "   %s \n" % ( results_dir))
+                        break   # breaks out of "for opstr ..." so we don't repeat this message
+
+                fout.write("\n")
         fout.close()
         fres.close()
 
@@ -359,9 +364,9 @@ class CaseAnalyzer(Assembly):
 def get_options():
     from optparse import OptionParser
     parser = OptionParser()    
-    parser.add_option("-i", "--input", dest="main_input",  type="string", default="runbatch-cases.txt",
+    parser.add_option("-i", "--input", dest="cases",  type="string", default="runbatch-cases.txt",
                                     help="main input file describing cases to run")
-    parser.add_option("-f", "--files", dest="file_locs",  type="string", default="runbatch-control.txt",
+    parser.add_option("-f", "--control_files", dest="control",  type="string", default="runbatch-control.txt",
                                     help="main input file describing locations of template files, and output fields/files to write")
     parser.add_option("-p", "--parallel", dest="run_parallel", help="run in parallel", action="store_true", default=False)
     parser.add_option("-c", "--cluster", dest="cluster_allocator", help="run using cluster allocator", action="store_true", default=False)
@@ -446,7 +451,7 @@ def parse_input(options):
     """
 
     ctrl = RunControlInput()
-    ctrl.cases['source_file'] = options.main_input        
+    ctrl.cases['source_file'] = options.cases        
 
     if (options.run_parallel):
         ## turns on openmdao concurrent execution stuff
@@ -456,7 +461,7 @@ def parse_input(options):
     ## input is raw cases
 
     # read file locations
-    ctrl.output = parse_key_val_file_all(options.file_locs)
+    ctrl.output = parse_key_val_file_all(options.control)
 
     return ctrl
 
