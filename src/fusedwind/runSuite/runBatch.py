@@ -312,12 +312,15 @@ class CaseAnalyzer(Assembly):
             if isinstance(output_ops, types.StringTypes):  ## hack to adjust if we actually did not get a list
                 output_ops = [output_ops]
         outnames = output_params['output_keys']
-        for op in output_ops:
-            if (":" in op):
-                op = op.split(":")[1]
-            for p in outnames:
-                fout.write("%s_%s " % (op,p))
-        fout.write("\n")
+        if ("raw" in output_ops):
+            fout.write("FAST output directory\n")
+        else:
+            for op in output_ops:
+                if (":" in op):
+                    op = op.split(":")[1]
+                for p in outnames:
+                    fout.write("%s_%s " % (op,p))
+            fout.write("\n")
         for fullcase in self.runcases:
             case = fullcase._inputs['runner.inputs']
             for p in parms:
@@ -326,7 +329,7 @@ class CaseAnalyzer(Assembly):
             fout.write("   ")
             results_dir = os.path.join(self.aerocode.basedir, case.case_name)
             print "collecting from ", results_dir
-            if ("name" in output_ops):
+            if ("raw" in output_ops):
                 ## user just wants name of raw FAST output file saved, for later access
                 fout.write("%s\n" % results_dir)
             else:
