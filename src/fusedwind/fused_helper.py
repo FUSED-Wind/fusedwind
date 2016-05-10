@@ -7,7 +7,7 @@ base_keys = Assembly.__base_traits__.keys() + Driver.__base_traits__.keys() + \
     CaseIteratorDriver.__base_traits__.keys()
 
 # from pygraphviz import AGraph # kld windows issues
-from IPython.display import SVG
+#from IPython.display import SVG
 from collections import defaultdict
 import json
 from numpy import ndarray, array, sort
@@ -22,9 +22,9 @@ from pprint import pprint
 
 
 # Creating the svg representation for dot_graphs
-def _repr_svg_(self):
-    self.draw('star.svg', prog="dot")
-    return SVG(filename='star.svg')
+# def _repr_svg_(self):
+#     self.draw('star.svg', prog="dot")
+#     return SVG(filename='star.svg')
 
 # AGraph.svg = property(lambda self: _repr_svg_(self)) # kld windows issues
 
@@ -278,47 +278,47 @@ def draw_graph(self, name='Graph', value=False):
 
 
 #from IPython.html.widgets import interactive, fixed #interact, 
-from IPython.html import widgets
-from IPython.display import clear_output, display, HTML
+#from IPython.html import widgets
+# from IPython.display import clear_output, display, HTML
 
 
-def interactive_graph(self):
-    """Create an interative graph using Ipython widgets
-    """
-    basedict = self.__class__.__base_traits__
-    inputs = dict([(c, (getattr(basedict[c], 'low'), getattr(basedict[c], 'high')))
-                   for c in list_ios(self, 'in')])
+# def interactive_graph(self):
+#     """Create an interative graph using Ipython widgets
+#     """
+#     basedict = self.__class__.__base_traits__
+#     inputs = dict([(c, (getattr(basedict[c], 'low'), getattr(basedict[c], 'high')))
+#                    for c in list_ios(self, 'in')])
 
-    def f(**kwargs):
-        my_call(self, **kwargs)
-        display(self.draw_graph(value=True))
-    return interact(f, **inputs)
-
-
-def interactive_output(self):
-    """Create an interative graph using Ipython widgets
-    """
-    basedict = self.__class__.__base_traits__
-    inputs = dict([(c, (getattr(basedict[c], 'low'), getattr(basedict[c], 'high')))
-                   for c in list_ios(self, 'in')])
-
-    def f(**kwargs):
-        my_call(self, **kwargs)
-        display(my_tree(self).json)
-    interact(f, **inputs)
+#     def f(**kwargs):
+#         my_call(self, **kwargs)
+#         display(self.draw_graph(value=True))
+#     return interact(f, **inputs)
 
 
-def interactive_plot(self):
-    """Create an interative plot using Ipython widgets
-    """
-    basedict = self.__class__.__base_traits__
-    inputs = dict([(c, (getattr(basedict[c], 'low'), getattr(basedict[c], 'high')))
-                   for c in list_ios(self, 'in')])
+# def interactive_output(self):
+#     """Create an interative graph using Ipython widgets
+#     """
+#     basedict = self.__class__.__base_traits__
+#     inputs = dict([(c, (getattr(basedict[c], 'low'), getattr(basedict[c], 'high')))
+#                    for c in list_ios(self, 'in')])
 
-    def f(**kwargs):
-        my_call(self, **kwargs)
-        display(self.plot())
-    interact(f, **inputs)
+#     def f(**kwargs):
+#         my_call(self, **kwargs)
+#         display(my_tree(self).json)
+#     interact(f, **inputs)
+
+
+# def interactive_plot(self):
+#     """Create an interative plot using Ipython widgets
+#     """
+#     basedict = self.__class__.__base_traits__
+#     inputs = dict([(c, (getattr(basedict[c], 'low'), getattr(basedict[c], 'high')))
+#                    for c in list_ios(self, 'in')])
+
+#     def f(**kwargs):
+#         my_call(self, **kwargs)
+#         display(self.plot())
+#     interact(f, **inputs)
 
 # Create a flat tree from a Component or Assembly
 flatree = lambda a, iotype=None: my_tree(a, iotype).flatten()
@@ -475,9 +475,9 @@ def _register(cls):
         cls.draw_graph = draw_graph
         cls.__call__ = my_call
         cls.list_ios = list_ios
-        cls.interactive_graph = interactive_graph
-        cls.interactive_output = interactive_output
-        cls.interactive_plot = interactive_plot
+        # cls.interactive_graph = interactive_graph
+        # cls.interactive_output = interactive_output
+        # cls.interactive_plot = interactive_plot
         cls._repr_json_ = _repr_tree_
         cls.init = init_container
 

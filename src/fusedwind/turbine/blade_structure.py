@@ -689,7 +689,7 @@ class BladeStructureProperties(Component):
 
         for i in range(self.surface.surface.shape[1]):
             x = self.surface.surface[:, i, :]
-            span = x[0, 2]
+            span = self.pf.s[i]
             af = AirfoilShape(points=x)
             for j in range(nDP):
                 s_chord = self.scurves[j](span)

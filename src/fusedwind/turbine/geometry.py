@@ -541,7 +541,7 @@ class LoftedBladeSurface(Component):
     span_ni = Int(300, iotype='in')
     redistribute_flag = Bool(False, desc='redistribute points chordwise')
     x_chordwise = Array(iotype='in', desc='user specified chordwise distribution')
-
+    minTE = Float(0., iotype='in', desc='minimum trailing edge thickness')
     interp_type = Enum('rthick', ('rthick', 's'), iotype='in')
     surface_spline = Str('akima', iotype='in', desc='Spline')
 
@@ -582,6 +582,7 @@ class LoftedBladeSurface(Component):
             points = self.redistribute(points, pos_z)
 
             points *= chord
+            points = self.open_trailing_edge(points)
             points[:, 0] -= chord * p_le
 
             # x-coordinate needs to be inverted for clockwise rotating blades
@@ -668,6 +669,18 @@ class LoftedBladeSurface(Component):
             airfoil = airfoil.redistribute(ni=self.chord_ni, dLE=dist_LE)
 
         return airfoil.points
+
+    def open_trailing_edge(self, points):
+
+        if self.minTE == 0.:
+            return points
+
+        af = AirfoilShape(points=points)
+        t = np.abs(af.points[-1,1] - af.points[0, 1])
+        if t < self.minTE:
+            af.open_trailing_edge(self.minTE)
+
+        return af.points
 
     def set_airfoil(self, airfoil, pos_z):
 

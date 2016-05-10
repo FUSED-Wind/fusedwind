@@ -628,7 +628,7 @@ class DistnParser(object):
 def get_options():
     from optparse import OptionParser
     parser = OptionParser()    
-    parser.add_option("-i", "--input", dest="main_input",  type="string", default="runbatch-dist.txt",
+    parser.add_option("-i", "--input", dest="dist",  type="string", default="runbatch-dist.txt",
                                     help="main input file describing distribution, ie cases to run")
     parser.add_option("-n", "--nsamples", dest="nsamples", help="how many samples to generate", type="int", default=5)
     parser.add_option("-o", "--output", dest="main_output",  type="string", default="runcases.txt",
@@ -648,11 +648,12 @@ def read_samples(fname):
         dat.append([float(x) for x in ln.split()])
     return hdr, dat
 
-def gen_cases():
-    options, args = get_options()
+def gen_cases(options=None, args=None):
+    if options==None:
+        options, args = get_options()
     
     dparser = DistnParser()
-    dparser.parse_file(options.main_input)
+    dparser.parse_file(options.dist)
 
     if (options.old_samples != None):
         # in this mode, we are given a distribution and, separately, a set of old samples.  Our job is to calculate the
@@ -686,7 +687,7 @@ def gen_cases():
             fout.write("\n")
         fout.close()
 
-        print "Calculated probabilities of samples in %s w.r.t. distribution in %s" % (options.old_samples, options.main_input)
+        print "Calculated probabilities of samples in %s w.r.t. distribution in %s" % (options.old_samples, options.dist)
         if (options.augment):
             print "Augmented output with these probs as Prob2 in field (0-based) %d" % (pidx)
         else:
@@ -709,7 +710,7 @@ def gen_cases():
                 fout.write("%.16e " % s[key])
             fout.write("   %.16e\n" % p)
         fout.close()
-        print "wrote %d samples (run cases) from distribution in \'%s\' to \'%s\'" % (numsamples, options.main_input, options.main_output)
+        print "wrote %d samples (run cases) from distribution in \'%s\' to \'%s\'" % (numsamples, options.dist, options.main_output)
 
 
 if __name__=="__main__":
