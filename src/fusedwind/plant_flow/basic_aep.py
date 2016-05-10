@@ -266,7 +266,7 @@ class aep_component(Component):
 
         self.gross_aep = self.turbine_number * np.trapz(self.power_curve, self.CDF_V)*365.0*24.0  # in kWh
         self.net_aep = self.availability * (1-self.array_losses) * (1-self.other_losses) * self.gross_aep
-        self.capacity_factor = self.net_aep / (8760. * self.machine_rating * self.turbine_number)
+        self.capacity_factor = self.net_aep / (8760. * self.machine_rating * 1000.0 * self.turbine_number)
 
     def list_deriv_vars(self):
 
