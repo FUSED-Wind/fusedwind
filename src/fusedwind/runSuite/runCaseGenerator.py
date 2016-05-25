@@ -631,6 +631,7 @@ def get_options():
     parser.add_option("-i", "--input", dest="dist",  type="string", default="runbatch-dist.txt",
                                     help="main input file describing distribution, ie cases to run")
     parser.add_option("-n", "--nsamples", dest="nsamples", help="how many samples to generate", type="int", default=5)
+    parser.add_option("-t", "--tmax", dest="tmax", help="analysis time, default is use tag in distribution file", type="float", default=None)
     parser.add_option("-o", "--output", dest="main_output",  type="string", default="runcases.txt",
                                     help="output file (where to write the run cases)")
     parser.add_option("-p", "--probfile", dest="old_samples",  type="string", default=None,
@@ -707,7 +708,10 @@ def gen_cases(options=None, args=None):
             p =  dparser.calc_prob(s)
     #        print "sample %d = " % i, s, p
             for key in s:
-                fout.write("%.16e " % s[key])
+                if (key == "AnalTime" and options.tmax != None and options.tmax > 0):
+                    fout.write("%.16e " % options.tmax)  ## special case to replace analysis time on the fly
+                else:
+                    fout.write("%.16e " % s[key])
             fout.write("   %.16e\n" % p)
         fout.close()
         print "wrote %d samples (run cases) from distribution in \'%s\' to \'%s\'" % (numsamples, options.dist, options.main_output)
