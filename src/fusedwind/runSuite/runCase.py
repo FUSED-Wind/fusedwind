@@ -46,7 +46,7 @@ class GenericRunCase(IECRunCaseBaseVT):
         self.sample = {param_names[i]:self.x[i] for i in range(len(param_names))}
         self.thename = casename
         for p in self.sample:
-            self.thename += "%s.%.1f" % (p[0:3],self.sample[p])
+            self.thename += "%s.%.4f" % (p[0:3],self.sample[p])
         self.case_name = self.thename
 
 class GenericRunCaseTable(object):
