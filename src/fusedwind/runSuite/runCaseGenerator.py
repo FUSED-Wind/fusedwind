@@ -107,6 +107,7 @@ import re, random, numpy as np, numpy.random as npr
 from copy import deepcopy
 
 from scipy.stats import vonmises, gamma
+import scipy.integrate as integrate
 # this is not available until scipy 0.14:
 #from scipy.stats import  multivariate_normal
 # so we have to us numpy.multivariate_normal (at least on my mac)
@@ -288,12 +289,41 @@ class FnDistn(Distribution):
         self.fn = fn
         self.args = args
 
+        self.is_truncated = False
+        self.C = None
+        if (fn[0] == "T"):  ## this is a truncated distribution
+            self.is_truncated = True
+            self.fn = fn[1:]  # strip "T"            
+            print "distn is truncated", fn, self.fn
+
+    def ensure_C(self, argvals):
+        if not self.is_truncated:
+            return
+        if self.C == None:
+            self.Vin = argvals[-2]  # last two args to distn are truncation points
+            self.Vout = argvals[-1]
+            self.is_truncated = False  # temp turn it off b/c we want true integral of pdf over truncated range
+            self.C = integrate.quad(self.calc_prob, self.Vin, self.Vout)
+            self.is_truncated = True
+            self.C = self.C[0]
+            print "truncated distribution normalization constant = ", self.C, "range: ", self.Vin, self.Vout
+
     def sample(self):
         argvals = []
         for i in range(len(self.args)):
             a = self.args[i]
             argvals.append(self.ctx.resolve_value(a))
 
+        if (self.is_truncated):
+            self.ensure_C(argvals)
+            val = self.Vin - 1
+            while (val < self.Vin or val > self.Vout):
+                val = self.raw_sample(argvals)
+            return val
+        else:
+            return self.raw_sample(argvals)
+
+    def raw_sample(self, argvals):
         if (self.fn == "N"):
 #            print " need to sample normal with args = ", argvals
             val = draw_normal(argvals[0], argvals[1])
@@ -310,11 +340,10 @@ class FnDistn(Distribution):
 #            print " need to sample von Mises with args = ", argvals
             val = draw_vonmises(argvals[0], argvals[1])
         elif (self.fn == "W"):
-#            print " need to sample Wiebull with args = ", argvals
             val = draw_weibull(argvals[0], argvals[1])
+#            print " sampled Wiebull with args = ", argvals, "got ", val
         else:
-            raise ValueError,  "unknown distribution %s" % self.fn
-
+            raise ValueError,  "Sorry, unknown distribution: %s" % self.fn
         return val
 
     def calc_prob(self, x):
@@ -325,6 +354,14 @@ class FnDistn(Distribution):
             a = self.args[i]
             argvals.append(self.ctx.resolve_value(a))
 
+        if (self.is_truncated):
+            self.ensure_C(argvals)
+            if x < self.Vin or x > self.Vout:
+                return 0  ## bail here for samples outside range
+            C = self.C ## this is normalization for truncated distn
+        else:
+            C = 1.0  ## untruncated distn's have normalization of 1
+            
         if (self.fn == "N"):
             val = prob_normal(x,argvals[0], argvals[1])
         elif (self.fn == "N2"):
@@ -337,12 +374,13 @@ class FnDistn(Distribution):
             val = prob_vonmises(x,argvals[0], argvals[1])
         elif (self.fn == "W"):
             val = prob_weibull(x,argvals[0], argvals[1])
+#            print "prob W", x, argvals[0], argvals[1], val
         else:
             raise ValueError,  "unknown distribution %s" % self.fn
         
         if (math.isnan(val)):
             print "NAN", val, x, self.fn, argvals
-        return val
+        return val/C
 
 
 class DistnParser(object):
