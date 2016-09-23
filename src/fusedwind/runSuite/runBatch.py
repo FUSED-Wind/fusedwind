@@ -312,6 +312,8 @@ class CaseAnalyzer(Assembly):
             if isinstance(output_ops, types.StringTypes):  ## hack to adjust if we actually did not get a list
                 output_ops = [output_ops]
         outnames = output_params['output_keys']
+        if (isinstance(outnames, basestring)):
+            outnames = [outnames]
         if ("raw" in output_ops):
             fout.write("FAST output directory\n")
         else:
@@ -349,7 +351,7 @@ class CaseAnalyzer(Assembly):
                         print "ERROR: Failed to find/use specified postprocessing function ", opstr
 
                     try:
-                        result = self.aerocode.getResults(output_params['output_keys'], results_dir, operation=op)
+                        result = self.aerocode.getResults(outnames, results_dir, operation=op)
                         for val in result:
                             if (val == None):
                                 fout.write("nan ")
