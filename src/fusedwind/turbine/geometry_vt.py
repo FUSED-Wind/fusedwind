@@ -72,7 +72,7 @@ class Curve(VariableTree):
             points[:, i] = self._splines[i](self.s)
 
         self.initialize(points)
-
+ 
     def interp_s(self, s):
         """
         interpolate (x,y) at some curve fraction s

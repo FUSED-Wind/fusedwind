@@ -9,7 +9,9 @@ from openmdao.lib.datatypes.api import VarTree, Float, Array, Bool, Str, List, I
 
 from fusedwind.turbine.geometry_vt import BladeSurfaceVT, BladePlanformVT, Curve, AirfoilShape
 from fusedwind.turbine.geometry import RedistributedBladePlanform, SplineComponentBase, FFDSplineComponentBase
-from fusedwind.turbine.structure_vt import BladeStructureVT3D, CrossSectionStructureVT, BeamStructureVT
+from fusedwind.turbine.structure_vt import BladeStructureVT3D, CrossSectionStructureVT, BeamStructureVT,\
+    CrossSectionMeshVT, ResultVectorArray, CrossSectionElementStressRecoveryVT,\
+    CrossSectionAreasVT, KeyPointsVT, CrossSectionAreasVT3D, MeshProps
 from fusedwind.turbine.rotoraero_vt import LoadVectorCaseList
 from fusedwind.interface import base, implement_base
 from fusedwind.lib.geom_tools import curvature
@@ -36,6 +38,14 @@ class ModifyBladeStructureBase(Component):
                                          desc='Vartree containing initial discrete definition of blade structure')
     st3dOut = VarTree(BladeStructureVT3D(), iotype='out',
                                          desc='Vartree containing modified discrete definition of blade structure')
+
+@base
+class ModifyCrossSectionAreasBase(Component):
+
+    areas3dIn = VarTree(CrossSectionAreasVT3D(), iotype='in',
+                                         desc='Vartree containing initial discrete definition of blade cross section areas')
+    areas3dOut = VarTree(CrossSectionAreasVT3D(), iotype='out',
+                                         desc='Vartree containing modified discrete definition of blade cross section areas')
 
 
 @implement_base(BladeStructureReaderBase)
@@ -651,7 +661,6 @@ class SplinedBladeStructure(Assembly):
             for layer in region.layers:
                 region.thickness += np.maximum(0., getattr(region, layer).thickness)
 
-
 class BladeStructureProperties(Component):
 
     surface = VarTree(BladeSurfaceVT(), iotype='in', desc='Stacked blade surface object')
@@ -855,6 +864,99 @@ class BladeStructureCSBuilder(BladeStructureBuilderBase):
 
             self.cs2d.append(st2d)
 
+@base    
+class CrossSectionAreasCSBuilder(Component):
+    """
+    Class that generates a series of 2D cross-sectional area
+    vartrees (CrossSectionAreasVT3D) used by a mesher like FEPROC
+    """
+    areas3d = VarTree(CrossSectionAreasVT3D(), iotype='in', desc = 'Vartree containing initial discrete definition of blade cross section areas')
+    areas2d_names = List(iotype='out', desc = 'List of Area names')
+    
+    areas2d = List(iotype='out', desc='List of cross-sectional area'
+                                         'vartrees')
+
+    def execute(self):
+        """
+        generate cross sections at every spanwise node of the areas3d vartree
+        """
+        # clear list of outputs!
+        self.areas2d = []
+        self.areas2d_names = self.areas3d.areas
+        
+        ni = self.areas3d.s.shape[0]
+        for i in range(ni):
+            
+            area2d = CrossSectionAreasVT()
+            area2d.s = self.areas3d.s[i]
+            for kp_name in self.areas3d.KPs:
+                kp3d = getattr(self.areas3d, kp_name)
+                kp2dIn = kp3d.extract_kp2d(i) # extract kp object
+                kp2dOut = area2d.add_kp(kp_name) # add kp object
+                kp2dOut.x = kp2dIn.x # copy kp coordinates
+                kp2dOut.y = kp2dIn.y # copy kp coordinates
+            area2d.materials = self.areas3d.materials.copy()
+            area2d.areas = self.areas3d.areas # copy area name list
+            for area_name in self.areas3d.areas:
+                area_obj3d = getattr(self.areas3d, area_name)
+                
+                area_obj2d = area2d.add_area(area_name)
+                area_obj2d.add_kps(area_obj3d.KPs)
+                area_obj2d.mat = area_obj3d.mat
+                area_obj2d.fiber_plane_angle = area_obj3d.fiber_plane_angle
+                area_obj2d.fiber_dir_angle = area_obj3d.fiber_dir_angle
+                
+            self.areas2d.append(area2d)
+                
+            
+            
+@base
+class BeamMeshCSCode(Component):
+    """
+    Base class for a code such as FEPROC computing beam cross-sectional meshes
+    suitable for 2D FE codes such as PreComp, BECAS or VABS.
+    """
+    mesh_props = VarTree(MeshProps(), iotype='in', desc = 'mesh properties')
+    
+    areas2d = List(iotype='in', desc='List of cross-sectional area'
+                                         'vartrees (CrossSectionAreasVT)')
+    
+    meshes2d =  List(iotype='out',desc='List of cross-sectional mesh'
+                                         'vartrees (CrossSectionMeshVT)')
+    
+
+
+@base
+class BeamStructureCSCodeWOMesher(Component):
+    """
+    Base class for computing beam structural properties using a cross-sectional
+    code such as PreComp, BECAS or VABS.
+
+    Complementary to BeamStructureCSCode
+    """
+    
+    cs_mesh_3D = List(CrossSectionMeshVT, desc='List of CrossSectionMeshVTs', iotype='in')
+    
+    beam_structure = List(BeamStructureVT, iotype='out', desc='List Structural beam properties')
+    
+    
+    
+@base
+class StressRecoveryCSStressStrain(Component):
+    """
+    Base class for performing cross sectional stress/strain analysis
+    using codes like BECAS and VABS.
+
+    This analysis will typically be in a workflow preceeded by
+    a call to a BeamStructureCSCode or BeamStructureCSCodeWOMesher. It is assumed that the list of
+    LoadVectorCaseList vartrees are interpolated onto the structural grid.
+    """
+    
+    load_cases = List(LoadVectorCaseList, iotype='in', 
+                           desc='List of lists of section load vectors for each radial section'
+                                'used to perform stress/strain analysis')
+    
+    cs_res_3D = List(CrossSectionElementStressRecoveryVT, desc='List of element result dictionary VTs', iotype='out')
 
 @base
 class BeamStructureCSCode(Component):

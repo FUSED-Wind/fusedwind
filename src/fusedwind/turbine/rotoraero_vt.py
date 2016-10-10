@@ -302,6 +302,7 @@ class LoadVectorArrayCaseList(VariableTree):
     List of load vector cases as function of span
     """
     cases = List(LoadVectorArray, desc='List of load cases')
+    # maro: why is this not a list of load case names according to the convention i.e.in structure_vt/BladeStructureVT3D
 
     def _interp_s(self, s):
         """

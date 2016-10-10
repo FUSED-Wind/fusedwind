@@ -1,4 +1,4 @@
-
+import numpy as np
 from openmdao.main.api import VariableTree
 from openmdao.lib.datatypes.api import Int, Float, Array, List, Str, Enum, Bool, VarTree, Slot, Dict
 
@@ -147,7 +147,7 @@ class Region(VariableTree):
 
 
 @base
-class CrossSectionStructureVT(VariableTree):
+class CrossSectionStructureVT(VariableTree): # more appropriate name: CrossSectionLayupVT
     """
     Container for a cross-sectional definition of the
     internal structure of a blade.
@@ -218,7 +218,7 @@ class Region3D(VariableTree):
 
 
 @base
-class BladeStructureVT3D(VariableTree):
+class BladeStructureVT3D(VariableTree): # more appropriate name:  BladeLayupVT3D
     """
     Variable tree for the structural definition of a blade.
     """
@@ -240,7 +240,7 @@ class BladeStructureVT3D(VariableTree):
 
         for i in range(nr):
             try:
-                name = rnames[i]
+                name = names[i]
             except:
                 name = 'region%02d' % i
             self.add_region(name)
@@ -251,7 +251,7 @@ class BladeStructureVT3D(VariableTree):
 
         for i in range(nw):
             try:
-                name = wnames[i]
+                name = names[i]
             except:
                 name = 'web%02d' % i
             self.add_web(name)
@@ -290,3 +290,209 @@ class BladeStructureVT3D(VariableTree):
         self.add(name, VarTree(mat))
         self.materials[name] = getattr(self, name)
         return getattr(self, name)
+    
+    
+@base
+class ResultVectorArray(VariableTree):
+    '''
+    Container for element results
+    '''
+    id = Str(desc = 'Result identifier')
+    comp_11 = Array(desc = 'Result component 11')
+    comp_22 = Array(desc = 'Result component 22')
+    comp_33 = Array(desc = 'Result component 33')
+    comp_12 = Array(desc = 'Result component 12')
+    comp_13 = Array(desc = 'Result component 13')
+    comp_23 = Array(desc = 'Result component 23')
+    
+    def _fromarray(self, d):
+
+        self.comp_11 = d[:,0]
+        self.comp_22 = d[:,1]
+        self.comp_33 = d[:,2]
+        self.comp_12 = d[:,3]
+        self.comp_13 = d[:,4]
+        self.comp_23 = d[:,5]
+        
+    def _toarray(self):
+
+        return np.array([self.comp_11, self.comp_22, self.comp_33, self.comp_12, self.comp_13,
+                         self.comp_23]).T
+
+@base
+class KeyPointsVT(VariableTree):
+    kp_name = Str('cs_xx',desc='Pointer for  key point array')
+    kp_coords = Array([[0.,0.],[1.,2.]],desc='Array containing arrays of key point coordinates')
+    
+@base
+class KeyPoint(VariableTree):
+    x = Float(desc = 'x coordinates of cs keypoints as function of span', units = 'm')
+    y = Float(desc = 'y coordinates of cs keypoints as function of span', units = 'm')
+    
+
+@base
+class Area(VariableTree):
+    '''
+    Area of a cross section.
+    '''
+    #no_KPs,ET,MAT,ASYS,REAL,CUT_flag
+    KPs = List(desc = 'List of keypoint names')
+    kp_ni = Int(desc='Number of area keypoints')
+    mat = Str(desc='Material name')
+    fiber_plane_angle = Float(units='deg', desc='Material (fiber) plane orientation angle (BECAS alpha)')
+    fiber_dir_angle = Float(units='deg', desc='Material (fiber) direction angle (BECAS beta)')
+    #csys_name = Str(desc='Coordinate system object name')
+    
+    def add_kps(self, kps):
+        """
+        add a list of keypoints to area
+        
+        parameters
+        -----------
+        kps: list
+            list of kp names
+        """
+        self.KPs = kps
+        self.kp_ni = len(kps)
+    
+@base
+class CrossSectionAreasVT(VariableTree):
+    """
+    Container for a cross section discretized by areas. An area is represented by
+    at least 3 keypoints.
+    """
+    s = Float(desc = 'position along span')
+    KPs = List(desc = 'List of keypoint names')
+    areas = List(desc = 'List of Area names')
+    materials = Dict(desc='Dictionary of MaterialProps vartrees')
+    
+    def add_kp(self, name):
+        self.add(name, VarTree(KeyPoint()))
+        self.KPs.append(name)
+        return getattr(self, name)
+   
+    def add_material(self, name):
+        mat = MaterialProps()
+        mat.materialname = name
+        self.add(name, VarTree(mat))
+        self.materials[name] = getattr(self, name)
+        return getattr(self, name)
+    
+    def add_area(self, name):
+        self.add(name, VarTree(Area()))
+        self.areas.append(name)
+        return getattr(self, name)
+        
+    def kp_coords(self):
+        '''
+        Returns the keypoint coordinates as np array [[x0, y0], [x1, y1], ...]
+        '''
+        kp_coords = []
+        for kp_name in self.KPs:
+            kp_obj = getattr(self, kp_name)
+            kp_coords.append([kp_obj.x, kp_obj.y])
+        return np.r_[kp_coords]
+
+@base
+class KeyPoint3D(VariableTree):
+    x = Array(desc = 'x coordinates of cs keypoints as function of span', units = 'm')
+    y = Array(desc = 'y coordinates of cs keypoints as function of span', units = 'm')
+    
+    def append_kp2d(self, kp):
+        '''
+        appends a 2D keypoint to KeyPoint3D
+        
+        parameters
+        -----------
+        kp: KeyPoint
+            keypoint
+        '''
+        # most efficient method to append items to a numpy array
+        x = self.x.tolist()
+        y = self.y.tolist()
+        x.append(kp.x)
+        y.append(kp.y)
+        self.x = np.r_[x]
+        self.y = np.r_[y]
+        
+    def extract_kp2d(self, kp_index):
+        '''
+        extracts a 2D keypoint from KeyPoint3D
+        
+        parameters
+        -----------
+        kp_index: int
+            index of the key point to be extracted
+        '''
+        kp2d = VarTree(KeyPoint())
+        kp2d.x = self.x[kp_index]
+        kp2d.y = self.y[kp_index]
+        return kp2d
+
+@base
+class CrossSectionAreasVT3D(VariableTree):
+    """
+    Container for a cross section discretized by areas as function of span.
+    """
+    
+    s = Array(desc = 'spanwise discretization of blade')
+    KPs = List(desc = 'List of keypoint names')
+    materials = Dict(desc = 'Dictionary of MaterialProps vartrees')
+    areas = List(desc = 'List of Area names')
+    
+    def add_kp(self, name):
+        self.add(name, VarTree(KeyPoint3D()))
+        self.KPs.append(name)
+        return getattr(self, name)
+   
+    def add_material(self, name):
+        mat = MaterialProps()
+        mat.materialname = name
+        self.add(name, VarTree(mat))
+        self.materials[name] = getattr(self, name)
+        return getattr(self, name)
+    
+    def add_area(self, name):
+        self.add(name, VarTree(Area()))
+        self.areas.append(name)
+        return getattr(self, name)
+    
+    
+    
+@base
+class MeshProps(VariableTree):
+    '''
+    Mesh properties for a mesher
+    '''
+    etype = Str(desc='Element type')
+    
+
+@base
+class Elset(VariableTree):
+    '''
+    Element set container
+    '''
+    el_numbers = Array(desc = 'Element numbers belonging to the set' ) 
+    
+@base
+class CrossSectionMeshVT(VariableTree):
+    '''
+    Container for a 2D cross sectional mesh.
+    Note: Is this too BECAS specific?
+    '''
+    s = Float(desc= 'psoition of mesh along span' )
+    nl_2d = Array(desc='Nodal points (node nr, x, y, z)')
+    defs = '(Element number, node 1, n2, n3, ..., n8)'
+    el_2d = Array(desc='Elements %s' % defs)
+    defs = '(Element nr, material nr, fiber angle, fiberplane angle)'
+    emat  = Array(desc='Material per element %s' % defs)
+    matprops = Array(desc='Material properties (see docs)')
+    elsets = Dict(desc='Dictionary of Elset vartrees')
+   
+@base
+class CrossSectionElementStressRecoveryVT(VariableTree):
+    '''
+    Container for cross sectional element results returned from any FE code.
+    '''
+    el_stresses = Dict(desc='element stresses') # List of ResultVectors
+    el_strains = Dict(desc='element strains') # List of ResultVectors
